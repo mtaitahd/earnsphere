@@ -647,7 +647,8 @@ class SnippePayment {
     }
     
     /**
-     * Finalize payout success: mark withdrawal completed.
+     * Finalize payout success: debit wallet + mark withdrawal completed.
+     * Balance is only deducted here (not at request time).
      */
     public function finalizePayoutSuccess(int $payoutId, int $withdrawalId, int $userId, float $amount): void {
         Database::beginTransaction();
@@ -663,10 +664,15 @@ class SnippePayment {
                 $userId, $withdrawalId, 'withdrawal', 'pending'
             ]);
             
-            $wallet = Database::fetchOne("SELECT id, pending_amount FROM wallets WHERE user_id = ?", [$userId]);
+            $wallet = Database::fetchOne("SELECT * FROM wallets WHERE user_id = ?", [$userId]);
             if ($wallet) {
+                $balanceBefore = (float) $wallet['balance'];
+                $balanceAfter = $balanceBefore - $amount;
+                
                 Database::update('wallets', [
-                    'pending_amount' => max(0, (float)$wallet['pending_amount'] - $amount),
+                    'balance'              => $balanceAfter,
+                    'total_withdrawn'      => (float)$wallet['total_withdrawn'] + $amount,
+                    'pending_amount'       => max(0, (float)$wallet['pending_amount'] - $amount),
                 ], 'id = ?', [$wallet['id']]);
             }
             
@@ -699,29 +705,13 @@ class SnippePayment {
             if ($previousFailed === 0) {
                 $wallet = Database::fetchOne("SELECT * FROM wallets WHERE user_id = ?", [$userId]);
                 if ($wallet) {
-                    $balanceBefore = (float) $wallet['balance'];
-                    $balanceAfter  = $balanceBefore + $amount;
                     $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
                     $withdrawableAfter = $withdrawableBefore + $amount;
                     
                     Database::update('wallets', [
-                        'balance'              => $balanceAfter,
                         'withdrawable_balance' => $withdrawableAfter,
-                        'total_withdrawn'      => max(0, (float)$wallet['total_withdrawn'] - $amount),
+                        'pending_amount'       => max(0, (float)$wallet['pending_amount'] - $amount),
                     ], 'id = ?', [$wallet['id']]);
-                    
-                    Database::insert('wallet_transactions', [
-                        'wallet_id'      => $wallet['id'],
-                        'user_id'        => $userId,
-                        'type'           => 'admin_adjustment',
-                        'amount'         => $amount,
-                        'balance_before' => $balanceBefore,
-                        'balance_after'  => $balanceAfter,
-                        'description'    => "Payout failed/reversed: {$reason}",
-                        'reference_id'   => $payoutId,
-                        'reference_type' => 'payout',
-                        'status'         => 'completed',
-                    ]);
                 }
             }
             
@@ -735,13 +725,6 @@ class SnippePayment {
             ], 'user_id = ? AND reference_id = ? AND reference_type = ? AND status = ?', [
                 $userId, $withdrawalId, 'withdrawal', 'pending'
             ]);
-            
-            $walletPending = Database::fetchOne("SELECT id, pending_amount FROM wallets WHERE user_id = ?", [$userId]);
-            if ($walletPending) {
-                Database::update('wallets', [
-                    'pending_amount' => max(0, (float)$walletPending['pending_amount'] - $amount),
-                ], 'id = ?', [$walletPending['id']]);
-            }
             
             Auth::logActivity($userId, 'payout_failed', "Payout TZS " . number_format($amount) . " failed: {$reason}");
             

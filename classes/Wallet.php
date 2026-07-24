@@ -185,7 +185,8 @@ class Wallet {
     }
     
     /**
-     * Request withdrawal - debits wallet and sends payout directly via Snippe
+     * Request withdrawal - holds withdrawable balance, sends payout via Snippe
+     * Balance is only deducted when payout succeeds (webhook confirms)
      */
     public static function requestWithdrawal(int $userId, float $amount, string $phone): array {
         $errors = [];
@@ -200,9 +201,11 @@ class Wallet {
         
         $wallet = self::getWallet($userId);
         $withdrawable = (float) ($wallet['withdrawable_balance'] ?? 0);
+        $pendingAmount = (float) ($wallet['pending_amount'] ?? 0);
+        $available = $withdrawable - $pendingAmount;
         
-        if ($amount > $withdrawable) {
-            $errors[] = "Insufficient withdrawable balance. You can withdraw TZS " . number_format($withdrawable) . " from your referral earnings";
+        if ($amount > $available) {
+            $errors[] = "Insufficient available balance. You have TZS " . number_format($available) . " available (earnings minus pending withdrawals)";
         }
         
         if (!empty($errors)) {
@@ -210,15 +213,28 @@ class Wallet {
         }
         
         try {
-            $transactionId = self::debit(
-                $userId,
-                $amount,
-                'withdrawal',
-                "Withdrawal request TZS " . number_format($amount),
-                null,
-                null,
-                'pending'
-            );
+            Database::beginTransaction();
+            
+            $balanceBefore = (float) $wallet['balance'];
+            $balanceAfter = $balanceBefore;
+            $withdrawableBefore = (float) $wallet['withdrawable_balance'];
+            $withdrawableAfter = $withdrawableBefore - $amount;
+            
+            Database::update('wallets', [
+                'withdrawable_balance' => $withdrawableAfter,
+                'pending_amount'       => $pendingAmount + $amount,
+            ], 'id = ?', [$wallet['id']]);
+            
+            $transactionId = Database::insert('wallet_transactions', [
+                'wallet_id'      => $wallet['id'],
+                'user_id'        => $userId,
+                'type'           => 'withdrawal',
+                'amount'         => -$amount,
+                'balance_before' => $balanceBefore,
+                'balance_after'  => $balanceAfter,
+                'description'    => "Withdrawal request TZS " . number_format($amount),
+                'status'         => 'pending',
+            ]);
             
             $withdrawalId = Database::insert('withdrawals', [
                 'user_id'        => $userId,
@@ -228,14 +244,12 @@ class Wallet {
                 'status'         => 'pending',
             ]);
             
-            Database::update('wallets', [
-                'pending_amount' => ($wallet['pending_amount'] ?? 0) + $amount,
-            ], 'id = ?', [$wallet['id']]);
-            
             Database::update('wallet_transactions', [
                 'reference_id'   => $withdrawalId,
                 'reference_type' => 'withdrawal',
             ], 'id = ?', [$transactionId]);
+            
+            Database::commit();
             
             Auth::logActivity($userId, 'withdrawal_requested', "Requested TZS " . number_format($amount));
             
@@ -286,35 +300,18 @@ class Wallet {
     }
     
     /**
-     * Reverse a failed withdrawal - restore wallet balance
+     * Reverse a failed withdrawal - restore withdrawable balance only (balance was never debited)
      */
     private static function reverseWithdrawal(int $userId, int $withdrawalId, float $amount): void {
         try {
             $wallet = self::getWallet($userId);
-            $balanceBefore = (float) $wallet['balance'];
-            $balanceAfter = $balanceBefore + $amount;
             $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
             $withdrawableAfter = $withdrawableBefore + $amount;
             
             Database::update('wallets', [
-                'balance'              => $balanceAfter,
                 'withdrawable_balance' => $withdrawableAfter,
-                'total_withdrawn'      => max(0, (float)$wallet['total_withdrawn'] - $amount),
                 'pending_amount'       => max(0, (float)$wallet['pending_amount'] - $amount),
             ], 'id = ?', [$wallet['id']]);
-            
-            Database::insert('wallet_transactions', [
-                'wallet_id'      => $wallet['id'],
-                'user_id'        => $userId,
-                'type'           => 'admin_adjustment',
-                'amount'         => $amount,
-                'balance_before' => $balanceBefore,
-                'balance_after'  => $balanceAfter,
-                'description'    => "Payout failed: wallet restored",
-                'reference_id'   => $withdrawalId,
-                'reference_type' => 'withdrawal',
-                'status'         => 'completed',
-            ]);
             
             Database::update('withdrawals', [
                 'status' => 'failed',
@@ -358,32 +355,16 @@ class Wallet {
                 'processed_at' => date('Y-m-d H:i:s'),
             ], 'id = ?', [$withdrawalId]);
             
-            // If rejected, refund wallet including withdrawable_balance
+            // If rejected, restore withdrawable balance only (balance was never debited)
             if ($status === 'rejected') {
                 $wallet = self::getWallet($withdrawal['user_id']);
-                $balanceBefore = (float) $wallet['balance'];
-                $balanceAfter = $balanceBefore + $withdrawal['amount'];
                 $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
                 $withdrawableAfter = $withdrawableBefore + $withdrawal['amount'];
                 
                 Database::update('wallets', [
-                    'balance'              => $balanceAfter,
                     'withdrawable_balance' => $withdrawableAfter,
-                    'total_withdrawn'      => $wallet['total_withdrawn'] - $withdrawal['amount'],
                     'pending_amount'       => max(0, (float)$wallet['pending_amount'] - $withdrawal['amount']),
                 ], 'id = ?', [$wallet['id']]);
-                
-                Database::insert('wallet_transactions', [
-                    'wallet_id'      => $wallet['id'],
-                    'user_id'        => $withdrawal['user_id'],
-                    'type'           => 'admin_adjustment',
-                    'amount'         => $withdrawal['amount'],
-                    'balance_before' => $balanceBefore,
-                    'balance_after'  => $balanceAfter,
-                    'description'    => "Withdrawal request rejected: " . ($adminNote ?: ''),
-                    'status'         => 'completed',
-                    'created_by'     => $adminId,
-                ]);
                 
                 Database::update('wallet_transactions', [
                     'status' => 'rejected',
