@@ -116,7 +116,7 @@ try {
 
     webhookLog("MAPPED | ref={$reference} | api_status={$apiStatus} → new_status={$newStatus} | payment_id_meta={$paymentId}");
 
-    // Find payment by snippe_reference OR order_id OR metadata.payment_id
+    // Find payment by snippe_reference OR metadata.payment_id OR order_id
     $payment = null;
     
     if (!empty($reference)) {
@@ -128,12 +128,35 @@ try {
     }
     
     if (!$payment && !empty($paymentId)) {
-        // payment_id in metadata is the DB row ID
         $payment = Database::fetchOne(
             "SELECT * FROM payments WHERE id = ? LIMIT 1",
             [(int)$paymentId]
         );
         webhookLog("LOOKUP id={$paymentId} → " . ($payment ? "FOUND id={$payment['id']}" : "NOT FOUND"));
+    }
+
+    // Fallback: match by order_id stored in metadata
+    if (!$payment) {
+        $orderId = $eventData['metadata']['order_id'] ?? $eventData['orderId'] ?? $eventData['metadata']['payment_id'] ?? '';
+        if (!empty($orderId)) {
+            $payment = Database::fetchOne(
+                "SELECT * FROM payments WHERE order_id = ? LIMIT 1",
+                [$orderId]
+            );
+            webhookLog("LOOKUP order_id={$orderId} → " . ($payment ? "FOUND id={$payment['id']}" : "NOT FOUND"));
+        }
+    }
+
+    // Last resort: match pending payment by user_id from metadata
+    if (!$payment) {
+        $userId = $eventData['metadata']['user_id'] ?? '';
+        if (!empty($userId)) {
+            $payment = Database::fetchOne(
+                "SELECT * FROM payments WHERE user_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
+                [(int)$userId]
+            );
+            webhookLog("LOOKUP user_id={$userId} (pending) → " . ($payment ? "FOUND id={$payment['id']}" : "NOT FOUND"));
+        }
     }
 
     if (!$payment) {

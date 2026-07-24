@@ -422,7 +422,8 @@ class SnippePayment {
         $paymentData = $body['data'] ?? $body['payment'] ?? $body;
         $reference   = $paymentData['reference'] ?? $paymentData['id'] ?? '';
         $status      = $paymentData['status'] ?? '';
-        $orderId     = $paymentData['metadata']['payment_id'] ?? $paymentData['orderId'] ?? '';
+        $paymentId   = $paymentData['metadata']['payment_id'] ?? '';
+        $orderId     = $paymentData['metadata']['order_id'] ?? $paymentData['orderId'] ?? '';
         $failureReason = $paymentData['failure_reason'] ?? null;
         
         $mappedStatus = match($status) {
@@ -431,13 +432,42 @@ class SnippePayment {
             default => 'pending',
         };
         
-        $paymentRecord = Database::fetchOne(
-            "SELECT * FROM payments WHERE snippe_reference = ? OR order_id = ?",
-            [$reference, $orderId]
-        );
+        // Lookup: snippe_reference → DB id → order_id → pending payment by user_id
+        $paymentRecord = null;
+        
+        if (!empty($reference)) {
+            $paymentRecord = Database::fetchOne(
+                "SELECT * FROM payments WHERE snippe_reference = ? LIMIT 1",
+                [$reference]
+            );
+        }
+        
+        if (!$paymentRecord && !empty($paymentId)) {
+            $paymentRecord = Database::fetchOne(
+                "SELECT * FROM payments WHERE id = ? LIMIT 1",
+                [(int)$paymentId]
+            );
+        }
+        
+        if (!$paymentRecord && !empty($orderId)) {
+            $paymentRecord = Database::fetchOne(
+                "SELECT * FROM payments WHERE order_id = ? LIMIT 1",
+                [$orderId]
+            );
+        }
         
         if (!$paymentRecord) {
-            error_log("EarnSphere: Collection webhook - payment not found for ref={$reference} order={$orderId}");
+            $userId = $paymentData['metadata']['user_id'] ?? '';
+            if (!empty($userId)) {
+                $paymentRecord = Database::fetchOne(
+                    "SELECT * FROM payments WHERE user_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
+                    [(int)$userId]
+                );
+            }
+        }
+        
+        if (!$paymentRecord) {
+            error_log("EarnSphere: Collection webhook - payment not found for ref={$reference} pid={$paymentId} order={$orderId}");
             return ['success' => false, 'error' => 'Payment record not found'];
         }
         
