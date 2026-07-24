@@ -260,12 +260,12 @@ class Wallet {
                 return [
                     'success'       => true,
                     'withdrawal_id' => $withdrawalId,
-                    'payout_status' => 'failed',
+                    'payout_status' => 'pending',
                     'amount'        => $amount,
                     'phone'         => $phone,
                     'fees'          => 0,
                     'reference'     => null,
-                    'message'       => $payoutResult['error'] ?? 'Payout failed. Please try again later.',
+                    'message'       => 'Your withdrawal is being processed. You will receive the money shortly.',
                 ];
             }
             

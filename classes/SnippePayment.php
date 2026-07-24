@@ -227,17 +227,18 @@ class SnippePayment {
             
             $validStatuses = ['completed', 'successful', 'pending', 'processing', 'failed'];
             if (!in_array($payoutStatus, $validStatuses)) {
-                $this->handlePayoutFailure($payoutId, $withdrawalId, $userId, $amount, $errorMsg ?: 'Payout API returned invalid status: ' . $payoutStatus);
+                // Unknown status — don't restore wallet, Snippe may have sent money
+                error_log("Snippe Payout unknown status for withdrawal #{$withdrawalId}: {$payoutStatus}");
                 
                 Database::update('payouts', [
-                    'status'       => 'failed',
-                    'error_message' => $errorMsg ?: 'Invalid API response',
+                    'status'       => 'pending',
+                    'error_message' => 'Unknown API status: ' . $payoutStatus,
                     'metadata'     => json_encode($data),
                 ], 'id = ?', [$payoutId]);
                 
                 return [
                     'success' => false,
-                    'error'   => $errorMsg ?: 'Payout failed: invalid API response',
+                    'error'   => 'Payout is being verified. Please wait.',
                 ];
             }
 
@@ -285,11 +286,18 @@ class SnippePayment {
             ];
         }
         
-        $this->handlePayoutFailure($payoutId, $withdrawalId, $userId, $amount, $response['error'] ?? 'Payout failed');
+        // API request failed (network error, timeout, etc.)
+        // DO NOT restore wallet — Snippe may have actually sent the money.
+        // Mark as pending so webhook/cron can verify later.
+        error_log("Snippe Payout API error for withdrawal #{$withdrawalId}: " . ($response['error'] ?? 'unknown'));
+        
+        Database::update('withdrawals', [
+            'status' => 'pending',
+        ], 'id = ?', [$withdrawalId]);
         
         return [
             'success' => false,
-            'error'   => $response['error'] ?? 'Payout failed',
+            'error'   => 'Payment service error. Please wait while we verify your payout.',
         ];
     }
     
@@ -677,7 +685,7 @@ class SnippePayment {
             }
             
             Database::update('withdrawals', [
-                'status'     => 'approved',
+                'status'     => 'failed',
                 'admin_note' => "Payout failed: {$reason}",
             ], 'id = ?', [$withdrawalId]);
             
