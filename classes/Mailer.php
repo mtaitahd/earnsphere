@@ -1,3 +1,4 @@
+<?php
 /**
  * EarnSphere - Mailer Class
  * Raw-socket SMTP mailer with PHP mail() fallback
