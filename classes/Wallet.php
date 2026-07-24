@@ -204,16 +204,6 @@ class Wallet {
             $errors[] = "Insufficient withdrawable balance. You can withdraw TZS " . number_format($withdrawable) . " from your referral earnings";
         }
         
-        $activePayout = Database::count(
-            'withdrawals',
-            'user_id = ? AND status IN (?, ?)',
-            [$userId, 'processing', 'approved']
-        );
-        
-        if ($activePayout > 0) {
-            $errors[] = "You have a withdrawal being processed. Please wait.";
-        }
-        
         if (!empty($errors)) {
             return ['success' => false, 'errors' => $errors];
         }
@@ -231,7 +221,7 @@ class Wallet {
                 'amount'         => $amount,
                 'phone'          => $phone,
                 'payment_method' => 'mobile_money',
-                'status'         => 'approved',
+                'status'         => 'pending',
             ]);
             
             Database::update('wallet_transactions', [

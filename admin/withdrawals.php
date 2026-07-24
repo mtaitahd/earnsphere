@@ -100,11 +100,9 @@ include __DIR__ . '/admin_header.php';
                     <span class="badge bg-danger ms-1"><?= $pendingCount ?></span>
                 <?php endif; ?>
             </a>
-            <a href="?status=approved" class="btn <?= $status === 'approved' ? 'btn-info' : 'btn-outline-info' ?> btn-sm">Approved</a>
-            <a href="?status=processing" class="btn <?= $status === 'processing' ? 'btn-secondary' : 'btn-outline-secondary' ?> btn-sm">Processing</a>
             <a href="?status=completed" class="btn <?= $status === 'completed' ? 'btn-success' : 'btn-outline-success' ?> btn-sm">Completed</a>
-            <a href="?status=rejected" class="btn <?= $status === 'rejected' ? 'btn-danger' : 'btn-outline-danger' ?> btn-sm">Rejected</a>
             <a href="?status=failed" class="btn <?= $status === 'failed' ? 'btn-dark' : 'btn-outline-dark' ?> btn-sm">Failed</a>
+            <a href="?status=rejected" class="btn <?= $status === 'rejected' ? 'btn-danger' : 'btn-outline-danger' ?> btn-sm">Rejected</a>
         </div>
     </div>
 </div>
@@ -158,14 +156,6 @@ include __DIR__ . '/admin_header.php';
 
                 <?php if ($wd['status'] === 'pending'): ?>
                 <div class="mt-2 d-flex gap-2 justify-content-md-end">
-                    <form method="POST" class="d-inline">
-                        <input type="hidden" name="action" value="approve">
-                        <input type="hidden" name="withdrawal_id" value="<?= $wd['id'] ?>">
-                        <input type="hidden" name="admin_note" value="Approved">
-                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve this request?')">
-                            <i class="fas fa-check me-1"></i> Approve
-                        </button>
-                    </form>
                     <button class="btn btn-danger btn-sm" data-bs-toggle="collapse" data-bs-target="#reject-<?= $wd['id'] ?>">
                         <i class="fas fa-times me-1"></i> Reject
                     </button>
@@ -185,7 +175,7 @@ include __DIR__ . '/admin_header.php';
                 </div>
                 <?php endif; ?>
 
-                <?php if (in_array($wd['status'], ['approved', 'failed']) && (empty($wd['payout_id']) || $wd['payout_status'] === 'failed')): ?>
+                <?php if (in_array($wd['status'], ['pending', 'approved', 'failed']) && (empty($wd['payout_id']) || $wd['payout_status'] === 'failed')): ?>
                 <!-- Send/Retry Payout via Snippe -->
                 <div class="mt-2">
                     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>" id="csrf-<?= $wd['id'] ?>">
@@ -200,7 +190,7 @@ include __DIR__ . '/admin_header.php';
                 </div>
                 <?php endif; ?>
 
-                <?php if ($wd['status'] === 'approved' && !empty($wd['payout_id']) && !in_array($wd['payout_status'], ['completed', 'failed'])): ?>
+                <?php if (in_array($wd['status'], ['pending', 'approved']) && !empty($wd['payout_id']) && !in_array($wd['payout_status'], ['completed', 'failed'])): ?>
                 <!-- Check payout status -->
                 <div class="mt-2">
                     <button type="button" class="btn btn-outline-info btn-sm"

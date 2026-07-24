@@ -212,7 +212,7 @@ include __DIR__ . '/includes/public_head.php';
         <?php foreach ($pendingWithdrawals as $wd): ?>
             <div class="list-item">
                 <div class="item-icon" style="background:<?= $wd['status'] === 'failed' || $wd['status'] === 'rejected' ? '#fef2f2' : ($wd['status'] === 'completed' ? '#ecfdf5' : '#fffbeb') ?>;color:<?= $wd['status'] === 'failed' || $wd['status'] === 'rejected' ? 'var(--danger)' : ($wd['status'] === 'completed' ? 'var(--secondary)' : 'var(--accent)') ?>;">
-                    <i class="fas fa-<?= $wd['status'] === 'failed' || $wd['status'] === 'rejected' ? 'times-circle' : ($wd['status'] === 'completed' ? 'check-circle' : 'sync-alt') ?>"></i>
+                    <i class="fas fa-<?= $wd['status'] === 'failed' || $wd['status'] === 'rejected' ? 'times-circle' : ($wd['status'] === 'completed' ? 'check-circle' : 'spinner fa-spin') ?>"></i>
                 </div>
                 <div class="item-info">
                     <p class="item-title"><?= formatCurrency($wd['amount']) ?></p>

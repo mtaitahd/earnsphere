@@ -164,7 +164,7 @@ class SnippePayment {
         if (!$withdrawal) {
             return ['success' => false, 'error' => 'Withdrawal request not found'];
         }
-        if (!in_array($withdrawal['status'], ['approved', 'failed'])) {
+        if (!in_array($withdrawal['status'], ['pending', 'approved', 'failed'])) {
             return ['success' => false, 'error' => 'This request cannot be retried (status: ' . $withdrawal['status'] . ')'];
         }
         
