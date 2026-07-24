@@ -122,6 +122,14 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
         </a>
     </li>
     
+    <!-- Profile -->
+    <li class="nav-item <?= $currentPage === 'profile' ? 'active' : '' ?>">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/profile">
+            <i class="fas fa-fw fa-user-cog"></i>
+            <span>Profile</span>
+        </a>
+    </li>
+    
     <!-- Activity Logs -->
     <li class="nav-item <?= $currentPage === 'logs' ? 'active' : '' ?>">
         <a class="nav-link" href="<?= SITE_URL ?>/admin/logs">
@@ -211,6 +219,9 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
                         </div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                        <a class="dropdown-item" href="<?= SITE_URL ?>/admin/profile">
+                            <i class="fas fa-user-cog fa-sm fa-fw mr-2 text-gray-400"></i> Profile
+                        </a>
                         <a class="dropdown-item" href="<?= SITE_URL ?>/admin/settings">
                             <i class="fas fa-cog fa-sm fa-fw mr-2 text-gray-400"></i> Settings
                         </a>
