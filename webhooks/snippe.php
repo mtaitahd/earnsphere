@@ -2,12 +2,11 @@
 /**
  * EarnSphere - Snippe Webhook Handler
  * 
- * Receives payment confirmations from Snippe API for both:
- * - Collection (registration payments)
- * - Disbursement (commission payouts)
+ * Receives payment confirmations from Snippe API.
+ * Security: HMAC-SHA256 signature verification
+ * Pattern: respond 200 immediately, process async (like mtaita-tech)
  * 
- * Security: HMAC-SHA256 signature verification via SnippePayment::processWebhook()
- * Uses response-first pattern: respond 200 immediately, process async.
+ * API Reference: https://docs.snippe.sh
  */
 
 require_once dirname(__DIR__) . '/config/database.php';
@@ -23,37 +22,65 @@ if (!is_dir($logDir)) {
     mkdir($logDir, 0755, true);
 }
 
+function webhookLog(string $msg): void {
+    file_put_contents(
+        dirname(__DIR__) . '/logs/webhook.log',
+        date('Y-m-d H:i:s') . ' | ' . $msg . PHP_EOL,
+        FILE_APPEND | LOCK_EX
+    );
+}
+
 // Only accept POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
     exit;
 }
 
-// Read raw body — CRITICAL: must be passed to signature verification
+// Read raw body
 $rawBody = file_get_contents('php://input');
 $body = json_decode($rawBody, true);
 
 if (!$body) {
+    webhookLog('REJECT: Invalid JSON body');
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid request body']);
     exit;
 }
 
-// Get headers (normalize for different server configs)
+// Get headers
 $headers = getallheaders();
+$headersLower = array_change_key_case($headers, CASE_LOWER);
 
-// Quick HMAC check before responding
-$snippe = new SnippePayment();
-$signatureValid = $snippe->verifyWebhookSignature($headers, $rawBody);
+$webhookEvent    = $headersLower['x-webhook-event'] ?? ($body['type'] ?? $body['event'] ?? '');
+$webhookTimestamp = $headersLower['x-webhook-timestamp'] ?? '';
+$webhookSignature = $headersLower['x-webhook-signature'] ?? '';
 
-// Respond to Snippe immediately (response-first pattern)
-// Prevents Snippe from retrying due to timeout
+webhookLog("INCOMING | event={$webhookEvent} | ts={$webhookTimestamp} | sig=" . substr($webhookSignature, 0, 16) . '... | body_len=' . strlen($rawBody));
+
+// ================================================================
+// VERIFY SIGNATURE
+// ================================================================
+$secret = SNIPPE_WEBHOOK_SECRET;
+$signatureValid = false;
+
+if (!empty($secret) && !empty($webhookSignature)) {
+    $snippe = new SnippePayment();
+    $signatureValid = $snippe->verifyWebhookSignature($headersLower, $rawBody);
+    
+    if (!$signatureValid) {
+        webhookLog('REJECT: HMAC verification failed (secret_len=' . strlen($secret) . ')');
+    }
+} else {
+    webhookLog('WARN: No webhook secret configured — skipping HMAC');
+    $signatureValid = true;
+}
+
+// ================================================================
+// RESPOND 200 IMMEDIATELY — prevent Snippe retries
+// ================================================================
 http_response_code(200);
 header('Content-Type: text/plain');
 echo 'OK';
 
-// Flush response to client immediately
 if (function_exists('fastcgi_finish_request')) {
     fastcgi_finish_request();
 } elseif (function_exists('ob_flush')) {
@@ -61,21 +88,109 @@ if (function_exists('fastcgi_finish_request')) {
     flush();
 }
 
-// Process async AFTER response is sent
 if (!$signatureValid) {
-    error_log("EarnSphere: Webhook HMAC verification failed - ignoring");
     exit;
 }
 
-$result = $snippe->processWebhook($headers, $body, $rawBody);
+// ================================================================
+// PROCESS EVENT (async, after 200 sent)
+// ================================================================
+$eventId   = $body['id'] ?? '';
+$eventType = $body['type'] ?? $body['event'] ?? '';
+$eventData = $body['data'] ?? $body['payment'] ?? $body;
 
-// Log result
-$logEntry = [
-    'timestamp' => date('Y-m-d H:i:s'),
-    'success'   => $result['success'],
-    'type'      => $result['type'] ?? 'unknown',
-    'status'    => $result['status'] ?? 'unknown',
-    'duplicate' => $result['duplicate'] ?? false,
-    'error'     => $result['error'] ?? null,
-];
-file_put_contents($logDir . '/webhook.log', json_encode($logEntry) . "\n", FILE_APPEND | LOCK_EX);
+webhookLog("PROCESS | event={$eventType} | id={$eventId} | data_keys=" . implode(',', array_keys($eventData)));
+
+try {
+    $reference    = $eventData['reference'] ?? $eventData['id'] ?? '';
+    $apiStatus    = $eventData['status'] ?? '';
+    $paymentId    = $eventData['metadata']['payment_id'] ?? '';
+    $failureReason = $eventData['failure_reason'] ?? null;
+
+    // Map status
+    $newStatus = match($apiStatus) {
+        'completed', 'successful' => 'completed',
+        'failed', 'voided', 'expired' => 'failed',
+        default => 'pending',
+    };
+
+    webhookLog("MAPPED | ref={$reference} | api_status={$apiStatus} → new_status={$newStatus} | payment_id_meta={$paymentId}");
+
+    // Find payment by snippe_reference OR order_id OR metadata.payment_id
+    $payment = null;
+    
+    if (!empty($reference)) {
+        $payment = Database::fetchOne(
+            "SELECT * FROM payments WHERE snippe_reference = ? LIMIT 1",
+            [$reference]
+        );
+        webhookLog("LOOKUP snippe_reference={$reference} → " . ($payment ? "FOUND id={$payment['id']}" : "NOT FOUND"));
+    }
+    
+    if (!$payment && !empty($paymentId)) {
+        // payment_id in metadata is the DB row ID
+        $payment = Database::fetchOne(
+            "SELECT * FROM payments WHERE id = ? LIMIT 1",
+            [(int)$paymentId]
+        );
+        webhookLog("LOOKUP id={$paymentId} → " . ($payment ? "FOUND id={$payment['id']}" : "NOT FOUND"));
+    }
+
+    if (!$payment) {
+        webhookLog("ERROR: No payment found for ref={$reference} payment_id={$paymentId}");
+        exit;
+    }
+
+    // Log current state
+    webhookLog("CURRENT | db_id={$payment['id']} | db_status={$payment['status']} | webhook_received={$payment['webhook_received']} | user_id={$payment['user_id']}");
+
+    // Skip if already processed
+    if ($payment['webhook_received'] == 1 && $payment['status'] === $newStatus) {
+        webhookLog("SKIP: Already processed (status={$newStatus})");
+        exit;
+    }
+
+    // Update payment status
+    Database::update('payments', [
+        'status'           => $newStatus,
+        'snippe_reference' => $reference ?: $payment['snippe_reference'],
+        'webhook_received' => 1,
+        'metadata'         => json_encode($eventData),
+        'completed_at'     => $newStatus === 'completed' ? date('Y-m-d H:i:s') : null,
+    ], 'id = ?', [$payment['id']]);
+
+    webhookLog("UPDATED | id={$payment['id']} → status={$newStatus}");
+
+    // Activate account if completed
+    if ($newStatus === 'completed' && $payment['status'] !== 'completed') {
+        webhookLog("ACTIVATING user_id={$payment['user_id']}");
+        
+        Database::beginTransaction();
+        try {
+            $user = Database::fetchOne("SELECT status FROM users WHERE id = ?", [$payment['user_id']]);
+            
+            if ($user && $user['status'] !== 'active') {
+                Database::update('users', ['status' => 'active'], 'id = ?', [$payment['user_id']]);
+                CommissionEngine::processRegistrationCommissions($payment['user_id']);
+                Auth::logActivity($payment['user_id'], 'account_activated', 'Account activated via webhook');
+                webhookLog("ACTIVATED user_id={$payment['user_id']} — account now active + commissions processed");
+            } elseif ($user) {
+                webhookLog("ALREADY ACTIVE user_id={$payment['user_id']}");
+            } else {
+                webhookLog("ERROR: User not found user_id={$payment['user_id']}");
+            }
+            
+            Database::commit();
+        } catch (Exception $e) {
+            Database::rollback();
+            webhookLog("ACTIVATION ERROR: " . $e->getMessage());
+        }
+    } elseif ($newStatus === 'failed') {
+        webhookLog("PAYMENT FAILED id={$payment['id']} reason={$failureReason}");
+    }
+
+} catch (Exception $e) {
+    webhookLog("EXCEPTION: " . $e->getMessage() . ' | ' . $e->getTraceAsString());
+}
+
+webhookLog("DONE");
