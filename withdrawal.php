@@ -71,21 +71,26 @@ include __DIR__ . '/includes/public_head.php';
     
     <?php if ($payoutResult): ?>
         <?php
-            $payoutStatus = $payoutResult['payout_status'] ?? 'failed';
+            $payoutStatus = $payoutResult['payout_status'] ?? 'pending';
             $isFailed = ($payoutStatus === 'failed');
             $isPending = ($payoutStatus === 'pending');
             $isCompleted = ($payoutStatus === 'completed');
-            $isSuccess = !$isFailed;
-
-            $icon = $isSuccess ? 'check-circle' : 'times-circle';
-            $iconColor = $isSuccess ? 'var(--secondary)' : 'var(--danger)';
-            $iconBg = $isSuccess ? '#ecfdf5' : '#fef2f2';
+            $isSuccess = $isCompleted;
 
             if ($isCompleted) {
+                $icon = 'check-circle';
+                $iconColor = 'var(--secondary)';
+                $iconBg = '#ecfdf5';
                 $title = 'Payout Successful!';
             } elseif ($isPending) {
+                $icon = 'clock';
+                $iconColor = 'var(--accent)';
+                $iconBg = '#fffbeb';
                 $title = 'Payout Processing';
             } else {
+                $icon = 'times-circle';
+                $iconColor = 'var(--danger)';
+                $iconBg = '#fef2f2';
                 $title = 'Payout Failed';
             }
         ?>
@@ -98,9 +103,9 @@ include __DIR__ . '/includes/public_head.php';
                 <?php if ($isCompleted): ?>
                     Money has been sent to your mobile money account.
                 <?php elseif ($isPending): ?>
-                    Payout is being processed. You will receive the money shortly.
+                    <?= $payoutResult['message'] ?? 'Payout is being processed. You will receive the money shortly.' ?>
                 <?php else: ?>
-                    <?= $payoutResult['message'] ?? 'Something went wrong. Your wallet has been restored.' ?>
+                    <?= $payoutResult['message'] ?? 'Something went wrong. Please try again or contact support.' ?>
                 <?php endif; ?>
             </p>
             
@@ -136,7 +141,7 @@ include __DIR__ . '/includes/public_head.php';
             <?php endif; ?>
         </div>
 
-        <?php if ($isSuccess): ?>
+        <?php if ($isCompleted): ?>
         <script>
             setTimeout(function() {
                 window.location.href = '<?= SITE_URL ?>/wallet';

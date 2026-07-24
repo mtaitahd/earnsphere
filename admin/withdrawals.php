@@ -175,7 +175,7 @@ include __DIR__ . '/admin_header.php';
                 </div>
                 <?php endif; ?>
 
-                <?php if (in_array($wd['status'], ['pending', 'approved', 'failed']) && (empty($wd['payout_id']) || $wd['payout_status'] === 'failed')): ?>
+                <?php if (in_array($wd['status'], ['pending', 'approved', 'failed']) && (empty($wd['payout_id']) || in_array($wd['payout_status'], ['failed', 'pending', 'superseded']))): ?>
                 <!-- Send/Retry Payout via Snippe -->
                 <div class="mt-2">
                     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>" id="csrf-<?= $wd['id'] ?>">
@@ -186,7 +186,11 @@ include __DIR__ . '/admin_header.php';
                             onclick="sendPayout(this)">
                             <i class="fas fa-<?= empty($wd['payout_id']) ? 'paper-plane' : 'redo' ?> me-1"></i> <?= empty($wd['payout_id']) ? 'Send Payout' : 'Retry Payout' ?>
                     </button>
-                    <small class="d-block text-muted mt-1" style="font-size:0.7rem;">Snippe Disbursement</small>
+                    <?php if (!empty($wd['payout_error'])): ?>
+                        <small class="d-block text-danger mt-1" style="font-size:0.7rem;"><?= sanitize($wd['payout_error']) ?></small>
+                    <?php else: ?>
+                        <small class="d-block text-muted mt-1" style="font-size:0.7rem;">Snippe Disbursement</small>
+                    <?php endif; ?>
                 </div>
                 <?php endif; ?>
 
@@ -270,9 +274,10 @@ async function sendPayout(btn) {
         } else {
             document.getElementById('payoutModalBody').innerHTML =
                 '<div class="text-center">' +
-                '<i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>' +
-                '<h6>Payout Failed</h6>' +
+                '<i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>' +
+                '<h6>Payout Not Completed</h6>' +
                 '<p class="text-danger">' + data.error + '</p>' +
+                '<p class="text-muted" style="font-size:0.85rem;">Withdrawal is still pending. You can retry later when payment service is available.</p>' +
                 '</div>';
         }
         new bootstrap.Modal(document.getElementById('payoutModal')).show();

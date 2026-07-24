@@ -169,12 +169,16 @@ class SnippePayment {
         }
         
         $existingPayout = Database::fetchOne(
-            "SELECT id FROM payouts WHERE withdrawal_id = ? AND status IN ('pending', 'completed')",
+            "SELECT id FROM payouts WHERE withdrawal_id = ? AND status = 'completed'",
             [$withdrawalId]
         );
         if ($existingPayout) {
-            return ['success' => false, 'error' => 'Payout already sent for this request'];
+            return ['success' => false, 'error' => 'Payout already completed for this request'];
         }
+        
+        Database::update('payouts', [
+            'status' => 'superseded',
+        ], 'withdrawal_id = ? AND status IN (?, ?)', [$withdrawalId, 'pending', 'failed']);
         
         $idempotencyKey = generateIdempotencyKey('payout');
         $narration = 'EarnSphere - Your commission payout';
@@ -257,6 +261,7 @@ class SnippePayment {
                 'total'              => $totalDeducted,
                 'provider'           => $provider,
                 'status'             => $payoutStatus,
+                'error_message'      => $payoutStatus === 'failed' ? ($errorMsg ?: 'Snippe returned failed') : null,
                 'metadata'           => json_encode($data),
             ], 'id = ?', [$payoutId]);
             
@@ -268,8 +273,24 @@ class SnippePayment {
             
             if ($payoutStatus === 'completed') {
                 $this->finalizePayoutSuccess($payoutId, $withdrawalId, $userId, $amount);
-            } elseif ($payoutStatus === 'failed') {
-                $this->handlePayoutFailure($payoutId, $withdrawalId, $userId, $amount, $errorMsg ?: 'Payout failed');
+            }
+            
+            if ($payoutStatus === 'failed') {
+                error_log("Snippe API returned failed for withdrawal #{$withdrawalId}: {$errorMsg}. Waiting for webhook confirmation before restoring wallet.");
+                
+                Database::update('withdrawals', [
+                    'status' => 'pending',
+                ], 'id = ?', [$withdrawalId]);
+                
+                Auth::logActivity($userId, 'payout_api_failed', "Payout TZS " . number_format($amount) . " rejected by Snippe API: {$errorMsg}");
+                
+                return [
+                    'success'   => false,
+                    'payout_id' => $payoutId,
+                    'reference' => $payoutRef,
+                    'status'    => 'pending',
+                    'error'     => 'Payment service is temporarily unavailable. Please try again later or contact support for help.',
+                ];
             }
             
             Auth::logActivity($userId, 'payout_sent', "Payout TZS " . number_format($amount) . " sent via Snippe");
@@ -291,13 +312,20 @@ class SnippePayment {
         // Mark as pending so webhook/cron can verify later.
         error_log("Snippe Payout API error for withdrawal #{$withdrawalId}: " . ($response['error'] ?? 'unknown'));
         
+        Database::update('payouts', [
+            'error_message' => $response['error'] ?? 'Network/API error',
+            'metadata'      => json_encode($response),
+        ], 'id = ?', [$payoutId]);
+        
         Database::update('withdrawals', [
             'status' => 'pending',
         ], 'id = ?', [$withdrawalId]);
         
         return [
-            'success' => false,
-            'error'   => 'Payment service error. Please wait while we verify your payout.',
+            'success'   => false,
+            'payout_id' => $payoutId,
+            'status'    => 'pending',
+            'error'     => 'Payment service is temporarily unavailable. Please try again later or contact support for help.',
         ];
     }
     
@@ -621,7 +649,7 @@ class SnippePayment {
     /**
      * Finalize payout success: mark withdrawal completed.
      */
-    private function finalizePayoutSuccess(int $payoutId, int $withdrawalId, int $userId, float $amount): void {
+    public function finalizePayoutSuccess(int $payoutId, int $withdrawalId, int $userId, float $amount): void {
         Database::beginTransaction();
         try {
             Database::update('withdrawals', [

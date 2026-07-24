@@ -257,15 +257,17 @@ class Wallet {
                         : 'Payout is being processed. You will receive the money shortly.',
                 ];
             } else {
+                $payoutStatus = $payoutResult['status'] ?? 'pending';
+                $errorMsg = $payoutResult['error'] ?? 'Payment service is temporarily unavailable.';
                 return [
                     'success'       => true,
                     'withdrawal_id' => $withdrawalId,
-                    'payout_status' => 'pending',
+                    'payout_status' => $payoutStatus,
                     'amount'        => $amount,
                     'phone'         => $phone,
                     'fees'          => 0,
-                    'reference'     => null,
-                    'message'       => 'Your withdrawal is being processed. You will receive the money shortly.',
+                    'reference'     => $payoutResult['reference'] ?? null,
+                    'message'       => $errorMsg,
                 ];
             }
             

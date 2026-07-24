@@ -61,17 +61,27 @@ if ($result['success']) {
         default     => 'pending',
     };
     
-    // Update payout record if status changed
+    // Only process status changes (not duplicates)
     if ($mappedStatus !== $payout['status']) {
         Database::update('payouts', [
             'status'   => $mappedStatus,
             'metadata' => json_encode($result['data']),
         ], 'id = ?', [$payout['id']]);
         
-        // Also update withdrawal
-        Database::update('withdrawals', [
-            'status' => $mappedStatus === 'completed' ? 'completed' : ($mappedStatus === 'failed' ? 'failed' : 'processing'),
-        ], 'id = ?', [$payout['withdrawal_id']]);
+        require_once dirname(__DIR__) . '/classes/Wallet.php';
+        require_once dirname(__DIR__) . '/classes/CommissionEngine.php';
+        $snippeHandler = new SnippePayment();
+        
+        if ($mappedStatus === 'completed') {
+            $snippeHandler->finalizePayoutSuccess(
+                $payout['id'], $payout['withdrawal_id'], $payout['user_id'], $payout['amount']
+            );
+        } elseif ($mappedStatus === 'failed') {
+            $snippeHandler->handlePayoutFailure(
+                $payout['id'], $payout['withdrawal_id'], $payout['user_id'], $payout['amount'],
+                $result['data']['error_message'] ?? 'Payout failed (verified by admin)'
+            );
+        }
     }
     
     jsonResponse([

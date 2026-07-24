@@ -77,6 +77,8 @@ if ($result['success']) {
 } else {
     jsonResponse([
         'success' => false,
+        'payout_id' => $result['payout_id'] ?? null,
+        'status'    => $result['status'] ?? 'pending',
         'error'   => $result['error'] ?? 'Payout imeshindwa. Jaribu tena.',
     ]);
 }
