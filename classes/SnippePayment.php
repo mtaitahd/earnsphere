@@ -657,6 +657,19 @@ class SnippePayment {
                 'processed_at' => date('Y-m-d H:i:s'),
             ], 'id = ?', [$withdrawalId]);
             
+            Database::update('wallet_transactions', [
+                'status' => 'completed',
+            ], 'user_id = ? AND reference_id = ? AND reference_type = ? AND status = ?', [
+                $userId, $withdrawalId, 'withdrawal', 'pending'
+            ]);
+            
+            $wallet = Database::fetchOne("SELECT id, pending_amount FROM wallets WHERE user_id = ?", [$userId]);
+            if ($wallet) {
+                Database::update('wallets', [
+                    'pending_amount' => max(0, (float)$wallet['pending_amount'] - $amount),
+                ], 'id = ?', [$wallet['id']]);
+            }
+            
             Auth::logActivity($userId, 'payout_completed', "Payout TZS " . number_format($amount) . " completed");
             
             Database::commit();
@@ -716,6 +729,19 @@ class SnippePayment {
                 'status'     => 'failed',
                 'admin_note' => "Payout failed: {$reason}",
             ], 'id = ?', [$withdrawalId]);
+            
+            Database::update('wallet_transactions', [
+                'status' => 'failed',
+            ], 'user_id = ? AND reference_id = ? AND reference_type = ? AND status = ?', [
+                $userId, $withdrawalId, 'withdrawal', 'pending'
+            ]);
+            
+            $walletPending = Database::fetchOne("SELECT id, pending_amount FROM wallets WHERE user_id = ?", [$userId]);
+            if ($walletPending) {
+                Database::update('wallets', [
+                    'pending_amount' => max(0, (float)$walletPending['pending_amount'] - $amount),
+                ], 'id = ?', [$walletPending['id']]);
+            }
             
             Auth::logActivity($userId, 'payout_failed', "Payout TZS " . number_format($amount) . " failed: {$reason}");
             

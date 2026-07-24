@@ -98,7 +98,8 @@ class Wallet {
         string $type,
         string $description = '',
         ?int $referenceId = null,
-        ?string $referenceType = null
+        ?string $referenceType = null,
+        string $txStatus = 'completed'
     ): int {
         $wallet = self::getWallet($userId);
         $balanceBefore = (float) $wallet['balance'];
@@ -137,7 +138,7 @@ class Wallet {
                 'description'    => $description,
                 'reference_id'   => $referenceId,
                 'reference_type' => $referenceType,
-                'status'         => 'completed',
+                'status'         => $txStatus,
             ]);
             
             Database::commit();
@@ -213,7 +214,10 @@ class Wallet {
                 $userId,
                 $amount,
                 'withdrawal',
-                "Withdrawal request TZS " . number_format($amount)
+                "Withdrawal request TZS " . number_format($amount),
+                null,
+                null,
+                'pending'
             );
             
             $withdrawalId = Database::insert('withdrawals', [
@@ -223,6 +227,10 @@ class Wallet {
                 'payment_method' => 'mobile_money',
                 'status'         => 'pending',
             ]);
+            
+            Database::update('wallets', [
+                'pending_amount' => ($wallet['pending_amount'] ?? 0) + $amount,
+            ], 'id = ?', [$wallet['id']]);
             
             Database::update('wallet_transactions', [
                 'reference_id'   => $withdrawalId,
@@ -292,6 +300,7 @@ class Wallet {
                 'balance'              => $balanceAfter,
                 'withdrawable_balance' => $withdrawableAfter,
                 'total_withdrawn'      => max(0, (float)$wallet['total_withdrawn'] - $amount),
+                'pending_amount'       => max(0, (float)$wallet['pending_amount'] - $amount),
             ], 'id = ?', [$wallet['id']]);
             
             Database::insert('wallet_transactions', [
@@ -310,6 +319,12 @@ class Wallet {
             Database::update('withdrawals', [
                 'status' => 'failed',
             ], 'id = ?', [$withdrawalId]);
+            
+            Database::update('wallet_transactions', [
+                'status' => 'failed',
+            ], 'user_id = ? AND reference_id = ? AND reference_type = ? AND status = ?', [
+                $userId, $withdrawalId, 'withdrawal', 'pending'
+            ]);
             
         } catch (Exception $e) {
             error_log("Reverse withdrawal error: " . $e->getMessage());
@@ -355,6 +370,7 @@ class Wallet {
                     'balance'              => $balanceAfter,
                     'withdrawable_balance' => $withdrawableAfter,
                     'total_withdrawn'      => $wallet['total_withdrawn'] - $withdrawal['amount'],
+                    'pending_amount'       => max(0, (float)$wallet['pending_amount'] - $withdrawal['amount']),
                 ], 'id = ?', [$wallet['id']]);
                 
                 Database::insert('wallet_transactions', [
@@ -367,6 +383,12 @@ class Wallet {
                     'description'    => "Withdrawal request rejected: " . ($adminNote ?: ''),
                     'status'         => 'completed',
                     'created_by'     => $adminId,
+                ]);
+                
+                Database::update('wallet_transactions', [
+                    'status' => 'rejected',
+                ], 'user_id = ? AND reference_id = ? AND reference_type = ? AND status = ?', [
+                    $withdrawal['user_id'], $withdrawalId, 'withdrawal', 'pending'
                 ]);
             }
             

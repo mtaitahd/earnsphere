@@ -72,11 +72,16 @@ include __DIR__ . '/includes/public_head.php';
             <?php
                 $isCredit = $tx['amount'] > 0;
                 $txStatus = $tx['status'] ?? 'completed';
+                $isPendingWithdrawal = ($tx['type'] === 'withdrawal' && $txStatus === 'pending');
 
                 if ($txStatus === 'failed' || $txStatus === 'rejected') {
                     $iconBg = '#fef2f2';
                     $iconColor = 'var(--danger)';
                     $badgeClass = 'bg-danger';
+                } elseif ($isPendingWithdrawal) {
+                    $iconBg = '#fffbeb';
+                    $iconColor = 'var(--accent)';
+                    $badgeClass = 'bg-warning text-dark';
                 } elseif ($txStatus === 'pending') {
                     $iconBg = '#fffbeb';
                     $iconColor = 'var(--accent)';
@@ -89,7 +94,7 @@ include __DIR__ . '/includes/public_head.php';
             ?>
             <div class="list-item">
                 <div class="item-icon" style="background:<?= $iconBg ?>; color:<?= $iconColor ?>;">
-                    <i class="fas fa-<?= match($tx['type']) {
+                    <i class="fas fa-<?= $isPendingWithdrawal ? 'clock' : match($tx['type']) {
                         'commission' => 'percentage',
                         'referral_bonus' => 'users',
                         'withdrawal' => 'money-bill-wave',
@@ -99,16 +104,18 @@ include __DIR__ . '/includes/public_head.php';
                     } ?>"></i>
                 </div>
                 <div class="item-info">
-                    <p class="item-title"><?= sanitize($tx['description'] ?: ucfirst(str_replace('_', ' ', $tx['type']))) ?></p>
+                    <p class="item-title"><?= $isPendingWithdrawal ? 'Withdrawal Request' : sanitize($tx['description'] ?: ucfirst(str_replace('_', ' ', $tx['type']))) ?></p>
                     <p class="item-subtitle">
                         <?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
-                        <?php if ($txStatus !== 'completed'): ?>
+                        <?php if ($isPendingWithdrawal): ?>
+                            <span class="badge bg-warning text-dark" style="font-size:0.6rem;">Processing</span>
+                        <?php elseif ($txStatus !== 'completed'): ?>
                             <span class="badge <?= $badgeClass ?>" style="font-size:0.6rem;"><?= ucfirst($txStatus) ?></span>
                         <?php endif; ?>
                     </p>
                 </div>
                 <div style="text-align:right;">
-                    <div class="item-amount <?= $isCredit ? 'credit' : 'debit' ?>">
+                    <div class="item-amount <?= $isPendingWithdrawal ? 'debit' : ($isCredit ? 'credit' : 'debit') ?>" style="<?= $isPendingWithdrawal ? 'color:var(--accent)' : '' ?>">
                         <?= $isCredit ? '+' : '' ?><?= formatCurrency(abs($tx['amount'])) ?>
                     </div>
                     <div style="font-size:0.7rem;color:var(--gray-400);">
