@@ -69,8 +69,26 @@ include __DIR__ . '/includes/public_head.php';
         </div>
     <?php else: ?>
         <?php foreach ($transactions as $tx): ?>
+            <?php
+                $isCredit = $tx['amount'] > 0;
+                $txStatus = $tx['status'] ?? 'completed';
+
+                if ($txStatus === 'failed' || $txStatus === 'rejected') {
+                    $iconBg = '#fef2f2';
+                    $iconColor = 'var(--danger)';
+                    $badgeClass = 'bg-danger';
+                } elseif ($txStatus === 'pending') {
+                    $iconBg = '#fffbeb';
+                    $iconColor = 'var(--accent)';
+                    $badgeClass = 'bg-warning text-dark';
+                } else {
+                    $iconBg = $isCredit ? '#ecfdf5' : '#f3f4f6';
+                    $iconColor = $isCredit ? 'var(--secondary)' : 'var(--gray-500)';
+                    $badgeClass = 'bg-success';
+                }
+            ?>
             <div class="list-item">
-                <div class="item-icon" style="background:<?= $tx['amount'] > 0 ? '#ecfdf5' : '#fef2f2' ?>; color:<?= $tx['amount'] > 0 ? 'var(--secondary)' : 'var(--danger)' ?>;">
+                <div class="item-icon" style="background:<?= $iconBg ?>; color:<?= $iconColor ?>;">
                     <i class="fas fa-<?= match($tx['type']) {
                         'commission' => 'percentage',
                         'referral_bonus' => 'users',
@@ -84,14 +102,14 @@ include __DIR__ . '/includes/public_head.php';
                     <p class="item-title"><?= sanitize($tx['description'] ?: ucfirst(str_replace('_', ' ', $tx['type']))) ?></p>
                     <p class="item-subtitle">
                         <?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
-                        <?php if ($tx['status'] !== 'completed'): ?>
-                            <span class="badge bg-warning text-dark" style="font-size:0.6rem;"><?= $tx['status'] ?></span>
+                        <?php if ($txStatus !== 'completed'): ?>
+                            <span class="badge <?= $badgeClass ?>" style="font-size:0.6rem;"><?= ucfirst($txStatus) ?></span>
                         <?php endif; ?>
                     </p>
                 </div>
                 <div style="text-align:right;">
-                    <div class="item-amount <?= $tx['amount'] > 0 ? 'credit' : 'debit' ?>">
-                        <?= $tx['amount'] > 0 ? '+' : '' ?><?= formatCurrency(abs($tx['amount'])) ?>
+                    <div class="item-amount <?= $isCredit ? 'credit' : 'debit' ?>">
+                        <?= $isCredit ? '+' : '' ?><?= formatCurrency(abs($tx['amount'])) ?>
                     </div>
                     <div style="font-size:0.7rem;color:var(--gray-400);">
                         Balance: <?= formatCurrency($tx['balance_after']) ?>
