@@ -25,6 +25,9 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $pageTitle ?? 'Admin' ?> | EarnSphere Admin</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="<?= SITE_URL ?>/assets/img/logoo.png">
+    
     <!-- CSRF Token for AJAX -->
     <meta name="csrf-token" content="<?= Auth::generateCSRF() ?>">
     

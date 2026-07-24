@@ -52,6 +52,9 @@ $csrfTokenForMeta = Auth::generateCSRF();
     
     <title><?= sanitize($pageTitle) ?> | EarnSphere</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="<?= SITE_URL ?>/assets/img/logoo.png">
+    
     <!-- CSRF Token for AJAX -->
     <meta name="csrf-token" content="<?= $csrfTokenForMeta ?>">
     
