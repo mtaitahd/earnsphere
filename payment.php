@@ -52,8 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'pay') {
                 $_SESSION['pending_user_id'] = $userId;
                 $orderId = $result['order_id'];
                 $ref = $result['reference'] ?? '';
-                $pushFail = $result['push_sent'] === false ? '&push_error=1' : '';
-                header('Location: ' . SITE_URL . '/payment?user_id=' . $userId . '&action=waiting&order_id=' . $orderId . '&ref=' . urlencode($ref) . $pushFail);
+                header('Location: ' . SITE_URL . '/payment?user_id=' . $userId . '&action=waiting&order_id=' . $orderId . '&ref=' . urlencode($ref));
                 exit;
             } else {
                 $error = $result['error'] ?? 'Payment error. Please try again.';
@@ -73,7 +72,6 @@ $refCode = $user['referral_code'];
 $userIdVal = $user['id'];
 $orderIdVal = sanitize($_GET['order_id'] ?? '');
 $refVal = sanitize($_GET['ref'] ?? '');
-$pushError = isset($_GET['push_error']);
 $referralLink = getReferralLink($refCode);
 ?>
 <!DOCTYPE html>
@@ -350,25 +348,20 @@ $referralLink = getReferralLink($refCode);
     <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show" class="back-link">
         <i class="fas fa-arrow-left"></i> Change Number
     </a>
-    <h2><i class="fas fa-hourglass-half me-2"></i>Waiting for Payment</h2>
-    <p>Complete the payment on your phone</p>
+    <h2><i class="fas fa-hourglass-half me-2"></i>Processing Payment</h2>
+    <p>Please check your phone to complete the payment</p>
 </div>
 
 <div class="payment-body">
-    <div class="waiting-card">
+    <div class="waiting-card" style="text-align:center;">
         <div class="waiting-spinner"></div>
-        <h5 style="font-weight:800;color:var(--gray-800);">Waiting for Payment...</h5>
-        <p style="color:var(--gray-500);font-size:0.9rem;margin:0.5rem 0 1.5rem;">
-            Please complete the payment on your phone.<br>
-            The transaction will be verified automatically.
-        </p>
 
-        <?php if ($pushError): ?>
-        <div class="alert alert-warning d-flex align-items-center mb-3" role="alert" style="border-radius:var(--radius-md);font-size:0.85rem;">
-            <i class="fas fa-exclamation-triangle me-2"></i> 
-            USSD push could not be sent. Tap retry below or dial <strong>*150*00#</strong> to pay manually.
-        </div>
-        <?php endif; ?>
+        <h5 style="font-weight:800;color:var(--gray-800);">Waiting for Payment Confirmation</h5>
+
+        <p style="color:var(--gray-500);font-size:0.9rem;margin:0.5rem 0 1.5rem;">
+            <i class="fas fa-mobile-screen me-1"></i> A payment prompt has been sent to your phone.<br>
+            Enter your PIN to confirm the payment.
+        </p>
 
         <?php if ($orderIdVal): ?>
         <div class="info-card" style="text-align:left;box-shadow:none;">
@@ -381,96 +374,85 @@ $referralLink = getReferralLink($refCode);
 
         <div id="payment-status" style="display:none;"></div>
 
-        <!-- Retry Push Button -->
-        <button type="button" class="btn btn-primary mt-2 mb-2" id="retryPushBtn" onclick="retryPush()" style="font-size:0.9rem;padding:0.6rem 1.5rem;">
-            <i class="fas fa-redo me-1"></i> Resend USSD Push
-        </button>
-        <div id="retryMsg" class="mt-2" style="display:none;font-size:0.85rem;"></div>
+        <div id="payment-error" class="alert alert-danger d-none" style="font-size:0.85rem;">
+            <i class="fas fa-exclamation-triangle me-1"></i> <span id="error-msg"></span>
+        </div>
 
-        <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show"
-           class="btn btn-outline-primary mt-2" style="font-size:0.9rem;">
-            <i class="fas fa-arrow-left me-1"></i> Use another number
-        </a>
+        <button type="button" class="btn btn-primary mt-2 mb-2" id="checkStatusBtn" onclick="checkStatusNow()" style="font-size:0.9rem;padding:0.6rem 1.5rem;">
+            <i class="fas fa-check me-1"></i> I've Confirmed Payment
+        </button>
+
+        <div style="margin-top:1rem;">
+            <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show"
+               class="btn btn-outline-primary" style="font-size:0.85rem;">
+                <i class="fas fa-arrow-left me-1"></i> Use another number
+            </a>
+            <a href="<?= $siteUrl ?>/dashboard"
+               class="btn btn-outline-secondary ms-2" style="font-size:0.85rem;">
+                <i class="fas fa-home me-1"></i> Dashboard
+            </a>
+        </div>
     </div>
 </div>
 
 <script>
-function retryPush() {
-    const btn = document.getElementById('retryPushBtn');
-    const msg = document.getElementById('retryMsg');
+var orderId = <?= json_encode($orderIdVal) ?>;
+var checkInterval;
+
+function checkStatusNow() {
+    var btn = document.getElementById('checkStatusBtn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
-    msg.style.display = 'none';
-    
-    fetch('<?= $siteUrl ?>/api/retry_push.php?order_id=' + encodeURIComponent('<?= $orderIdVal ?>'))
-        .then(r => r.json())
-        .then(data => {
-            msg.style.display = 'block';
-            if (data.success) {
-                msg.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> USSD push resent! Check your phone.';
-                msg.style.color = '#1CC88A';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Checking...';
+    document.getElementById('payment-error').classList.add('d-none');
+
+    fetch('<?= $siteUrl ?>/api/check_payment.php?order_id=' + encodeURIComponent(orderId))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> I\'ve Confirmed Payment';
+
+            if (data.status === 'completed') {
+                clearInterval(checkInterval);
+                document.getElementById('payment-status').innerHTML =
+                    '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payment confirmed! Redirecting...</div>';
+                document.getElementById('payment-status').style.display = 'block';
+                setTimeout(function() { window.location.href = '<?= $siteUrl ?>/dashboard'; }, 1000);
+            } else if (data.status === 'failed' || data.status === 'voided' || data.status === 'expired') {
+                clearInterval(checkInterval);
+                document.getElementById('payment-status').innerHTML =
+                    '<div class="alert alert-danger"><i class="fas fa-times-circle me-1"></i> Payment failed. <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show" class="alert-link">Try again</a></div>';
+                document.getElementById('payment-status').style.display = 'block';
             } else {
-                msg.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> ' + (data.message || 'Failed to resend. Try dialing *150*00# manually.');
-                msg.style.color = '#E74A3B';
+                document.getElementById('payment-error').classList.remove('d-none');
+                document.getElementById('error-msg').textContent = 'Payment not yet confirmed. Please check your phone and try again.';
             }
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-redo me-1"></i> Resend USSD Push';
         })
-        .catch(() => {
-            msg.style.display = 'block';
-            msg.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> Network error. Try dialing *150*00# manually.';
-            msg.style.color = '#E74A3B';
+        .catch(function() {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-redo me-1"></i> Resend USSD Push';
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> I\'ve Confirmed Payment';
+            document.getElementById('payment-error').classList.remove('d-none');
+            document.getElementById('error-msg').textContent = 'Connection error. Please try again.';
         });
 }
 
-(function() {
-    const orderId = '<?= $orderIdVal ?>';
-    if (!orderId) return;
-    
-    let attempts = 0;
-    const maxAttempts = 120;
-    let checkInterval = null;
-    
-    function checkStatus() {
-        if (attempts >= maxAttempts) {
-            document.getElementById('payment-status').innerHTML = 
-                '<div class="alert alert-warning"><i class="fas fa-clock me-1"></i> Time expired. Check your dashboard or try again.</div>';
-            document.getElementById('payment-status').style.display = 'block';
-            if (checkInterval) clearInterval(checkInterval);
-            return;
-        }
-        
+if (orderId) {
+    checkInterval = setInterval(function() {
         fetch('<?= $siteUrl ?>/api/check_payment.php?order_id=' + encodeURIComponent(orderId))
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 if (data.status === 'completed') {
-                    if (checkInterval) clearInterval(checkInterval);
-                    document.getElementById('payment-status').innerHTML = 
-                        '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payment confirmed! Redirecting...</div>';
-                    document.getElementById('payment-status').style.display = 'block';
-                    setTimeout(function() { window.location.href = '<?= $siteUrl ?>/dashboard'; }, 1000);
+                    clearInterval(checkInterval);
+                    window.location.href = '<?= $siteUrl ?>/dashboard';
                 } else if (data.status === 'failed' || data.status === 'voided' || data.status === 'expired') {
-                    if (checkInterval) clearInterval(checkInterval);
-                    document.getElementById('payment-status').innerHTML = 
+                    clearInterval(checkInterval);
+                    document.getElementById('payment-status').innerHTML =
                         '<div class="alert alert-danger"><i class="fas fa-times-circle me-1"></i> Payment failed. <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show" class="alert-link">Try again</a></div>';
                     document.getElementById('payment-status').style.display = 'block';
-                } else {
-                    attempts++;
                 }
             })
-            .catch(() => {
-                attempts++;
-            });
-    }
-    
-    // Auto-verify on page load if payment is older than 30s (webhook may have missed)
-    checkStatus();
-    
-    // Then poll every 5 seconds
-    checkInterval = setInterval(checkStatus, 5000);
-})();
+            .catch(function() {});
+    }, 5000);
+}
 </script>
 <?php endif; ?>
 

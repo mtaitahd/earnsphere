@@ -94,15 +94,7 @@ class SnippePayment {
                 'snippe_reference' => $snippeRef,
             ], 'id = ?', [$paymentId]);
             
-            if ($snippeRef) {
-                $pushPayload = ['phone_number' => $phone];
-                $pushResponse = $this->makeRequest('POST', "/v1/payments/{$snippeRef}/push", $pushPayload);
-                error_log("Snippe USSD Push Response: " . json_encode($pushResponse));
-                
-                if (!$pushResponse['success']) {
-                    error_log("Snippe USSD Push FAILED for ref={$snippeRef}: " . ($pushResponse['error'] ?? 'unknown'));
-                }
-            }
+            // Snippe automatically sends USSD push when payment is created — no need to call /push
             
             Auth::logActivity($userId, 'payment_initiated', "Payment TZS " . number_format($amount) . " initiated via Snippe");
             
@@ -111,8 +103,6 @@ class SnippePayment {
                 'payment_id' => $paymentId,
                 'order_id'   => $orderId,
                 'reference'  => $snippeRef,
-                'push_sent'  => isset($pushResponse) ? $pushResponse['success'] : false,
-                'push_error' => isset($pushResponse) && !$pushResponse['success'] ? ($pushResponse['error'] ?? 'Push failed') : null,
                 'data'       => $data,
             ];
         }
