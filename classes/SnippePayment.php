@@ -212,6 +212,8 @@ class SnippePayment {
         
         $response = $this->makeRequest('POST', '/v1/payouts/send', $payload, $idempotencyKey);
         
+        error_log("Snippe Payout Response: " . json_encode($response));
+        
         if ($response['success']) {
             $data = $response['data'];
             
@@ -221,10 +223,10 @@ class SnippePayment {
             $totalDeducted = $this->extractObjectValue($data['total'] ?? ($amount + $fees));
             $provider      = $data['channel']['provider'] ?? $this->config['payout_channel'];
             $payoutStatus  = $data['status'] ?? '';
-            $errorMsg      = $data['error_message'] ?? $data['message'] ?? ($data['error'] ?? null);
+            $errorMsg      = $data['error_message'] ?? $data['error'] ?? null;
             
             $validStatuses = ['completed', 'successful', 'pending', 'processing', 'failed'];
-            if (!in_array($payoutStatus, $validStatuses) || $errorMsg) {
+            if (!in_array($payoutStatus, $validStatuses)) {
                 $this->handlePayoutFailure($payoutId, $withdrawalId, $userId, $amount, $errorMsg ?: 'Payout API returned invalid status: ' . $payoutStatus);
                 
                 Database::update('payouts', [
