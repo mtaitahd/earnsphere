@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /config/
+Disallow: /classes/
+Disallow: /includes/
+Disallow: /webhooks/
+Disallow: /logs/
+Disallow: /database/
+Disallow: /cron/
+Disallow: /install.php
+Disallow: /temp_setup_otp.php
+Disallow: /logout.php
+Disallow: /*.json$
+Disallow: /*.log$
+
+Sitemap: https://earnsphere.co.tz/sitemap.xml

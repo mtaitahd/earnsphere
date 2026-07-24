@@ -1,0 +1,36 @@
+# EarnSphere - Git Ignore
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Uploads
+uploads/
+!uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# XAMPP
+htdocs/
+
+# Backup files
+*.bak
+*.sql
+*.sql.gz
+database/*.sql
+!database/schema.sql

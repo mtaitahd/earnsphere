@@ -1,0 +1,155 @@
+# =============================================================
+# EarnSphere - Production .htaccess
+# HTTPS enforcement, security headers, directory protection
+# =============================================================
+
+# --- Force HTTPS ---
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# --- Remove www (optional, uncomment if needed) ---
+# RewriteCond %{HTTP_HOST} ^www\.earnsphere\.co\.tz [NC]
+# RewriteRule ^(.*)$ https://earnsphere.co.tz/$1 [L,R=301]
+
+# --- Force HTTPS for HSTS ---
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
+
+# --- Security Headers ---
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+Header always set Cross-Origin-Opener-Policy "same-origin"
+Header always set Cross-Origin-Embedder-Policy "require-corp"
+
+# --- Disable Server Signature ---
+ServerSignature Off
+
+# --- Prevent directory listing ---
+Options -Indexes
+
+# --- Protect sensitive directories ---
+<DirectoryMatch "^/.*/(config|classes|includes|logs|uploads|database|cron)/">
+    Require all denied
+</DirectoryMatch>
+
+# --- Protect specific files ---
+<FilesMatch "\.(env|git|htaccess|htpasswd|ini|log|sh|sql|bak)$">
+    Require all denied
+</FilesMatch>
+
+# --- Block access to dotfiles ---
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# --- Protect config directory ---
+<Directory "config">
+    Require all denied
+</Directory>
+
+# --- Protect logs directory ---
+<Directory "logs">
+    Require all denied
+</Directory>
+
+# --- Protect database directory ---
+<Directory "database">
+    Require all denied
+</Directory>
+
+# --- Protect classes directory ---
+<Directory "classes">
+    Require all denied
+</Directory>
+
+# --- Protect includes directory ---
+<Directory "includes">
+    Require all denied
+</Directory>
+
+# --- Protect uploads from script execution ---
+<Directory "uploads">
+    <FilesMatch "\.php$">
+        Require all denied
+    </FilesMatch>
+</Directory>
+
+# --- Prevent script execution in uploads ---
+<Directory "uploads">
+    RemoveHandler .php .phtml .php3 .php4 .php5 .php7
+    AddType text/plain .php .phtml .php3 .php4 .php5 .php7
+</Directory>
+
+# --- Block common attack vectors ---
+RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+RewriteRule .* index.php [F,L]
+
+# --- Block SQL injection attempts ---
+RewriteCond %{QUERY_STRING} (\%27)|(\')|(\-\-)|(%23)|(#) [NC,OR]
+RewriteCond %{QUERY_STRING} union.*select.*\( [NC,OR]
+RewriteCond %{QUERY_STRING} concat.*\( [NC]
+RewriteRule .* index.php [F,L]
+
+# --- Block common file inclusion attacks ---
+RewriteCond %{REQUEST_URI} (etc/passwd|proc/self/environ) [NC,OR]
+RewriteCond %{REQUEST_URI} \.env$ [NC,OR]
+RewriteCond %{REQUEST_URI} composer\.(json|lock)$ [NC]
+RewriteRule .* - [F,L]
+
+# --- Set PHP security settings ---
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag expose_php Off
+    php_flag allow_url_fopen Off
+    php_flag allow_url_include Off
+    php_value session.cookie_httponly 1
+    php_value session.cookie_secure 1
+    php_value session.cookie_samesite Lax
+    php_value session.use_strict_mode 1
+    php_flag session.use_only_cookies 1
+    php_value post_max_size 10M
+    php_value upload_max_filesize 5M
+    php_value max_execution_time 60
+    php_value max_input_time 60
+    php_value memory_limit 128M
+</IfModule>
+
+# --- Cache control for static assets ---
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType application/pdf "access plus 1 month"
+</IfModule>
+
+# --- Compression ---
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+    AddOutputFilterByType DEFLATE application/javascript application/json application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# --- Block bad bots ---
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} (ahrefs|semrush|mj12bot|dotbot|blexbot|exabot|sistrix) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# --- CORS for API (restrict to same origin) ---
+<IfModule mod_headers.c>
+    <FilesMatch "\.(php)$">
+        Header set X-Content-Type-Options "nosniff"
+    </FilesMatch>
+</IfModule>
