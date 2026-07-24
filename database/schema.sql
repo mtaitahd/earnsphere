@@ -8,8 +8,8 @@ SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+03:00";
 
-CREATE DATABASE IF NOT EXISTS `earnsphere` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `earnsphere`;
+CREATE DATABASE IF NOT EXISTS `atimscot_earnsphere` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `atimscot_earnsphere`;
 
 -- ============================================================
 -- TABLE: users
@@ -265,7 +265,7 @@ VALUES (
     'System Administrator',
     '0700000000',
     'admin@earnsphere.com',
-    '$2y$10$YourHashedPasswordHere123456789012345678901234',
+    '$2y$12$Vjw7JzQeoUKJQVSm0SIqHeG2Uw0MAl.ifENia/It.5qjS9RqGy8mK',
     'ADMIN001',
     'active',
     'admin'

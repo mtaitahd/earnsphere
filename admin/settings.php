@@ -10,7 +10,7 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login.php');
+    header('Location: ' . SITE_URL . '/admin/login');
     exit;
 }
 

@@ -9,7 +9,7 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login.php');
+    header('Location: ' . SITE_URL . '/admin/login');
     exit;
 }
 
@@ -199,7 +199,7 @@ include __DIR__ . '/admin_header.php';
 
 <!-- Pagination -->
 <div class="mt-3">
-    <?= paginate($total, $page, $perPage, SITE_URL . '/admin/users.php?' . http_build_query(['search' => $search, 'status' => $status, 'page' => ''])) ?>
+    <?= paginate($total, $page, $perPage, SITE_URL . '/admin/users?' . http_build_query(['search' => $search, 'status' => $status, 'page' => ''])) ?>
 </div>
 
 <?php include __DIR__ . '/admin_footer.php'; ?>

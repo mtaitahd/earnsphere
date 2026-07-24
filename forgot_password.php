@@ -12,7 +12,7 @@ require_once __DIR__ . '/includes/helpers.php';
 Auth::initSession();
 
 if (Auth::isLoggedIn()) {
-    header('Location: ' . SITE_URL . '/dashboard.php');
+    header('Location: ' . SITE_URL . '/dashboard');
     exit;
 }
 
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (OTP::sendUserOTP($user['id'], 'reset')) {
                     $_SESSION['reset_user_id'] = $user['id'];
                     $_SESSION['reset_email'] = $user['email'];
-                    header('Location: ' . SITE_URL . '/otp_verify.php');
+                    header('Location: ' . SITE_URL . '/otp_verify');
                     exit;
                 } else {
                     $error = 'Failed to send code. Please try again.';
@@ -97,7 +97,7 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         
         <div class="auth-footer">
-            <p>Remember your password? <a href="login.php" style="font-weight:700;">Login here</a></p>
+            <p>Remember your password? <a href="login" style="font-weight:700;">Login here</a></p>
         </div>
     </div>
 </div>

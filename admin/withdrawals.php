@@ -13,7 +13,7 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login.php');
+    header('Location: ' . SITE_URL . '/admin/login');
     exit;
 }
 
@@ -225,7 +225,7 @@ include __DIR__ . '/admin_header.php';
 <?php endif; ?>
 
 <div class="mt-3">
-    <?= paginate($total, $page, $perPage, SITE_URL . '/admin/withdrawals.php?' . http_build_query(['status' => $status, 'page' => ''])) ?>
+    <?= paginate($total, $page, $perPage, SITE_URL . '/admin/withdrawals?' . http_build_query(['status' => $status, 'page' => ''])) ?>
 </div>
 
 <!-- Payout Result Modal -->

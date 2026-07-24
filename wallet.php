@@ -32,7 +32,7 @@ include __DIR__ . '/includes/public_head.php';
 
 <div class="dash-header">
     <div class="top-bar">
-        <a href="dashboard.php" style="color:white;text-decoration:none;">
+        <a href="dashboard" style="color:white;text-decoration:none;">
             <i class="fas fa-arrow-left"></i>
         </a>
         <h5 class="mb-0" style="font-weight:800;">Wallet</h5>
@@ -48,10 +48,10 @@ include __DIR__ . '/includes/public_head.php';
         <div class="balance-amount"><?= formatCurrency($wallet['withdrawable_balance'] ?? 0) ?></div>
         <div class="balance-sublabel">Referral earnings only · Withdrawable</div>
         <div class="balance-actions">
-            <a href="withdrawal.php" class="btn btn-light btn-sm" <?= ($wallet['withdrawable_balance'] ?? 0) < app_setting('min_withdrawal', MIN_WITHDRAWAL) ? 'disabled' : '' ?>>
+            <a href="withdrawal" class="btn btn-light btn-sm" <?= ($wallet['withdrawable_balance'] ?? 0) < app_setting('min_withdrawal', MIN_WITHDRAWAL) ? 'disabled' : '' ?>>
                 <i class="fas fa-money-bill-wave me-1"></i> Withdraw
             </a>
-            <a href="transactions.php" class="btn btn-outline-light btn-sm">
+            <a href="transactions" class="btn btn-outline-light btn-sm">
                 <i class="fas fa-history me-1"></i> History
             </a>
         </div>
@@ -139,23 +139,23 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Bottom Navigation -->
 <nav class="mobile-nav">
-    <a href="dashboard.php" class="nav-item">
+    <a href="dashboard" class="nav-item">
         <i class="fas fa-home"></i>
         <span>Home</span>
     </a>
-    <a href="referrals.php" class="nav-item">
+    <a href="referrals" class="nav-item">
         <i class="fas fa-users"></i>
         <span>Referrals</span>
     </a>
-    <a href="wallet.php" class="nav-item center-action active">
+    <a href="wallet" class="nav-item center-action active">
         <i class="fas fa-wallet"></i>
         <span>Wallet</span>
     </a>
-    <a href="transactions.php" class="nav-item">
+    <a href="transactions" class="nav-item">
         <i class="fas fa-receipt"></i>
         <span>History</span>
     </a>
-    <a href="profile.php" class="nav-item">
+    <a href="profile" class="nav-item">
         <i class="fas fa-user"></i>
         <span>Profile</span>
     </a>

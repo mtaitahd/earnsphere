@@ -321,7 +321,7 @@ class Auth {
     public static function requireAuth(): void {
         self::initSession();
         if (!self::isLoggedIn()) {
-            header('Location: ' . SITE_URL . '/login.php');
+            header('Location: ' . SITE_URL . '/login');
             exit;
         }
     }
@@ -332,7 +332,7 @@ class Auth {
     public static function requireAdmin(): void {
         self::requireAuth();
         if (!self::isAdmin()) {
-            header('Location: ' . SITE_URL . '/dashboard.php');
+            header('Location: ' . SITE_URL . '/dashboard');
             exit;
         }
     }

@@ -10,7 +10,7 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login.php');
+    header('Location: ' . SITE_URL . '/admin/login');
     exit;
 }
 
@@ -154,7 +154,7 @@ include __DIR__ . '/admin_header.php';
 </div>
 
 <div class="mt-3">
-    <?= paginate($total, $page, $perPage, SITE_URL . '/admin/commissions.php?' . http_build_query(['level' => $level, 'page' => ''])) ?>
+    <?= paginate($total, $page, $perPage, SITE_URL . '/admin/commissions?' . http_build_query(['level' => $level, 'page' => ''])) ?>
 </div>
 
 <?php include __DIR__ . '/admin_footer.php'; ?>

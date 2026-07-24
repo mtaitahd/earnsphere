@@ -11,7 +11,7 @@ require_once __DIR__ . '/includes/helpers.php';
 Auth::initSession();
 
 if (Auth::isLoggedIn()) {
-    header('Location: ' . SITE_URL . '/dashboard.php');
+    header('Location: ' . SITE_URL . '/dashboard');
     exit;
 }
 
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Clear referral from session after use
             unset($_SESSION['referral_code']);
 
-            header('Location: ' . SITE_URL . '/payment.php?user_id=' . $result['user_id']);
+            header('Location: ' . SITE_URL . '/payment?user_id=' . $result['user_id']);
             exit;
         } else {
             $errors = $result['errors'];
@@ -139,7 +139,7 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         
         <div class="auth-footer">
-            <p>Already have an account? <a href="login.php" style="font-weight:700;">Login here</a></p>
+            <p>Already have an account? <a href="login" style="font-weight:700;">Login here</a></p>
         </div>
     </div>
 </div>

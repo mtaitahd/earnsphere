@@ -14,7 +14,7 @@ $userId = (int)($_SESSION['reset_user_id'] ?? 0);
 $verified = $_SESSION['reset_verified'] ?? false;
 
 if (!$userId || !$verified) {
-    header('Location: ' . SITE_URL . '/forgot_password.php');
+    header('Location: ' . SITE_URL . '/forgot_password');
     exit;
 }
 
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Clear reset session
                 unset($_SESSION['reset_user_id'], $_SESSION['reset_verified'], $_SESSION['reset_email']);
 
-                header('Location: ' . SITE_URL . '/login.php');
+                header('Location: ' . SITE_URL . '/login');
                 exit;
 
             } catch (Exception $e) {

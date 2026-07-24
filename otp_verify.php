@@ -13,7 +13,7 @@ Auth::initSession();
 
 $userId = (int)($_SESSION['reset_user_id'] ?? 0);
 if (!$userId) {
-    header('Location: ' . SITE_URL . '/forgot_password.php');
+    header('Location: ' . SITE_URL . '/forgot_password');
     exit;
 }
 
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             if (OTP::verify($userId, $otpCode, 'reset')) {
                 $_SESSION['reset_verified'] = true;
-                header('Location: ' . SITE_URL . '/reset_password.php');
+                header('Location: ' . SITE_URL . '/reset_password');
                 exit;
             } else {
                 $error = 'Invalid or expired code. Please try again.';
@@ -137,7 +137,7 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         
         <div class="auth-footer">
-            <p><a href="forgot_password.php" style="font-weight:700;"><i class="fas fa-arrow-left me-1"></i> Change email</a></p>
+            <p><a href="forgot_password" style="font-weight:700;"><i class="fas fa-arrow-left me-1"></i> Change email</a></p>
         </div>
     </div>
 </div>

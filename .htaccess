@@ -12,6 +12,19 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # RewriteCond %{HTTP_HOST} ^www\.earnsphere\.co\.tz [NC]
 # RewriteRule ^(.*)$ https://earnsphere.co.tz/$1 [L,R=301]
 
+# --- Remove .php extension (301 redirect) ---
+RewriteCond %{REQUEST_URI} \.php$
+RewriteCond %{REQUEST_URI} !^/(api|webhooks)/
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(.+)\.php$ /$1 [R=301,L,NE]
+
+# --- Internal rewrite: serve .php from clean URL ---
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/(api|webhooks)/
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+)$ $1.php [L,QSA]
+
 # --- Force HTTPS for HSTS ---
 Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
 

@@ -12,7 +12,7 @@ Auth::initSession();
 
 // Redirect logged-in users to dashboard
 if (Auth::isLoggedIn()) {
-    header('Location: ' . SITE_URL . '/dashboard.php');
+    header('Location: ' . SITE_URL . '/dashboard');
     exit;
 }
 
@@ -39,10 +39,10 @@ include __DIR__ . '/includes/public_head.php';
     </p>
     
     <div class="cta-buttons">
-        <a href="register.php" class="btn btn-light btn-lg w-100 mb-3" style="font-weight: 800;">
+        <a href="register" class="btn btn-light btn-lg w-100 mb-3" style="font-weight: 800;">
             <i class="fas fa-rocket me-2"></i> Join Now
         </a>
-        <a href="login.php" class="btn btn-outline-light btn-lg w-100">
+        <a href="login" class="btn btn-outline-light btn-lg w-100">
             <i class="fas fa-sign-in-alt me-2"></i> Login
         </a>
     </div>
@@ -56,7 +56,7 @@ include __DIR__ . '/includes/public_head.php';
 <section class="cta-bottom">
     <h2>Ready to Get Started?</h2>
     <p>Join thousands of members who are already earning money through EarnSphere.</p>
-    <a href="register.php" class="btn btn-light btn-lg" style="font-weight: 800;">
+    <a href="register" class="btn btn-light btn-lg" style="font-weight: 800;">
         <i class="fas fa-rocket me-2"></i>Join Free
     </a>
 </section>

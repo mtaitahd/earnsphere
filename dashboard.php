@@ -45,10 +45,10 @@ include __DIR__ . '/includes/public_head.php';
             <h4 class="user-name"><?= sanitize($user['full_name']) ?></h4>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="profile.php" class="notification-btn" style="text-decoration:none;">
+            <a href="profile" class="notification-btn" style="text-decoration:none;">
                 <i class="fas fa-bell"></i>
             </a>
-            <a href="profile.php" style="text-decoration:none;">
+            <a href="profile" style="text-decoration:none;">
                 <div class="avatar" style="background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">
                     <?= strtoupper(substr($user['full_name'], 0, 1)) ?>
                 </div>
@@ -64,7 +64,7 @@ include __DIR__ . '/includes/public_head.php';
             <strong>Your account is not yet activated!</strong>
         </div>
         <p style="font-size:0.85rem;margin:0 0 0.75rem;opacity:0.9;">Complete your <?= formatCurrency(app_setting('registration_fee', REGISTRATION_FEE)) ?> payment to activate your account and start earning commissions.</p>
-        <a href="payment.php?user_id=<?= $user['id'] ?>" style="display:inline-block;background:white;color:#f59e0b;padding:0.5rem 1.5rem;border-radius:8px;font-weight:800;text-decoration:none;">
+        <a href="payment?user_id=<?= $user['id'] ?>" style="display:inline-block;background:white;color:#f59e0b;padding:0.5rem 1.5rem;border-radius:8px;font-weight:800;text-decoration:none;">
             <i class="fas fa-credit-card me-1"></i> Pay Now
         </a>
     </div>
@@ -193,16 +193,16 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-            <a href="wallet.php" class="btn btn-outline-primary" style="padding:0.75rem;">
+            <a href="wallet" class="btn btn-outline-primary" style="padding:0.75rem;">
                 <i class="fas fa-wallet me-1"></i> Wallet
             </a>
-            <a href="withdrawal.php" class="btn btn-outline-primary" style="padding:0.75rem;">
+            <a href="withdrawal" class="btn btn-outline-primary" style="padding:0.75rem;">
                 <i class="fas fa-money-bill-wave me-1"></i> Withdraw
             </a>
-            <a href="referrals.php" class="btn btn-outline-primary" style="padding:0.75rem;">
+            <a href="referrals" class="btn btn-outline-primary" style="padding:0.75rem;">
                 <i class="fas fa-share me-1"></i> Referrals
             </a>
-            <a href="transactions.php" class="btn btn-outline-primary" style="padding:0.75rem;">
+            <a href="transactions" class="btn btn-outline-primary" style="padding:0.75rem;">
                 <i class="fas fa-history me-1"></i> History
             </a>
         </div>
@@ -212,7 +212,7 @@ include __DIR__ . '/includes/public_head.php';
     <div class="dash-section">
         <div class="section-header">
             <h6><i class="fas fa-history me-1"></i> Transactions</h6>
-            <a href="transactions.php">View all</a>
+            <a href="transactions">View all</a>
         </div>
         
         <?php if (empty($recentTransactions)): ?>
@@ -242,23 +242,23 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Bottom Navigation -->
 <nav class="mobile-nav">
-    <a href="dashboard.php" class="nav-item active">
+    <a href="dashboard" class="nav-item active">
         <i class="fas fa-home"></i>
         <span>Home</span>
     </a>
-    <a href="referrals.php" class="nav-item">
+    <a href="referrals" class="nav-item">
         <i class="fas fa-users"></i>
         <span>Referrals</span>
     </a>
-    <a href="wallet.php" class="nav-item center-action">
+    <a href="wallet" class="nav-item center-action">
         <i class="fas fa-wallet"></i>
         <span>Wallet</span>
     </a>
-    <a href="transactions.php" class="nav-item">
+    <a href="transactions" class="nav-item">
         <i class="fas fa-receipt"></i>
         <span>History</span>
     </a>
-    <a href="profile.php" class="nav-item">
+    <a href="profile" class="nav-item">
         <i class="fas fa-user"></i>
         <span>Profile</span>
     </a>

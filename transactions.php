@@ -35,13 +35,13 @@ $transactions = Database::fetchAll(
 );
 
 $pageTitle = 'Transaction History';
-$baseUrl = SITE_URL . '/transactions.php?filter=' . $filter . '&';
+$baseUrl = SITE_URL . '/transactions?filter=' . $filter . '&';
 include __DIR__ . '/includes/public_head.php';
 ?>
 
 <div class="dash-header">
     <div class="top-bar">
-        <a href="dashboard.php" style="color:white;text-decoration:none;">
+        <a href="dashboard" style="color:white;text-decoration:none;">
             <i class="fas fa-arrow-left"></i>
         </a>
         <h5 class="mb-0" style="font-weight:800;">Transactions</h5>
@@ -109,23 +109,23 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Bottom Navigation -->
 <nav class="mobile-nav">
-    <a href="dashboard.php" class="nav-item">
+    <a href="dashboard" class="nav-item">
         <i class="fas fa-home"></i>
         <span>Home</span>
     </a>
-    <a href="referrals.php" class="nav-item">
+    <a href="referrals" class="nav-item">
         <i class="fas fa-users"></i>
         <span>Referrals</span>
     </a>
-    <a href="wallet.php" class="nav-item center-action">
+    <a href="wallet" class="nav-item center-action">
         <i class="fas fa-wallet"></i>
         <span>Wallet</span>
     </a>
-    <a href="transactions.php" class="nav-item active">
+    <a href="transactions" class="nav-item active">
         <i class="fas fa-receipt"></i>
         <span>History</span>
     </a>
-    <a href="profile.php" class="nav-item">
+    <a href="profile" class="nav-item">
         <i class="fas fa-user"></i>
         <span>Profile</span>
     </a>

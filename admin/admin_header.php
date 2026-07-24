@@ -5,7 +5,7 @@
  */
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login.php');
+    header('Location: ' . SITE_URL . '/admin/login');
     exit;
 }
 
@@ -46,7 +46,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
 <!-- Sidebar -->
 <ul class="navbar-nav sidebar sidebar-light accordion" id="accordionSidebar">
     <!-- Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?= SITE_URL ?>/admin/index.php">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?= SITE_URL ?>/admin/index">
         <div class="sidebar-brand-icon">
             <i class="fas fa-gem"></i>
         </div>
@@ -56,7 +56,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Nav Item - Dashboard -->
     <li class="nav-item <?= $currentPage === 'index' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/index.php">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/index">
             <i class="fas fa-fw fa-tachometer-alt"></i>
             <span>Dashboard</span>
         </a>
@@ -67,7 +67,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Users -->
     <li class="nav-item <?= $currentPage === 'users' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/users.php">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/users">
             <i class="fas fa-fw fa-users"></i>
             <span>Users</span>
         </a>
@@ -75,7 +75,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Payments -->
     <li class="nav-item <?= $currentPage === 'payments' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/payments.php">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/payments">
             <i class="fas fa-fw fa-credit-card"></i>
             <span>Payments</span>
         </a>
@@ -83,7 +83,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Commissions -->
     <li class="nav-item <?= $currentPage === 'commissions' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/commissions.php">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/commissions">
             <i class="fas fa-fw fa-coins"></i>
             <span>Commissions</span>
         </a>
@@ -91,7 +91,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Withdrawals -->
     <li class="nav-item <?= $currentPage === 'withdrawals' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/withdrawals.php">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/withdrawals">
             <i class="fas fa-fw fa-money-bill-wave"></i>
             <span>Withdrawals</span>
             <?php if ($pendingWd > 0): ?>
@@ -102,7 +102,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Referral Tree -->
     <li class="nav-item <?= $currentPage === 'referral-tree' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/referral-tree.php">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/referral-tree">
             <i class="fas fa-fw fa-sitemap"></i>
             <span>Referral Network</span>
         </a>
@@ -113,7 +113,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Settings -->
     <li class="nav-item <?= $currentPage === 'settings' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/settings.php">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/settings">
             <i class="fas fa-fw fa-cog"></i>
             <span>Settings</span>
         </a>
@@ -121,7 +121,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Activity Logs -->
     <li class="nav-item <?= $currentPage === 'logs' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/logs.php">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/logs">
             <i class="fas fa-fw fa-list-alt"></i>
             <span>Activity Logs</span>
         </a>
@@ -131,7 +131,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     
     <!-- Back to Site -->
     <li class="nav-item">
-        <a class="nav-link" href="<?= SITE_URL ?>/dashboard.php" target="_blank">
+        <a class="nav-link" href="<?= SITE_URL ?>/dashboard" target="_blank">
             <i class="fas fa-fw fa-external-link-alt"></i>
             <span>View Site</span>
         </a>
@@ -140,7 +140,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
     <!-- Sidebar Footer -->
     <div class="sidebar-footer" style="padding: 0.75rem 1.25rem; margin-top: auto;">
         <hr class="sidebar-divider mb-2">
-        <a class="nav-link" href="<?= SITE_URL ?>/logout.php" style="padding:0.5rem 0;color:var(--danger);font-size:0.8rem;">
+        <a class="nav-link" href="<?= SITE_URL ?>/logout" style="padding:0.5rem 0;color:var(--danger);font-size:0.8rem;">
             <i class="fas fa-fw fa-sign-out-alt"></i>
             <span>Logout</span>
         </a>
@@ -186,7 +186,7 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
                 <!-- Pending Withdrawals Alert -->
                 <?php if ($pendingWd > 0): ?>
                 <li class="nav-item dropdown no-arrow mx-1">
-                    <a class="nav-link position-relative" href="<?= SITE_URL ?>/admin/withdrawals.php" title="<?= $pendingWd ?> pending requests" style="color: rgba(255,255,255,0.8);">
+                    <a class="nav-link position-relative" href="<?= SITE_URL ?>/admin/withdrawals" title="<?= $pendingWd ?> pending requests" style="color: rgba(255,255,255,0.8);">
                         <span class="badge badge-danger badge-pill" style="font-size:0.6rem;position:absolute;top:2px;right:2px;animation:notifPulse 2s infinite;">
                             <?= $pendingWd ?>
                         </span>
@@ -208,14 +208,14 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
                         </div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                        <a class="dropdown-item" href="<?= SITE_URL ?>/admin/settings.php">
+                        <a class="dropdown-item" href="<?= SITE_URL ?>/admin/settings">
                             <i class="fas fa-cog fa-sm fa-fw mr-2 text-gray-400"></i> Settings
                         </a>
-                        <a class="dropdown-item" href="<?= SITE_URL ?>/dashboard.php" target="_blank">
+                        <a class="dropdown-item" href="<?= SITE_URL ?>/dashboard" target="_blank">
                             <i class="fas fa-external-link-alt fa-sm fa-fw mr-2 text-gray-400"></i> View Site
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="<?= SITE_URL ?>/logout.php" data-toggle="modal" data-target="#logoutModal">
+                        <a class="dropdown-item" href="<?= SITE_URL ?>/logout" data-toggle="modal" data-target="#logoutModal">
                             <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
                         </a>
                     </div>

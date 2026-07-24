@@ -13,7 +13,7 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 Auth::initSession();
 
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login.php');
+    header('Location: ' . SITE_URL . '/admin/login');
     exit;
 }
 
@@ -67,7 +67,7 @@ include __DIR__ . '/admin_header.php';
 <!-- Stat Cards - Row 1 -->
 <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 g-3 mb-4">
     <div class="col">
-        <a href="users.php" class="stat-card" style="text-decoration:none;color:inherit;">
+        <a href="users" class="stat-card" style="text-decoration:none;color:inherit;">
             <div class="stat-icon" style="background:var(--accent-dim);color:var(--accent);">
                 <i class="fas fa-users"></i>
             </div>
@@ -78,7 +78,7 @@ include __DIR__ . '/admin_header.php';
         </a>
     </div>
     <div class="col">
-        <a href="users.php" class="stat-card" style="text-decoration:none;color:inherit;">
+        <a href="users" class="stat-card" style="text-decoration:none;color:inherit;">
             <div class="stat-icon" style="background:rgba(28,200,138,0.12);color:var(--success);">
                 <i class="fas fa-user-check"></i>
             </div>
@@ -89,7 +89,7 @@ include __DIR__ . '/admin_header.php';
         </a>
     </div>
     <div class="col">
-        <a href="payments.php" class="stat-card" style="text-decoration:none;color:inherit;">
+        <a href="payments" class="stat-card" style="text-decoration:none;color:inherit;">
             <div class="stat-icon" style="background:rgba(78,115,223,0.12);color:#4E73DF;">
                 <i class="fas fa-money-bill-wave"></i>
             </div>
@@ -100,7 +100,7 @@ include __DIR__ . '/admin_header.php';
         </a>
     </div>
     <div class="col">
-        <a href="withdrawals.php" class="stat-card" style="text-decoration:none;color:inherit;">
+        <a href="withdrawals" class="stat-card" style="text-decoration:none;color:inherit;">
             <div class="stat-icon" style="background:rgba(231,74,59,0.12);color:var(--danger);">
                 <i class="fas fa-clock"></i>
             </div>
@@ -111,7 +111,7 @@ include __DIR__ . '/admin_header.php';
         </a>
     </div>
     <div class="col">
-        <a href="commissions.php" class="stat-card" style="text-decoration:none;color:inherit;">
+        <a href="commissions" class="stat-card" style="text-decoration:none;color:inherit;">
             <div class="stat-icon" style="background:rgba(246,194,62,0.12);color:#F6C23E;">
                 <i class="fas fa-coins"></i>
             </div>
@@ -122,7 +122,7 @@ include __DIR__ . '/admin_header.php';
         </a>
     </div>
     <div class="col">
-        <a href="users.php" class="stat-card" style="text-decoration:none;color:inherit;">
+        <a href="users" class="stat-card" style="text-decoration:none;color:inherit;">
             <div class="stat-icon" style="background:rgba(54,185,204,0.12);color:#36B9CC;">
                 <i class="fas fa-user-plus"></i>
             </div>
@@ -141,22 +141,22 @@ include __DIR__ . '/admin_header.php';
     </div>
     <div class="card-body" style="padding:1rem 1.25rem;">
         <div class="d-flex flex-wrap gap-2">
-            <a href="users.php" class="btn btn-cyan btn-sm">
+            <a href="users" class="btn btn-cyan btn-sm">
                 <i class="fas fa-users me-1"></i> Manage Users
             </a>
-            <a href="payments.php" class="btn btn-outline-cyan btn-sm">
+            <a href="payments" class="btn btn-outline-cyan btn-sm">
                 <i class="fas fa-credit-card me-1"></i> Payments
             </a>
-            <a href="withdrawals.php" class="btn btn-outline-cyan btn-sm">
+            <a href="withdrawals" class="btn btn-outline-cyan btn-sm">
                 <i class="fas fa-money-bill-wave me-1"></i> Withdrawals
                 <?php if ($pendingWd > 0): ?>
                     <span class="badge badge-danger ms-1" style="font-size:0.6rem;"><?= $pendingWd ?></span>
                 <?php endif; ?>
             </a>
-            <a href="commissions.php" class="btn btn-outline-cyan btn-sm">
+            <a href="commissions" class="btn btn-outline-cyan btn-sm">
                 <i class="fas fa-coins me-1"></i> Commissions
             </a>
-            <a href="settings.php" class="btn btn-outline-cyan btn-sm">
+            <a href="settings" class="btn btn-outline-cyan btn-sm">
                 <i class="fas fa-cog me-1"></i> Settings
             </a>
         </div>
@@ -287,7 +287,7 @@ include __DIR__ . '/admin_header.php';
         <div class="card" style="margin-bottom:0;">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="fas fa-users me-1"></i> New Users</h6>
-                <a href="users.php" style="font-size:0.8rem;font-weight:700;color:var(--accent);">View All</a>
+                <a href="users" style="font-size:0.8rem;font-weight:700;color:var(--accent);">View All</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -323,7 +323,7 @@ include __DIR__ . '/admin_header.php';
         <div class="card" style="margin-bottom:0;">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="fas fa-credit-card me-1"></i> Recent Payments</h6>
-                <a href="payments.php" style="font-size:0.8rem;font-weight:700;color:var(--accent);">View All</a>
+                <a href="payments" style="font-size:0.8rem;font-weight:700;color:var(--accent);">View All</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">

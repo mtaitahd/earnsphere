@@ -15,12 +15,12 @@ $userId = (int)($_GET['user_id'] ?? $_SESSION['pending_user_id'] ?? 0);
 $action = $_GET['action'] ?? $_POST['action'] ?? 'show';
 
 if (!$userId) {
-    redirect(SITE_URL . '/register.php', 'error', 'User not found');
+    redirect(SITE_URL . '/register', 'error', 'User not found');
 }
 
 $user = Database::fetchOne("SELECT * FROM users WHERE id = ?", [$userId]);
 if (!$user) {
-    redirect(SITE_URL . '/register.php', 'error', 'User not found');
+    redirect(SITE_URL . '/register', 'error', 'User not found');
 }
 
 if ($user['status'] === 'active') {
@@ -28,7 +28,7 @@ if ($user['status'] === 'active') {
     $_SESSION['user_role'] = $user['role'];
     $_SESSION['user_name'] = $user['full_name'];
     $_SESSION['user_status'] = $user['status'];
-    redirect(SITE_URL . '/dashboard.php', 'success', 'Your account is already activated!');
+    redirect(SITE_URL . '/dashboard', 'success', 'Your account is already activated!');
 }
 
 $existingPayment = Database::fetchOne(
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'pay') {
                 $orderId = $result['order_id'];
                 $ref = $result['reference'] ?? '';
                 $pushFail = $result['push_sent'] === false ? '&push_error=1' : '';
-                header('Location: ' . SITE_URL . '/payment.php?user_id=' . $userId . '&action=waiting&order_id=' . $orderId . '&ref=' . urlencode($ref) . $pushFail);
+                header('Location: ' . SITE_URL . '/payment?user_id=' . $userId . '&action=waiting&order_id=' . $orderId . '&ref=' . urlencode($ref) . $pushFail);
                 exit;
             } else {
                 $error = $result['error'] ?? 'Payment error. Please try again.';
@@ -278,7 +278,7 @@ $referralLink = getReferralLink($refCode);
 
 <?php if ($action === 'show'): ?>
 <div class="payment-hero">
-    <a href="<?= $siteUrl ?>/register.php" class="back-link">
+    <a href="<?= $siteUrl ?>/register" class="back-link">
         <i class="fas fa-arrow-left"></i> Back
     </a>
     <h2><i class="fas fa-credit-card me-2"></i>Complete Payment</h2>
@@ -347,7 +347,7 @@ $referralLink = getReferralLink($refCode);
 
 <?php elseif ($action === 'waiting'): ?>
 <div class="payment-hero">
-    <a href="<?= $siteUrl ?>/payment.php?user_id=<?= $userIdVal ?>&action=show" class="back-link">
+    <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show" class="back-link">
         <i class="fas fa-arrow-left"></i> Change Number
     </a>
     <h2><i class="fas fa-hourglass-half me-2"></i>Waiting for Payment</h2>
@@ -387,7 +387,7 @@ $referralLink = getReferralLink($refCode);
         </button>
         <div id="retryMsg" class="mt-2" style="display:none;font-size:0.85rem;"></div>
 
-        <a href="<?= $siteUrl ?>/payment.php?user_id=<?= $userIdVal ?>&action=show"
+        <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show"
            class="btn btn-outline-primary mt-2" style="font-size:0.9rem;">
             <i class="fas fa-arrow-left me-1"></i> Use another number
         </a>
@@ -450,11 +450,11 @@ function retryPush() {
                     document.getElementById('payment-status').innerHTML = 
                         '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payment confirmed! Redirecting...</div>';
                     document.getElementById('payment-status').style.display = 'block';
-                    setTimeout(function() { window.location.href = '<?= $siteUrl ?>/dashboard.php'; }, 1000);
+                    setTimeout(function() { window.location.href = '<?= $siteUrl ?>/dashboard'; }, 1000);
                 } else if (data.status === 'failed' || data.status === 'voided' || data.status === 'expired') {
                     if (checkInterval) clearInterval(checkInterval);
                     document.getElementById('payment-status').innerHTML = 
-                        '<div class="alert alert-danger"><i class="fas fa-times-circle me-1"></i> Payment failed. <a href="<?= $siteUrl ?>/payment.php?user_id=<?= $userIdVal ?>&action=show" class="alert-link">Try again</a></div>';
+                        '<div class="alert alert-danger"><i class="fas fa-times-circle me-1"></i> Payment failed. <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show" class="alert-link">Try again</a></div>';
                     document.getElementById('payment-status').style.display = 'block';
                 } else {
                     attempts++;

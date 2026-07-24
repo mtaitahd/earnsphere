@@ -11,7 +11,7 @@ Auth::initSession();
 
 // Redirect if already logged in as admin
 if (Auth::isLoggedIn() && Auth::isAdmin()) {
-    header('Location: ' . SITE_URL . '/admin/index.php');
+    header('Location: ' . SITE_URL . '/admin/index');
     exit;
 }
 
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($result['success']) {
                 if ($result['user']['role'] === 'admin') {
-                    header('Location: ' . SITE_URL . '/admin/index.php');
+                    header('Location: ' . SITE_URL . '/admin/index');
                     exit;
                 } else {
                     Auth::logout();

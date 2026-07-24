@@ -11,7 +11,7 @@ Auth::initSession();
 
 // Redirect if already logged in
 if (Auth::isLoggedIn()) {
-    header('Location: ' . SITE_URL . '/dashboard.php');
+                    header('Location: ' . SITE_URL . '/dashboard');
     exit;
 }
 
@@ -32,9 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result['success']) {
                 $user = $result['user'];
                 if ($user['role'] === 'admin') {
-                    header('Location: ' . SITE_URL . '/admin/index.php');
+                    header('Location: ' . SITE_URL . '/admin/index');
                 } else {
-                    header('Location: ' . SITE_URL . '/dashboard.php');
+    header('Location: ' . SITE_URL . '/dashboard');
                 }
                 exit;
             } else {
@@ -93,7 +93,7 @@ include __DIR__ . '/includes/public_head.php';
                 </div>
                 
                 <div class="d-flex justify-content-end mb-3">
-                    <a href="forgot_password.php" style="font-size:0.85rem;font-weight:700;color:var(--primary);text-decoration:none;">
+                    <a href="forgot_password" style="font-size:0.85rem;font-weight:700;color:var(--primary);text-decoration:none;">
                         <i class="fas fa-key me-1"></i> Forgot Password?
                     </a>
                 </div>
@@ -105,7 +105,7 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         
         <div class="auth-footer">
-            <p>Don't have an account? <a href="register.php" style="font-weight:700;">Join now</a></p>
+            <p>Don't have an account? <a href="register" style="font-weight:700;">Join now</a></p>
         </div>
     </div>
 </div>

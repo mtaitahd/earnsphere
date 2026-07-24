@@ -9,5 +9,5 @@ require_once __DIR__ . '/classes/Auth.php';
 Auth::initSession();
 Auth::logout();
 
-header('Location: ' . SITE_URL . '/login.php');
+header('Location: ' . SITE_URL . '/login');
 exit;

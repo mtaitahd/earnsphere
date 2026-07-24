@@ -90,7 +90,7 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Profile Header -->
 <div class="profile-header">
-    <a href="dashboard.php" style="color:white;text-decoration:none;position:absolute;left:1rem;top:1rem;">
+    <a href="dashboard" style="color:white;text-decoration:none;position:absolute;left:1rem;top:1rem;">
         <i class="fas fa-arrow-left"></i>
     </a>
     <div class="profile-avatar">
@@ -203,7 +203,7 @@ include __DIR__ . '/includes/public_head.php';
     <div class="dash-section">
         <h6 class="section-title"><i class="fas fa-cog me-1"></i> Options</h6>
         
-        <a href="transactions.php" class="profile-menu-item">
+        <a href="transactions" class="profile-menu-item">
             <i class="fas fa-receipt"></i>
             <div class="menu-info">
                 <div class="menu-title">Transaction History</div>
@@ -212,7 +212,7 @@ include __DIR__ . '/includes/public_head.php';
             <i class="fas fa-chevron-right menu-arrow"></i>
         </a>
         
-        <a href="wallet.php" class="profile-menu-item">
+        <a href="wallet" class="profile-menu-item">
             <i class="fas fa-wallet"></i>
             <div class="menu-info">
                 <div class="menu-title">Wallet</div>
@@ -221,7 +221,7 @@ include __DIR__ . '/includes/public_head.php';
             <i class="fas fa-chevron-right menu-arrow"></i>
         </a>
         
-        <a href="referrals.php" class="profile-menu-item">
+        <a href="referrals" class="profile-menu-item">
             <i class="fas fa-users"></i>
             <div class="menu-info">
                 <div class="menu-title">Referrals</div>
@@ -230,7 +230,7 @@ include __DIR__ . '/includes/public_head.php';
             <i class="fas fa-chevron-right menu-arrow"></i>
         </a>
         
-        <a href="withdrawal.php" class="profile-menu-item">
+        <a href="withdrawal" class="profile-menu-item">
             <i class="fas fa-money-bill-wave"></i>
             <div class="menu-info">
                 <div class="menu-title">Request Withdrawal</div>
@@ -239,7 +239,7 @@ include __DIR__ . '/includes/public_head.php';
             <i class="fas fa-chevron-right menu-arrow"></i>
         </a>
         
-        <a href="logout.php" class="profile-menu-item" onclick="return confirm('Leave your account?')">
+        <a href="logout" class="profile-menu-item" onclick="return confirm('Leave your account?')">
             <i class="fas fa-sign-out-alt" style="background:#fef2f2;color:var(--danger);"></i>
             <div class="menu-info">
                 <div class="menu-title" style="color:var(--danger);">Logout</div>
@@ -252,23 +252,23 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Bottom Navigation -->
 <nav class="mobile-nav">
-    <a href="dashboard.php" class="nav-item">
+    <a href="dashboard" class="nav-item">
         <i class="fas fa-home"></i>
         <span>Home</span>
     </a>
-    <a href="referrals.php" class="nav-item">
+    <a href="referrals" class="nav-item">
         <i class="fas fa-users"></i>
         <span>Referrals</span>
     </a>
-    <a href="wallet.php" class="nav-item center-action">
+    <a href="wallet" class="nav-item center-action">
         <i class="fas fa-wallet"></i>
         <span>Wallet</span>
     </a>
-    <a href="transactions.php" class="nav-item">
+    <a href="transactions" class="nav-item">
         <i class="fas fa-receipt"></i>
         <span>History</span>
     </a>
-    <a href="profile.php" class="nav-item active">
+    <a href="profile" class="nav-item active">
         <i class="fas fa-user"></i>
         <span>Profile</span>
     </a>

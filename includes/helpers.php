@@ -88,7 +88,7 @@ function generateQRCodeUrl(string $data, int $size = 200): string {
  * Get referral link
  */
 function getReferralLink(string $referralCode): string {
-    return SITE_URL . "/register.php?ref=" . urlencode($referralCode);
+    return SITE_URL . "/register?ref=" . urlencode($referralCode);
 }
 
 /**
