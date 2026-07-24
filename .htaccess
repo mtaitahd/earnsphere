@@ -35,8 +35,8 @@ Options -Indexes
     Require all denied
 </DirectoryMatch>
 
-# --- Protect specific files ---
-<FilesMatch "\.(env|git|htaccess|htpasswd|ini|log|sh|sql|bak)$">
+# --- Protect specific files (web access only, PHP can still read) ---
+<FilesMatch "\.(git|htaccess|htpasswd|ini|log|sh|bak)$">
     Require all denied
 </FilesMatch>
 
