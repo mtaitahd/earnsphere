@@ -1,7 +1,6 @@
-<?php
 /**
  * EarnSphere - Mailer Class
- * Raw-socket SMTP mailer (ported from mtaita-tech)
+ * Raw-socket SMTP mailer with PHP mail() fallback
  */
 
 require_once __DIR__ . '/../config/config.php';
@@ -25,10 +24,17 @@ class Mailer {
         $this->fromName   = FROM_NAME;
     }
 
-    /**
-     * Send email via raw SMTP socket
-     */
     public function send(string $to, string $subject, string $htmlBody, string $textBody = ''): bool {
+        // Try SMTP first
+        $result = $this->sendSMTP($to, $subject, $htmlBody);
+        if ($result) return true;
+
+        // Fallback to PHP mail()
+        error_log("Mailer: SMTP failed, falling back to PHP mail()");
+        return $this->sendPHPMail($to, $subject, $htmlBody);
+    }
+
+    private function sendSMTP(string $to, string $subject, string $htmlBody): bool {
         if ($this->encryption === 'ssl') {
             $remote = "ssl://{$this->host}:{$this->port}";
         } else {
@@ -43,20 +49,17 @@ class Mailer {
             ],
         ]);
 
-        $socket = @stream_socket_client($remote, $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $context);
+        $socket = @stream_socket_client($remote, $errno, $errstr, 10, STREAM_CLIENT_CONNECT, $context);
         if (!$socket) {
             error_log("Mailer: SMTP connection failed: {$errstr} ({$errno})");
             return false;
         }
 
-        // Read greeting
         $response = fread($socket, 512);
 
-        // EHLO
         fwrite($socket, "EHLO earnsphere\r\n");
         $response = $this->readResponse($socket);
 
-        // STARTTLS if not ssl
         if ($this->encryption !== 'ssl') {
             fwrite($socket, "STARTTLS\r\n");
             $response = $this->readResponse($socket);
@@ -65,7 +68,6 @@ class Mailer {
             $response = $this->readResponse($socket);
         }
 
-        // AUTH LOGIN
         fwrite($socket, "AUTH LOGIN\r\n");
         $response = $this->readResponse($socket);
 
@@ -75,20 +77,15 @@ class Mailer {
         fwrite($socket, base64_encode($this->password) . "\r\n");
         $response = $this->readResponse($socket);
 
-        // MAIL FROM
         fwrite($socket, "MAIL FROM:<{$this->fromEmail}>\r\n");
         $response = $this->readResponse($socket);
 
-        // RCPT TO
         fwrite($socket, "RCPT TO:<{$to}>\r\n");
         $response = $this->readResponse($socket);
 
-        // DATA
         fwrite($socket, "DATA\r\n");
         $response = $this->readResponse($socket);
 
-        // Build headers
-        $boundary = md5(uniqid(time()));
         $headers  = "From: =?UTF-8?B?" . base64_encode($this->fromName) . "?= <{$this->fromEmail}>\r\n";
         $headers .= "To: <{$to}>\r\n";
         $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
@@ -101,12 +98,24 @@ class Mailer {
         fwrite($socket, $headers . $htmlBody . "\r\n.\r\n");
         $response = $this->readResponse($socket);
 
-        // QUIT
         fwrite($socket, "QUIT\r\n");
         fclose($socket);
 
         $code = substr(trim($response ?? ''), 0, 3);
         return $code === '250';
+    }
+
+    private function sendPHPMail(string $to, string $subject, string $htmlBody): bool {
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: {$this->fromName} <{$this->fromEmail}>\r\n";
+        $headers .= "X-Mailer: EarnSphere/1.0\r\n";
+
+        $result = @mail($to, $subject, $htmlBody, $headers);
+        if (!$result) {
+            error_log("Mailer: PHP mail() failed for {$to}");
+        }
+        return $result;
     }
 
     private function readResponse($socket): string {
