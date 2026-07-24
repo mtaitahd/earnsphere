@@ -95,7 +95,8 @@ class SnippePayment {
             ], 'id = ?', [$paymentId]);
             
             if ($snippeRef) {
-                $pushResponse = $this->makeRequest('POST', "/v1/payments/{$snippeRef}/push");
+                $pushPayload = ['phone_number' => $phone];
+                $pushResponse = $this->makeRequest('POST', "/v1/payments/{$snippeRef}/push", $pushPayload);
                 error_log("Snippe USSD Push Response: " . json_encode($pushResponse));
                 
                 if (!$pushResponse['success']) {
