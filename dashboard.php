@@ -25,6 +25,12 @@ $recentTransactions = Database::fetchAll(
     [$_SESSION['user_id']]
 );
 
+// Registration payment info
+$registrationPayment = Database::fetchOne(
+    "SELECT amount, status, completed_at FROM payments WHERE user_id = ? AND payment_type = 'registration' ORDER BY id DESC LIMIT 1",
+    [$_SESSION['user_id']]
+);
+
 $csrf = Auth::generateCSRF();
 $pageTitle = 'Dashboard';
 
@@ -67,6 +73,21 @@ include __DIR__ . '/includes/public_head.php';
         <a href="payment?user_id=<?= $user['id'] ?>" style="display:inline-block;background:white;color:#f59e0b;padding:0.5rem 1.5rem;border-radius:8px;font-weight:800;text-decoration:none;">
             <i class="fas fa-credit-card me-1"></i> Pay Now
         </a>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($registrationPayment && $user['status'] === 'active'): ?>
+    <div style="background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;padding:1rem;margin-top:0.5rem;color:white;">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <div style="font-size:0.8rem;opacity:0.85;"><i class="fas fa-check-circle me-1"></i> Registration Paid</div>
+                <div style="font-size:1.3rem;font-weight:800;"><?= formatCurrency($registrationPayment['amount']) ?></div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:0.75rem;opacity:0.8;">Paid on</div>
+                <div style="font-size:0.85rem;font-weight:600;"><?= date('d M Y', strtotime($registrationPayment['completed_at'])) ?></div>
+            </div>
+        </div>
     </div>
     <?php endif; ?>
 </div>

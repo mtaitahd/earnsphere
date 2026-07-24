@@ -489,7 +489,10 @@ if (orderId) {
             .then(function(data) {
                 if (data.status === 'completed') {
                     clearInterval(checkInterval);
-                    window.location.href = '<?= $siteUrl ?>/dashboard';
+                    document.getElementById('payment-status').innerHTML =
+                        '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payment confirmed! Redirecting to your dashboard...</div>';
+                    document.getElementById('payment-status').style.display = 'block';
+                    setTimeout(function() { window.location.href = '<?= $siteUrl ?>/dashboard'; }, 2000);
                 } else if (data.status === 'failed' || data.status === 'voided' || data.status === 'expired') {
                     clearInterval(checkInterval);
                     document.getElementById('payment-status').innerHTML =
