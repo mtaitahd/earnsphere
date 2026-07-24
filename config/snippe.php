@@ -68,11 +68,11 @@ function getSnippeConfig(): array {
 
 /**
  * Generate a unique idempotency key for Snippe requests
- * Format: {prefix}-{unique_id}-{timestamp}
- * Max 100 chars to be safe
+ * Snippe API requires max 30 characters.
+ * Format: {prefix}{timestamp6}{random6} = 3+6+6 = 15 chars max
  */
 function generateIdempotencyKey(string $prefix = 'es'): string {
-    $unique = bin2hex(random_bytes(8));
-    $time = time();
-    return "{$prefix}-{$unique}-{$time}";
+    $random = bin2hex(random_bytes(3));
+    $time = dechex(time());
+    return substr($prefix . $time . $random, 0, 30);
 }

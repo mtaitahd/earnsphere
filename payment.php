@@ -36,7 +36,7 @@ $existingPayment = Database::fetchOne(
     [$userId]
 );
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'pay') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['pay', 'change_number'])) {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
     } else {
@@ -56,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'pay') {
                 exit;
             } else {
                 $error = $result['error'] ?? 'Payment error. Please try again.';
+                $action = 'show';
             }
         }
     }
@@ -383,14 +384,31 @@ $referralLink = getReferralLink($refCode);
         </button>
 
         <div style="margin-top:1rem;">
-            <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show"
-               class="btn btn-outline-primary" style="font-size:0.85rem;">
-                <i class="fas fa-arrow-left me-1"></i> Use another number
-            </a>
+            <button type="button" class="btn btn-outline-primary" id="toggleChangeNumBtn" onclick="toggleChangeNum()" style="font-size:0.85rem;">
+                <i class="fas fa-sync me-1"></i> Change Number
+            </button>
             <a href="<?= $siteUrl ?>/dashboard"
                class="btn btn-outline-secondary ms-2" style="font-size:0.85rem;">
                 <i class="fas fa-home me-1"></i> Dashboard
             </a>
+        </div>
+
+        <div id="changeNumSection" style="display:none;margin-top:1rem;text-align:left;background:var(--gray-50);padding:1rem;border-radius:var(--radius-md);">
+            <p style="font-size:0.85rem;font-weight:700;color:var(--gray-800);margin-bottom:0.5rem;">
+                <i class="fas fa-mobile-screen me-1"></i> Send USSD push to a different number
+            </p>
+            <form method="POST" action="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=change_number">
+                <input type="hidden" name="<?= $csrfName ?>" value="<?= $csrfVal ?>">
+                <div class="input-group" style="border-radius:var(--radius-sm);overflow:hidden;">
+                    <span class="input-group-text" style="background:var(--gray-100);border:none;font-size:0.9rem;"><i class="fas fa-phone"></i></span>
+                    <input type="tel" name="phone" class="form-control" placeholder="e.g. 0712 345 678" required
+                           style="border:none;font-size:0.9rem;padding:0.6rem 0.8rem;">
+                    <button type="submit" class="btn btn-primary" style="border:none;font-size:0.85rem;padding:0.6rem 1rem;">
+                        <i class="fas fa-paper-plane me-1"></i> Send
+                    </button>
+                </div>
+                <small style="color:var(--gray-500);font-size:0.75rem;">M-Pesa, Tigo Pesa, Airtel Money, or HaloPesa</small>
+            </form>
         </div>
     </div>
 </div>
@@ -398,6 +416,18 @@ $referralLink = getReferralLink($refCode);
 <script>
 var orderId = <?= json_encode($orderIdVal) ?>;
 var checkInterval;
+
+function toggleChangeNum() {
+    var section = document.getElementById('changeNumSection');
+    var btn = document.getElementById('toggleChangeNumBtn');
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-times me-1"></i> Cancel';
+    } else {
+        section.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-sync me-1"></i> Change Number';
+    }
+}
 
 function checkStatusNow() {
     var btn = document.getElementById('checkStatusBtn');
