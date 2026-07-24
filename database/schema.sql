@@ -232,6 +232,25 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- TABLE: user_otps
+-- OTP codes for password reset and verification
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `user_otps` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id` INT UNSIGNED NOT NULL,
+    `type` VARCHAR(20) NOT NULL DEFAULT 'reset',
+    `otp` VARCHAR(10) NOT NULL,
+    `expires_at` DATETIME NOT NULL,
+    `used` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_otp` (`otp`),
+    KEY `idx_expires` (`expires_at`),
+    CONSTRAINT `fk_otps_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- INSERT DEFAULT SETTINGS
 -- ============================================================
 INSERT INTO `settings` (`setting_key`, `setting_value`, `setting_type`, `description`) VALUES
