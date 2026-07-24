@@ -159,3 +159,68 @@ if ($isCLI) {
         echo "Nothing to verify.\n";
     }
 }
+
+// PART 3: Expire pending withdrawals older than 1 hour
+
+$expiredWithdrawals = Database::fetchAll(
+    "SELECT w.id, w.user_id, w.amount, w.created_at
+     FROM withdrawals w
+     WHERE w.status = 'pending'
+     AND w.created_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)
+     ORDER BY w.created_at ASC
+     LIMIT 50"
+);
+
+$expired = 0;
+
+foreach ($expiredWithdrawals as $wd) {
+    try {
+        Database::beginTransaction();
+        
+        $payout = Database::fetchOne(
+            "SELECT id FROM payouts WHERE withdrawal_id = ? AND status IN ('pending', 'processing')",
+            [$wd['id']]
+        );
+        
+        if ($payout) {
+            Database::update('payouts', [
+                'status'        => 'failed',
+                'error_message' => 'Expired: pending for over 1 hour',
+            ], 'id = ?', [$payout['id']]);
+        }
+        
+        Database::update('withdrawals', [
+            'status'     => 'failed',
+            'admin_note' => 'Auto-expired: pending for over 1 hour',
+        ], 'id = ?', [$wd['id']]);
+        
+        $wallet = Database::fetchOne("SELECT * FROM wallets WHERE user_id = ?", [$wd['user_id']]);
+        if ($wallet) {
+            $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
+            Database::update('wallets', [
+                'withdrawable_balance' => $withdrawableBefore + $wd['amount'],
+                'pending_amount'       => max(0, (float)$wallet['pending_amount'] - $wd['amount']),
+            ], 'id = ?', [$wallet['id']]);
+        }
+        
+        Database::update('wallet_transactions', [
+            'status' => 'failed',
+        ], 'user_id = ? AND reference_id = ? AND reference_type = ? AND status = ?', [
+            $wd['user_id'], $wd['id'], 'withdrawal', 'pending'
+        ]);
+        
+        Database::commit();
+        $expired++;
+        
+        if ($isCLI) echo "  Withdrawal #{$wd['id']}: expired (TZS " . number_format($wd['amount']) . ") - wallet restored\n";
+        
+    } catch (Exception $e) {
+        Database::rollback();
+        error_log("EarnSphere: Cron expire withdrawal error #{$wd['id']}: " . $e->getMessage());
+        if ($isCLI) echo "  Withdrawal #{$wd['id']}: error\n";
+    }
+}
+
+if ($isCLI && $expired > 0) {
+    echo "Withdrawals - Expired: {$expired}\n";
+}
