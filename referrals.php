@@ -15,7 +15,6 @@ Auth::requireAuth();
 $user = Auth::getUser();
 $stats = CommissionEngine::getReferralStats($_SESSION['user_id']);
 $referralLink = getReferralLink($user['referral_code']);
-$qrUrl = generateQRCodeUrl($referralLink);
 $level = (int)($_GET['level'] ?? 1);
 
 // Get referred users by level
@@ -72,7 +71,7 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         
         <div class="qr-container">
-            <img src="<?= $qrUrl ?>" alt="QR Code" loading="lazy">
+            <canvas id="referralQR"></canvas>
             <p>Scan to join your network</p>
         </div>
     </div>
@@ -171,5 +170,15 @@ include __DIR__ . '/includes/public_head.php';
         <span>Profile</span>
     </a>
 </nav>
+
+<script>
+if (typeof QRCode !== 'undefined') {
+    QRCode.toCanvas(document.getElementById('referralQR'), <?= json_encode($referralLink) ?>, {
+        width: 160,
+        margin: 1,
+        color: { dark: '#72578B', light: '#FFFFFF' }
+    });
+}
+</script>
 
 <?php include __DIR__ . '/includes/public_foot.php'; ?>
