@@ -37,6 +37,14 @@ if (empty($phone)) {
     jsonResponse(['success' => false, 'error' => 'Enter payment phone number']);
 }
 
+// Validate phone format
+$snippeValidator = new SnippePayment();
+$phoneCheck = $snippeValidator->validatePhone($phone);
+if (!$phoneCheck['valid']) {
+    jsonResponse(['success' => false, 'error' => $phoneCheck['error']]);
+}
+$phone = $phoneCheck['phone'];
+
 // Check user exists and is pending
 $user = Database::fetchOne("SELECT id, status FROM users WHERE id = ?", [$userId]);
 if (!$user) {

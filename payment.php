@@ -46,17 +46,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['pay', 'change_n
             $error = 'Enter payment phone number.';
         } else {
             $snippe = new SnippePayment();
-            $result = $snippe->initiatePayment($userId, $phone);
+            $phoneCheck = $snippe->validatePhone($phone);
             
-            if ($result['success']) {
-                $_SESSION['pending_user_id'] = $userId;
-                $orderId = $result['order_id'];
-                $ref = $result['reference'] ?? '';
-                header('Location: ' . SITE_URL . '/payment?user_id=' . $userId . '&action=waiting&order_id=' . $orderId . '&ref=' . urlencode($ref));
-                exit;
-            } else {
-                $error = $result['error'] ?? 'Payment error. Please try again.';
+            if (!$phoneCheck['valid']) {
+                $error = $phoneCheck['error'];
                 $action = 'show';
+            } else {
+                $result = $snippe->initiatePayment($userId, $phoneCheck['phone']);
+            
+                if ($result['success']) {
+                    $_SESSION['pending_user_id'] = $userId;
+                    $orderId = $result['order_id'];
+                    $ref = $result['reference'] ?? '';
+                    header('Location: ' . SITE_URL . '/payment?user_id=' . $userId . '&action=waiting&order_id=' . $orderId . '&ref=' . urlencode($ref));
+                    exit;
+                } else {
+                    $error = $result['error'] ?? 'Payment error. Please try again.';
+                    $action = 'show';
+                }
             }
         }
     }
@@ -328,6 +335,7 @@ $referralLink = getReferralLink($refCode);
             <div class="form-floating mb-2">
                 <input type="tel" class="form-control" id="phone" name="phone"
                        placeholder="Payment Phone Number" required
+                       pattern="^(?:\+255|0)[67]\d{8}$" title="Valid Tanzania mobile number (e.g. 0712345678)"
                        value="<?= sanitize($phone) ?>">
                 <label for="phone"><i class="fas fa-mobile-screen me-1"></i> Phone Number</label>
             </div>
@@ -417,6 +425,7 @@ $referralLink = getReferralLink($refCode);
                 <div class="input-group" style="border-radius:var(--radius-sm);overflow:hidden;">
                     <span class="input-group-text" style="background:var(--gray-100);border:none;font-size:0.9rem;"><i class="fas fa-phone"></i></span>
                     <input type="tel" name="phone" class="form-control" placeholder="e.g. 0712 345 678" required
+                           pattern="^(?:\+255|0)[67]\d{8}$" title="Valid Tanzania mobile number (e.g. 0712345678)"
                            style="border:none;font-size:0.9rem;padding:0.6rem 0.8rem;">
                     <button type="submit" class="btn btn-primary" style="border:none;font-size:0.85rem;padding:0.6rem 1rem;">
                         <i class="fas fa-paper-plane me-1"></i> Send

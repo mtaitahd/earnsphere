@@ -107,9 +107,22 @@ class SnippePayment {
             ];
         }
         
+        // API rejected — mark payment as failed immediately instead of leaving it pending
+        $errorMsg = $response['error'] ?? 'Payment could not be initiated';
+        $existingMeta = [];
+        $existingMeta['api_error'] = $errorMsg;
+        $existingMeta['api_error_code'] = $response['error_code'] ?? null;
+        
+        Database::update('payments', [
+            'status'      => 'failed',
+            'metadata'    => json_encode($existingMeta),
+        ], 'id = ?', [$paymentId]);
+        
+        Auth::logActivity($userId, 'payment_failed', "Payment TZS " . number_format($amount) . " failed: {$errorMsg}");
+        
         return [
             'success' => false,
-            'error'   => $response['error'] ?? 'Payment could not be initiated',
+            'error'   => $errorMsg,
         ];
     }
     
@@ -869,6 +882,40 @@ class SnippePayment {
         $expected = hash_hmac('sha256', $payloadString, $this->config['webhook_secret']);
         
         return hash_equals($expected, $signature);
+    }
+    
+    /**
+     * Validate a Tanzania mobile phone number.
+     * 
+     * Accepted formats (all must be valid TZ mobile prefixes):
+     *   0712345678, 0612345678, +255712345678, 255712345678, 712345678
+     * 
+     * Supported networks:
+     *   Vodacom:  071x, 072x, 073x, 074x, 075x, 076x
+     *   Airtel:   078x
+     *   Tigo:     067x, 068x, 069x
+     *   Halotel:  061x, 062x, 063x, 064x, 065x, 066x
+     *   TTCL:     077x
+     * 
+     * @return array ['valid' => bool, 'phone' => string, 'error' => string|null]
+     */
+    public function validatePhone(string $phone): array {
+        $phone = $this->normalizePhone($phone);
+        
+        // After normalization must be 255XXXXXXXXX (12 digits)
+        if (!preg_match('/^255[67]\d{8}$/', $phone)) {
+            return [
+                'valid' => false,
+                'phone' => $phone,
+                'error' => 'Invalid phone number. Use a valid Tanzania mobile number (e.g. 0712345678, 0612345678).',
+            ];
+        }
+        
+        return [
+            'valid' => true,
+            'phone' => $phone,
+            'error' => null,
+        ];
     }
     
     /**

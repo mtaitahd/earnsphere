@@ -129,6 +129,7 @@ include __DIR__ . '/admin_header.php';
                             <th>Order ID</th>
                             <th>Snippe Ref</th>
                             <th>Status</th>
+                            <th>Failure Reason</th>
                             <th>Date</th>
                             <th style="width:50px;"></th>
                         </tr>
@@ -150,6 +151,20 @@ include __DIR__ . '/admin_header.php';
                                 <?php endif; ?>
                             </td>
                             <td><?= statusBadge($p['status']) ?></td>
+                            <td>
+                                <?php
+                                $failureReason = '';
+                                if (!empty($p['metadata'])) {
+                                    $meta = json_decode($p['metadata'], true) ?: [];
+                                    $failureReason = $meta['failure_reason'] ?? $meta['api_error'] ?? '';
+                                }
+                                ?>
+                                <?php if ($failureReason): ?>
+                                    <small class="text-danger" title="<?= sanitize($failureReason) ?>"><?= truncate(sanitize($failureReason), 40) ?></small>
+                                <?php else: ?>
+                                    <span class="text-muted">-</span>
+                                <?php endif; ?>
+                            </td>
                             <td><small><?= date('d M Y H:i', strtotime($p['created_at'])) ?></small></td>
                             <td>
                                 <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this payment record?');">
@@ -166,7 +181,7 @@ include __DIR__ . '/admin_header.php';
                         
                         <?php if (empty($payments)): ?>
                         <tr>
-                            <td colspan="10" class="text-center py-4">
+                            <td colspan="11" class="text-center py-4">
                                 <p class="text-muted mb-0">No payments found</p>
                             </td>
                         </tr>

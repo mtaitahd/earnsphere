@@ -26,9 +26,17 @@ $recentTransactions = Database::fetchAll(
 
 // Registration payment info
 $registrationPayment = Database::fetchOne(
-    "SELECT amount, status, completed_at FROM payments WHERE user_id = ? AND payment_type = 'registration' ORDER BY id DESC LIMIT 1",
+    "SELECT amount, status, completed_at, metadata FROM payments WHERE user_id = ? AND payment_type = 'registration' ORDER BY id DESC LIMIT 1",
     [$_SESSION['user_id']]
 );
+
+// Check if latest payment failed
+$paymentFailed = ($registrationPayment && $registrationPayment['status'] === 'failed');
+$paymentFailureReason = '';
+if ($paymentFailed && !empty($registrationPayment['metadata'])) {
+    $meta = json_decode($registrationPayment['metadata'], true) ?: [];
+    $paymentFailureReason = $meta['failure_reason'] ?? $meta['api_error'] ?? '';
+}
 
 $csrf = Auth::generateCSRF();
 $pageTitle = 'Dashboard';
@@ -63,14 +71,21 @@ include __DIR__ . '/includes/public_head.php';
     
     <!-- Account Status -->
     <?php if ($user['status'] !== 'active'): ?>
-    <div style="background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px;padding:1rem;margin-top:0.5rem;color:white;">
+    <div style="background:linear-gradient(135deg,<?= $paymentFailed ? '#ef4444,#dc2626' : '#f59e0b,#ef4444' ?>);border-radius:12px;padding:1rem;margin-top:0.5rem;color:white;">
         <div class="d-flex align-items-center mb-2">
-            <i class="fas fa-exclamation-triangle me-2" style="font-size:1.2rem;"></i>
-            <strong>Your account is not yet activated!</strong>
+            <i class="fas fa-<?= $paymentFailed ? 'times-circle' : 'exclamation-triangle' ?> me-2" style="font-size:1.2rem;"></i>
+            <strong><?= $paymentFailed ? 'Payment Failed!' : 'Your account is not yet activated!' ?></strong>
         </div>
+        <?php if ($paymentFailed): ?>
+        <p style="font-size:0.85rem;margin:0 0 0.75rem;opacity:0.9;">
+            <?= $paymentFailureReason ? 'Reason: ' . sanitize($paymentFailureReason) . '.' : 'Your last payment was not successful.' ?>
+            Please try again with a valid phone number.
+        </p>
+        <?php else: ?>
         <p style="font-size:0.85rem;margin:0 0 0.75rem;opacity:0.9;">Complete your <?= formatCurrency(app_setting('registration_fee', REGISTRATION_FEE)) ?> payment to activate your account and start earning commissions.</p>
-        <a href="payment?user_id=<?= $user['id'] ?>" style="display:inline-block;background:white;color:#f59e0b;padding:0.5rem 1.5rem;border-radius:8px;font-weight:800;text-decoration:none;">
-            <i class="fas fa-credit-card me-1"></i> Pay Now
+        <?php endif; ?>
+        <a href="payment?user_id=<?= $user['id'] ?>" style="display:inline-block;background:white;color:<?= $paymentFailed ? '#ef4444' : '#f59e0b' ?>;padding:0.5rem 1.5rem;border-radius:8px;font-weight:800;text-decoration:none;">
+            <i class="fas fa-credit-card me-1"></i> <?= $paymentFailed ? 'Retry Payment' : 'Pay Now' ?>
         </a>
     </div>
     <?php endif; ?>
