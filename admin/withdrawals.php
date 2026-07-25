@@ -1,7 +1,7 @@
 <?php
 /**
  * EarnSphere - Admin: Withdrawals Management
- * Supports approve/reject + Snippe payout dispatch
+ * Supports approve/reject, Snippe payout dispatch, delete (single + bulk)
  */
 
 require_once dirname(__DIR__) . '/config/database.php';
@@ -19,27 +19,56 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') 
 
 $adminId = $_SESSION['user_id'];
 
-// Handle approve/reject actions
+// Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $wdAction = $_POST['action'];
-    $wdId = (int)($_POST['withdrawal_id'] ?? 0);
-    $adminNote = trim($_POST['admin_note'] ?? '');
+    if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
+        setFlash('error', 'Security token invalid');
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
 
-    if ($wdAction === 'approve' || $wdAction === 'reject' || $wdAction === 'complete') {
+    $wdAction = $_POST['action'];
+
+    if (in_array($wdAction, ['approve', 'reject', 'complete'])) {
+        $wdId = (int)($_POST['withdrawal_id'] ?? 0);
+        $adminNote = trim($_POST['admin_note'] ?? '');
         $statusMap = [
             'approve'  => 'approved',
             'reject'   => 'rejected',
             'complete' => 'completed',
         ];
-
         $result = Wallet::processWithdrawal($wdId, $statusMap[$wdAction], $adminNote, $adminId);
-
         if ($result['success']) {
             setFlash('success', 'Withdrawal request processed');
         } else {
             setFlash('error', $result['errors'][0] ?? 'Error');
         }
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
 
+    if ($wdAction === 'delete_single') {
+        $wdId = (int)($_POST['withdrawal_id'] ?? 0);
+        if ($wdId > 0) {
+            Database::delete('payouts', 'withdrawal_id = ?', [$wdId]);
+            Database::delete('wallet_transactions', 'reference_id = ? AND reference_type = ?', [$wdId, 'withdrawal']);
+            Database::delete('withdrawals', 'id = ?', [$wdId]);
+            setFlash('success', 'Withdrawal record deleted');
+        }
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
+    if ($wdAction === 'delete_selected') {
+        $ids = $_POST['withdrawal_ids'] ?? [];
+        if (!empty($ids)) {
+            $ids = array_map('intval', $ids);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            Database::query("DELETE FROM payouts WHERE withdrawal_id IN ({$placeholders})", $ids);
+            Database::query("DELETE FROM wallet_transactions WHERE reference_id IN ({$placeholders}) AND reference_type = 'withdrawal'", $ids);
+            Database::query("DELETE FROM withdrawals WHERE id IN ({$placeholders})", $ids);
+            setFlash('success', count($ids) . ' withdrawal record(s) deleted');
+        }
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
     }
@@ -107,107 +136,141 @@ include __DIR__ . '/admin_header.php';
     </div>
 </div>
 
-<!-- Withdrawals -->
-<?php foreach ($withdrawals as $wd): ?>
-<div class="card mb-3 <?= $wd['status'] === 'pending' ? 'border-left-warning' : '' ?>" style="<?= $wd['status'] === 'pending' ? 'border-left:4px solid #f59e0b;' : '' ?>">
-    <div class="card-body">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <div class="d-flex align-items-center mb-2">
-                    <div style="width:40px;height:40px;border-radius:50%;background:#f3eef7;color:#72578B;display:flex;align-items:center;justify-content:center;font-weight:800;margin-right:0.75rem;">
-                        <?= strtoupper(substr($wd['full_name'], 0, 1)) ?>
-                    </div>
-                    <div>
-                        <strong style="font-size:1rem;"><?= sanitize($wd['full_name']) ?></strong>
-                        <div style="font-size:0.8rem;color:#6b7280;">
-                            <?= formatPhone($wd['phone']) ?> &middot; <?= $wd['payment_method'] ?>
+<!-- Bulk Delete Form -->
+<form method="POST" id="bulkDeleteForm">
+    <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+    <input type="hidden" name="action" value="delete_selected">
+
+    <?php if (!empty($withdrawals)): ?>
+    <div class="card mb-3" style="display:none;" id="bulkActions">
+        <div class="card-body py-2 d-flex align-items-center">
+            <input type="checkbox" id="selectAll" class="form-check-input me-2">
+            <label for="selectAll" class="me-3" style="font-size:0.85rem;font-weight:700;">
+                Select All (<span id="selectedCount">0</span> selected)
+            </label>
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete selected withdrawal records and their payout data?');">
+                <i class="fas fa-trash me-1"></i> Delete Selected
+            </button>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Withdrawals -->
+    <?php foreach ($withdrawals as $wd): ?>
+    <div class="card mb-3 <?= $wd['status'] === 'pending' ? 'border-left-warning' : '' ?>" style="<?= $wd['status'] === 'pending' ? 'border-left:4px solid #f59e0b;' : '' ?>">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-1">
+                    <input type="checkbox" name="withdrawal_ids[]" value="<?= $wd['id'] ?>" class="form-check-input item-checkbox">
+                </div>
+                <div class="col-md-7">
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="width:40px;height:40px;border-radius:50%;background:#f3eef7;color:#72578B;display:flex;align-items:center;justify-content:center;font-weight:800;margin-right:0.75rem;">
+                            <?= strtoupper(substr($wd['full_name'], 0, 1)) ?>
+                        </div>
+                        <div>
+                            <strong style="font-size:1rem;"><?= sanitize($wd['full_name']) ?></strong>
+                            <div style="font-size:0.8rem;color:#6b7280;">
+                                <?= formatPhone($wd['phone']) ?> &middot; <?= $wd['payment_method'] ?>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="mt-2">
-                    <div style="font-size:1.25rem;font-weight:800;color:#72578B;"><?= formatCurrency($wd['amount']) ?></div>
-                    <small style="color:#9ca3af;"><?= date('d M Y H:i', strtotime($wd['created_at'])) ?></small>
-                    <?php if ($wd['admin_note']): ?>
-                        <div class="mt-1"><small class="text-muted"><i class="fas fa-comment me-1"></i> <?= sanitize($wd['admin_note']) ?></small></div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Payout info (if payout was sent) -->
-                <?php if ($wd['payout_id']): ?>
-                    <div class="mt-2 p-2" style="background:#f0fdf4;border-radius:8px;font-size:0.8rem;">
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <i class="fas fa-paper-plane" style="color:#10b981;"></i>
-                            <strong>Payout:</strong> <?= statusBadge($wd['payout_status']) ?>
+                    <div class="mt-2">
+                        <div style="font-size:1.25rem;font-weight:800;color:#72578B;"><?= formatCurrency($wd['amount']) ?></div>
+                        <small style="color:#9ca3af;"><?= date('d M Y H:i', strtotime($wd['created_at'])) ?></small>
+                        <?php if ($wd['admin_note']): ?>
+                            <div class="mt-1"><small class="text-muted"><i class="fas fa-comment me-1"></i> <?= sanitize($wd['admin_note']) ?></small></div>
+                        <?php endif; ?>
                     </div>
-                    <?php if ($wd['payout_reference']): ?>
-                        <div><small class="text-muted">Ref: <?= $wd['payout_reference'] ?></small></div>
-                    <?php endif; ?>
-                    <?php if ($wd['payout_fees'] > 0): ?>
-                        <div><small class="text-muted">Fees: <?= formatCurrency($wd['payout_fees']) ?> | Provider: <?= $wd['payout_provider'] ?></small></div>
-                    <?php endif; ?>
-                    <?php if ($wd['payout_error']): ?>
-                        <div><small class="text-danger"><?= sanitize($wd['payout_error']) ?></small></div>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-            </div>
-            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <?= statusBadge($wd['status']) ?>
 
-                <?php if ($wd['status'] === 'pending'): ?>
-                <div class="mt-2 d-flex gap-2 justify-content-md-end">
-                    <button class="btn btn-danger btn-sm" data-bs-toggle="collapse" data-bs-target="#reject-<?= $wd['id'] ?>">
-                        <i class="fas fa-times me-1"></i> Reject
-                    </button>
-                </div>
-
-                <div class="collapse mt-2" id="reject-<?= $wd['id'] ?>">
-                    <form method="POST">
-                        <input type="hidden" name="action" value="reject">
-                        <input type="hidden" name="withdrawal_id" value="<?= $wd['id'] ?>">
-                        <div class="input-group input-group-sm">
-                            <input type="text" class="form-control" name="admin_note" placeholder="Reason for rejection...">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Reject this request?')">
-                                Confirm
-                            </button>
+                    <!-- Payout info (if payout was sent) -->
+                    <?php if ($wd['payout_id']): ?>
+                        <div class="mt-2 p-2" style="background:#f0fdf4;border-radius:8px;font-size:0.8rem;">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fas fa-paper-plane" style="color:#10b981;"></i>
+                                <strong>Payout:</strong> <?= statusBadge($wd['payout_status']) ?>
+                            </div>
+                            <?php if ($wd['payout_reference']): ?>
+                                <div><small class="text-muted">Ref: <?= $wd['payout_reference'] ?></small></div>
+                            <?php endif; ?>
+                            <?php if ($wd['payout_fees'] > 0): ?>
+                                <div><small class="text-muted">Fees: <?= formatCurrency($wd['payout_fees']) ?> | Provider: <?= $wd['payout_provider'] ?></small></div>
+                            <?php endif; ?>
+                            <?php if ($wd['payout_error']): ?>
+                                <div><small class="text-danger"><?= sanitize($wd['payout_error']) ?></small></div>
+                            <?php endif; ?>
                         </div>
-                    </form>
-                </div>
-                <?php endif; ?>
-
-                <?php if (in_array($wd['status'], ['pending', 'approved', 'failed']) && (empty($wd['payout_id']) || in_array($wd['payout_status'], ['failed', 'pending', 'superseded']))): ?>
-                <!-- Send/Retry Payout via Snippe -->
-                <div class="mt-2">
-                    <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>" id="csrf-<?= $wd['id'] ?>">
-                    <button type="button" class="btn <?= empty($wd['payout_id']) ? 'btn-primary' : 'btn-warning' ?> btn-sm send-payout-btn"
-                            data-id="<?= $wd['id'] ?>"
-                            data-amount="<?= $wd['amount'] ?>"
-                            data-name="<?= sanitize($wd['full_name']) ?>"
-                            onclick="sendPayout(this)">
-                            <i class="fas fa-<?= empty($wd['payout_id']) ? 'paper-plane' : 'redo' ?> me-1"></i> <?= empty($wd['payout_id']) ? 'Send Payout' : 'Retry Payout' ?>
-                    </button>
-                    <?php if (!empty($wd['payout_error'])): ?>
-                        <small class="d-block text-danger mt-1" style="font-size:0.7rem;"><?= sanitize($wd['payout_error']) ?></small>
-                    <?php else: ?>
-                        <small class="d-block text-muted mt-1" style="font-size:0.7rem;">Snippe Disbursement</small>
                     <?php endif; ?>
                 </div>
-                <?php endif; ?>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <?= statusBadge($wd['status']) ?>
 
-                <?php if (in_array($wd['status'], ['pending', 'approved']) && !empty($wd['payout_id']) && !in_array($wd['payout_status'], ['completed', 'failed'])): ?>
-                <!-- Check payout status -->
-                <div class="mt-2">
-                    <button type="button" class="btn btn-outline-info btn-sm"
-                            onclick="checkPayout(<?= $wd['payout_id'] ?>, '<?= $wd['payout_reference'] ?>', this)">
+                    <?php if ($wd['status'] === 'pending'): ?>
+                    <div class="mt-2 d-flex gap-2 justify-content-md-end">
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="collapse" data-bs-target="#reject-<?= $wd['id'] ?>">
+                            <i class="fas fa-times me-1"></i> Reject
+                        </button>
+                    </div>
+
+                    <div class="collapse mt-2" id="reject-<?= $wd['id'] ?>">
+                        <form method="POST">
+                            <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+                            <input type="hidden" name="action" value="reject">
+                            <input type="hidden" name="withdrawal_id" value="<?= $wd['id'] ?>">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" name="admin_note" placeholder="Reason for rejection...">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Reject this request?')">
+                                    Confirm
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (in_array($wd['status'], ['pending', 'approved', 'failed']) && (empty($wd['payout_id']) || in_array($wd['payout_status'], ['failed', 'pending', 'superseded']))): ?>
+                    <div class="mt-2">
+                        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>" id="csrf-<?= $wd['id'] ?>">
+                        <button type="button" class="btn <?= empty($wd['payout_id']) ? 'btn-primary' : 'btn-warning' ?> btn-sm send-payout-btn"
+                                data-id="<?= $wd['id'] ?>"
+                                data-amount="<?= $wd['amount'] ?>"
+                                data-name="<?= sanitize($wd['full_name']) ?>"
+                                onclick="sendPayout(this)">
+                                <i class="fas fa-<?= empty($wd['payout_id']) ? 'paper-plane' : 'redo' ?> me-1"></i> <?= empty($wd['payout_id']) ? 'Send Payout' : 'Retry Payout' ?>
+                        </button>
+                        <?php if (!empty($wd['payout_error'])): ?>
+                            <small class="d-block text-danger mt-1" style="font-size:0.7rem;"><?= sanitize($wd['payout_error']) ?></small>
+                        <?php else: ?>
+                            <small class="d-block text-muted mt-1" style="font-size:0.7rem;">Snippe Disbursement</small>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (in_array($wd['status'], ['pending', 'approved']) && !empty($wd['payout_id']) && !in_array($wd['payout_status'], ['completed', 'failed'])): ?>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-outline-info btn-sm"
+                                onclick="checkPayout(<?= $wd['payout_id'] ?>, '<?= $wd['payout_reference'] ?>', this)">
                             <i class="fas fa-sync me-1"></i> Check Status
-                    </button>
+                        </button>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Delete button -->
+                    <div class="mt-2">
+                        <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this withdrawal record and its payout data?');">
+                            <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+                            <input type="hidden" name="action" value="delete_single">
+                            <input type="hidden" name="withdrawal_id" value="<?= $wd['id'] ?>">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash me-1"></i> Delete
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>
-</div>
-<?php endforeach; ?>
+    <?php endforeach; ?>
+</form>
 
 <?php if (empty($withdrawals)): ?>
 <div class="card">
@@ -231,13 +294,39 @@ include __DIR__ . '/admin_header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="payoutModalBody">
-                <!-- Filled dynamically -->
             </div>
         </div>
     </div>
 </div>
 
 <script>
+// Bulk select logic
+const selectAll = document.getElementById('selectAll');
+const selectAllHeader = document.getElementById('selectAllHeader');
+const checkboxes = document.querySelectorAll('.item-checkbox');
+const bulkActions = document.getElementById('bulkActions');
+const selectedCount = document.getElementById('selectedCount');
+
+function updateBulkUI() {
+    const checked = document.querySelectorAll('.item-checkbox:checked').length;
+    selectedCount.textContent = checked;
+    bulkActions.style.display = checked > 0 ? 'block' : 'none';
+}
+
+selectAll?.addEventListener('change', () => {
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    if (selectAllHeader) selectAllHeader.checked = selectAll.checked;
+    updateBulkUI();
+});
+
+selectAllHeader?.addEventListener('change', () => {
+    checkboxes.forEach(cb => cb.checked = selectAllHeader.checked);
+    if (selectAll) selectAll.checked = selectAllHeader.checked;
+    updateBulkUI();
+});
+
+checkboxes.forEach(cb => cb.addEventListener('change', updateBulkUI));
+
 async function sendPayout(btn) {
     const id = btn.dataset.id;
     const name = btn.dataset.name;
