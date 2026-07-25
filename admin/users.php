@@ -33,6 +33,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
+    if ($action === 'update_email') {
+        $userId = (int)($_POST['user_id'] ?? 0);
+        $newEmail = strtolower(trim($_POST['new_email'] ?? ''));
+        if ($userId > 0 && filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ?", [$newEmail, $userId]);
+            if ($existing) {
+                setFlash('error', 'Email already in use by another user');
+            } else {
+                Database::update('users', ['email' => $newEmail], 'id = ?', [$userId]);
+                setFlash('success', 'Email updated successfully');
+            }
+        } else {
+            setFlash('error', 'Invalid email address');
+        }
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
     if ($action === 'delete_single') {
         $userId = (int)($_POST['user_id'] ?? 0);
         $user = Database::fetchOne("SELECT id, full_name FROM users WHERE id = ? AND role = 'user'", [$userId]);
@@ -244,8 +262,13 @@ include __DIR__ . '/admin_header.php';
                                         </li>
                                         <?php endif; ?>
                                         <?php endforeach; ?>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#emailModal" data-user-id="<?= $u['id'] ?>" data-user-name="<?= sanitize($u['full_name']) ?>" data-user-email="<?= sanitize($u['email'] ?? '') ?>">
+                                            <i class="fas fa-envelope me-1"></i> Edit Email
+                                        </button>
+                                    </li>
+                                    <li>
                                             <form method="POST" class="d-inline" onsubmit="return confirm('Delete this user permanently? All related data will be removed.')">
                                                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
                                                 <input type="hidden" name="action" value="delete_single">
@@ -281,6 +304,31 @@ include __DIR__ . '/admin_header.php';
     <?= paginate($total, $page, $perPage, SITE_URL . '/admin/users?' . http_build_query(['search' => $search, 'status' => $status, 'page' => ''])) ?>
 </div>
 
+<!-- Email Edit Modal -->
+<div class="modal fade" id="emailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST">
+                <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+                <input type="hidden" name="action" value="update_email">
+                <input type="hidden" name="user_id" id="emailUserId">
+                <div class="modal-header">
+                    <h6 class="modal-title"><i class="fas fa-envelope me-1"></i> Edit Email — <span id="emailUserName"></span></h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" style="font-weight:700;">New Email Address</label>
+                    <input type="email" class="form-control" name="new_email" id="emailInput" required placeholder="user@example.com">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 const selectAll = document.getElementById('selectAll');
 const selectAllHeader = document.getElementById('selectAllHeader');
@@ -307,6 +355,14 @@ selectAllHeader?.addEventListener('change', () => {
 });
 
 checkboxes.forEach(cb => cb.addEventListener('change', updateBulkUI));
+
+// Email modal populate
+document.getElementById('emailModal')?.addEventListener('show.bs.modal', function(event) {
+    const btn = event.relatedTarget;
+    document.getElementById('emailUserId').value = btn.dataset.userId;
+    document.getElementById('emailUserName').textContent = btn.dataset.userName;
+    document.getElementById('emailInput').value = btn.dataset.userEmail || '';
+});
 </script>
 
 <?php include __DIR__ . '/admin_footer.php'; ?>
