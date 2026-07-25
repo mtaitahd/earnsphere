@@ -22,7 +22,28 @@ $admin = Database::fetchOne(
     [$_SESSION['user_id']]
 );
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_type'] ?? '') === 'update_email') {
+        $newEmail = strtolower(trim($_POST['new_email'] ?? ''));
+        if (empty($newEmail)) {
+            $error = 'Email is required.';
+        } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Invalid email address.';
+        } elseif ($newEmail === ($admin['email'] ?? '')) {
+            $error = 'New email is the same as current email.';
+        } else {
+            $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ?", [$newEmail, $_SESSION['user_id']]);
+            if ($existing) {
+                $error = 'This email is already in use by another account.';
+            } else {
+                Database::update('users', ['email' => $newEmail], 'id = ?', [$_SESSION['user_id']]);
+                Auth::logActivity($_SESSION['user_id'], 'email_changed', 'Admin updated their email to ' . $newEmail);
+                $admin['email'] = $newEmail;
+                $success = 'Email updated successfully!';
+            }
+        }
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_type'] ?? '') === 'update_password') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
     } else {
@@ -97,6 +118,35 @@ include __DIR__ . '/admin_header.php';
 
     <!-- Change Password -->
     <div class="col-lg-8">
+        <!-- Update Email -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-envelope me-1"></i> Update Email</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+                    <input type="hidden" name="form_type" value="update_email">
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight:700;font-size:0.85rem;">Current Email</label>
+                        <input type="text" class="form-control" value="<?= sanitize($admin['email'] ?: 'Not set') ?>" disabled>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight:700;font-size:0.85rem;">New Email</label>
+                        <input type="email" class="form-control" name="new_email" required placeholder="admin@example.com" value="<?= sanitize($admin['email'] ?? '') ?>">
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Update Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-header">
                 <h6><i class="fas fa-lock me-1"></i> Change Password</h6>
@@ -104,6 +154,7 @@ include __DIR__ . '/admin_header.php';
             <div class="card-body">
                 <form method="POST">
                     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+                    <input type="hidden" name="form_type" value="update_password">
 
                     <div class="mb-3">
                         <label class="form-label" style="font-weight:700;font-size:0.85rem;">Current Password</label>
