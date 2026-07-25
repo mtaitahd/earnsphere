@@ -72,7 +72,7 @@ class Auth {
             $errors[] = "Full name is too short";
         }
         
-        if (!preg_match('/^(?:\+255|0)[67]\d{8}$/', $phone)) {
+        if (!preg_match('/^(?:\+255|0)(61|71|74|75|76|78)\d{8}$/', $phone)) {
             $errors[] = "Phone number is invalid";
         }
         

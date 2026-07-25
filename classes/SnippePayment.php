@@ -885,17 +885,13 @@ class SnippePayment {
     }
     
     /**
-     * Validate a Tanzania mobile phone number.
+     * Validate a Tanzania mobile phone number supported by Snippe.
      * 
-     * Accepted formats (all must be valid TZ mobile prefixes):
-     *   0712345678, 0612345678, +255712345678, 255712345678, 712345678
-     * 
-     * Supported networks:
-     *   Vodacom:  071x, 072x, 073x, 074x, 075x, 076x
-     *   Airtel:   078x
-     *   Tigo:     067x, 068x, 069x
-     *   Halotel:  061x, 062x, 063x, 064x, 065x, 066x
-     *   TTCL:     077x
+     * ONLY these prefixes are accepted (must match Snippe's supported networks):
+     *   Vodacom M-Pesa:  071x, 076x
+     *   Airtel Money:    074x, 078x
+     *   Tigo Pesa:       078x
+     *   Halotel:         061x, 075x
      * 
      * @return array ['valid' => bool, 'phone' => string, 'error' => string|null]
      */
@@ -903,11 +899,12 @@ class SnippePayment {
         $phone = $this->normalizePhone($phone);
         
         // After normalization must be 255XXXXXXXXX (12 digits)
-        if (!preg_match('/^255[67]\d{8}$/', $phone)) {
+        // Only accept prefixes supported by Snippe
+        if (!preg_match('/^255(61|71|74|75|76|78)\d{8}$/', $phone)) {
             return [
                 'valid' => false,
                 'phone' => $phone,
-                'error' => 'Invalid phone number. Use a valid Tanzania mobile number (e.g. 0712345678, 0612345678).',
+                'error' => 'This phone number is not supported. Use M-Pesa (071x, 076x), Airtel (074x, 078x), Tigo (078x), or Halotel (061x, 075x).',
             ];
         }
         
