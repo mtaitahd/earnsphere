@@ -161,15 +161,15 @@ include __DIR__ . '/includes/public_head.php';
             </h6>
             <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem;">
                 <span style="color:var(--gray-600);"><i class="fas fa-user-plus me-1" style="color:var(--primary);"></i> Level 1 (Direct)</span>
-                <strong style="color:var(--primary);">TZS 2,500</strong>
+                <strong style="color:var(--primary);">TZS <?= number_format((int) app_setting('commission_l1', COMMISSION_L1)) ?></strong>
             </div>
             <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem;">
                 <span style="color:var(--gray-600);"><i class="fas fa-user-group me-1" style="color:var(--secondary);"></i> Level 2 (Grand)</span>
-                <strong style="color:var(--secondary);">TZS 1,500</strong>
+                <strong style="color:var(--secondary);">TZS <?= number_format((int) app_setting('commission_l2', COMMISSION_L2)) ?></strong>
             </div>
             <div class="d-flex justify-content-between" style="font-size:0.85rem;">
                 <span style="color:var(--gray-600);"><i class="fas fa-people-arrows me-1" style="color:var(--accent);"></i> Level 3 (Great-grand)</span>
-                <strong style="color:var(--accent);">TZS 1,000</strong>
+                <strong style="color:var(--accent);">TZS <?= number_format((int) app_setting('commission_l3', COMMISSION_L3)) ?></strong>
             </div>
         </div>
         

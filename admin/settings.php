@@ -21,22 +21,43 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $settings = $_POST['settings'] ?? [];
 
-    foreach ($settings as $key => $value) {
-        $existing = Database::fetchOne("SELECT id FROM settings WHERE setting_key = ?", [$key]);
-        if ($existing) {
-            Database::update('settings', [
-                'setting_value' => $value,
-            ], 'setting_key = ?', [$key]);
-        } else {
-            Database::insert('settings', [
-                'setting_key'   => $key,
-                'setting_value' => $value,
-                'description'   => $key,
-            ]);
+    // Commission validation
+    $regFee    = (int)($settings['registration_fee'] ?? 0);
+    $company   = (int)($settings['company_earning'] ?? 0);
+    $commTotal = (int)($settings['commission_total'] ?? 0);
+    $l1        = (int)($settings['commission_l1'] ?? 0);
+    $l2        = (int)($settings['commission_l2'] ?? 0);
+    $l3        = (int)($settings['commission_l3'] ?? 0);
+
+    if ($regFee > 0 && $company > 0 && $commTotal > 0) {
+        if ($company + $commTotal !== $regFee) {
+            $error = "Company earning ({$company}) + Commission total ({$commTotal}) must equal Registration fee ({$regFee}).";
+        } elseif ($l1 + $l2 + $l3 !== $commTotal) {
+            $error = "L1 ({$l1}) + L2 ({$l2}) + L3 ({$l3}) must equal Commission total ({$commTotal}).";
         }
     }
 
-    $success = 'Settings updated!';
+    if (empty($error)) {
+        foreach ($settings as $key => $value) {
+            $existing = Database::fetchOne("SELECT id FROM settings WHERE setting_key = ?", [$key]);
+            if ($existing) {
+                Database::update('settings', [
+                    'setting_value' => $value,
+                ], 'setting_key = ?', [$key]);
+            } else {
+                Database::insert('settings', [
+                    'setting_key'   => $key,
+                    'setting_value' => $value,
+                    'description'   => $key,
+                ]);
+            }
+        }
+
+        // Clear app_setting cache so new values take effect immediately
+        if (function_exists('opcache_reset')) { @opcache_reset(); }
+
+        $success = 'Settings updated!';
+    }
 }
 
 // Get all settings
@@ -51,8 +72,8 @@ foreach ($allSettings as $s) {
 // Group by category
 $categories = [
     'general'  => ['site_name', 'site_tagline', 'currency', 'admin_email', 'support_phone', 'terms_url', 'privacy_url'],
-    'payment'  => ['registration_fee', 'company_earning', 'commission_total', 'min_withdrawal', 'max_withdrawal'],
-    'commission' => ['commission_l1', 'commission_l2', 'commission_l3'],
+    'payment'  => ['registration_fee', 'min_withdrawal', 'max_withdrawal'],
+    'commission' => ['commission_l1', 'commission_l2', 'commission_l3', 'company_earning', 'commission_total'],
     'snippe'   => ['snippe_api_key', 'snippe_webhook_secret', 'snippe_api_url', 'snippe_api_version'],
     'payout'   => ['payout_channel', 'payout_webhook_url'],
     'system'   => ['maintenance_mode'],
@@ -123,12 +144,31 @@ include __DIR__ . '/admin_header.php';
             <h6><i class="fas fa-coins me-1"></i> Commission Settings</h6>
         </div>
         <div class="card-body">
+            <!-- Live Breakdown Preview -->
+            <div id="commissionBreakdown" style="background:#f8f9fa;border:1px solid #e3e6f0;border-radius:8px;padding:1rem;margin-bottom:1.25rem;">
+                <div style="font-weight:700;font-size:0.85rem;color:#555;margin-bottom:0.5rem;">
+                    <i class="fas fa-calculator me-1"></i> Commission Breakdown (per registration)
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem 1.5rem;font-size:0.85rem;">
+                    <span>L1 (Direct): <strong id="previewL1">0</strong></span>
+                    <span>L2 (Grand): <strong id="previewL2">0</strong></span>
+                    <span>L3 (Great-grand): <strong id="previewL3">0</strong></span>
+                    <span>Company: <strong id="previewCompany">0</strong></span>
+                    <span style="font-weight:700;border-top:1px solid #ccc;padding-top:4px;">Total: <strong id="previewTotal">0</strong></span>
+                </div>
+                <div id="validationMsg" style="display:none;margin-top:0.5rem;font-size:0.8rem;font-weight:600;"></div>
+            </div>
+
             <div class="row g-3">
                 <?php foreach ($categories['commission'] as $key): ?>
                     <?php $s = $settingsMap[$key] ?? null; if (!$s) continue; ?>
                     <div class="col-md-4">
-                        <label class="form-label" style="font-weight:700;font-size:0.85rem;"><?= $s['description'] ?: $key ?></label>
-                        <input type="number" class="form-control" name="settings[<?= $key ?>]" value="<?= sanitize($s['setting_value']) ?>">
+                        <label class="form-label" style="font-weight:700;font-size:0.85rem;">
+                            <?= $s['description'] ?: $key ?>
+                        </label>
+                        <input type="number" class="form-control commission-input" name="settings[<?= $key ?>]"
+                               value="<?= sanitize($s['setting_value']) ?>"
+                               data-key="<?= $key ?>" min="0" step="100">
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -220,5 +260,59 @@ include __DIR__ . '/admin_header.php';
         </button>
     </div>
 </form>
+
+<script>
+(function() {
+    var inputs = document.querySelectorAll('.commission-input');
+    var regFeeInput = document.querySelector('input[name="settings[registration_fee]"]');
+
+    function getVal(key) {
+        var el = document.querySelector('input[name="settings[' + key + ']"]');
+        return el ? parseInt(el.value) || 0 : 0;
+    }
+
+    function updatePreview() {
+        var l1 = getVal('commission_l1');
+        var l2 = getVal('commission_l2');
+        var l3 = getVal('commission_l3');
+        var company = getVal('company_earning');
+        var commTotal = getVal('commission_total');
+        var regFee = regFeeInput ? parseInt(regFeeInput.value) || 0 : 0;
+
+        var commSum = l1 + l2 + l3;
+
+        document.getElementById('previewL1').textContent = 'TZS ' + l1.toLocaleString();
+        document.getElementById('previewL2').textContent = 'TZS ' + l2.toLocaleString();
+        document.getElementById('previewL3').textContent = 'TZS ' + l3.toLocaleString();
+        document.getElementById('previewCompany').textContent = 'TZS ' + company.toLocaleString();
+        document.getElementById('previewTotal').textContent = 'TZS ' + (commSum + company).toLocaleString();
+
+        var msg = document.getElementById('validationMsg');
+        if (regFee > 0 && company > 0 && commTotal > 0) {
+            if (company + commTotal !== regFee) {
+                msg.style.display = 'block';
+                msg.style.color = '#e74a3b';
+                msg.textContent = 'Company (' + company.toLocaleString() + ') + Commission (' + commTotal.toLocaleString() + ') = ' + (company + commTotal).toLocaleString() + ' but Registration fee is ' + regFee.toLocaleString();
+            } else if (commSum !== commTotal) {
+                msg.style.display = 'block';
+                msg.style.color = '#e74a3b';
+                msg.textContent = 'L1+L2+L3 = ' + commSum.toLocaleString() + ' but Commission total is ' + commTotal.toLocaleString();
+            } else {
+                msg.style.display = 'block';
+                msg.style.color = '#1cc88a';
+                msg.textContent = 'All amounts match correctly.';
+            }
+        } else {
+            msg.style.display = 'none';
+        }
+    }
+
+    inputs.forEach(function(input) {
+        input.addEventListener('input', updatePreview);
+    });
+    if (regFeeInput) regFeeInput.addEventListener('input', updatePreview);
+    updatePreview();
+})();
+</script>
 
 <?php include __DIR__ . '/admin_footer.php'; ?>
