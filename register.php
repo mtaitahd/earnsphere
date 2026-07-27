@@ -92,9 +92,9 @@ include __DIR__ . '/includes/public_head.php';
                     <input type="tel" class="form-control" id="phone" name="phone" 
                            placeholder="Phone Number" required
                            value="<?= sanitize($_POST['phone'] ?? '') ?>"
-                           pattern="^(?:\+255|0)(61|71|74|75|76|78)\d{8}$">
+                           pattern="^(?:\+255|0)\d{9}$">
                     <label for="phone"><i class="fas fa-phone me-1"></i> Phone Number</label>
-                    <small class="text-muted ms-1">Example: 0712345678 or +255712345678</small>
+                    <small class="text-muted ms-1">Example: 07XXXXXXXX or +2557XXXXXXXX</small>
                 </div>
                 
                 <div class="form-floating mb-3">
