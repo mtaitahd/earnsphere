@@ -232,6 +232,30 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- TABLE: error_logs
+-- Structured errors visible to admins
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `error_logs` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id` INT UNSIGNED DEFAULT NULL,
+    `category` VARCHAR(50) NOT NULL DEFAULT 'system',
+    `severity` VARCHAR(20) NOT NULL DEFAULT 'error',
+    `source` VARCHAR(150) DEFAULT NULL,
+    `message` TEXT NOT NULL,
+    `context` JSON DEFAULT NULL,
+    `request_method` VARCHAR(10) DEFAULT NULL,
+    `request_uri` VARCHAR(255) DEFAULT NULL,
+    `ip_address` VARCHAR(45) DEFAULT NULL,
+    `user_agent` TEXT DEFAULT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_error_user` (`user_id`),
+    KEY `idx_error_category` (`category`),
+    KEY `idx_error_severity` (`severity`),
+    KEY `idx_error_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- TABLE: user_otps
 -- OTP codes for password reset and verification
 -- ============================================================

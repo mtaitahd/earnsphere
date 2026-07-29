@@ -138,6 +138,14 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
         </a>
     </li>
     
+    <!-- Error Logs -->
+    <li class="nav-item <?= $currentPage === 'error-logs' ? 'active' : '' ?>">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/error-logs">
+            <i class="fas fa-fw fa-bug"></i>
+            <span>Error Logs</span>
+        </a>
+    </li>
+    
     <hr class="sidebar-divider">
     
     <!-- Back to Site -->

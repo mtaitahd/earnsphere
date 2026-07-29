@@ -9,6 +9,7 @@ require_once dirname(__DIR__) . '/config/database.php';
 require_once dirname(__DIR__) . '/config/snippe.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/classes/SnippePayment.php';
+require_once dirname(__DIR__) . '/includes/helpers.php';
 
 header('Content-Type: application/json');
 

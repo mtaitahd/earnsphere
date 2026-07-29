@@ -201,6 +201,15 @@ function isAjax(): bool {
  * JSON response
  */
 function jsonResponse(array $data, int $code = 200): void {
+    if ($code >= 400 || (($data['success'] ?? null) === false && (isset($data['error']) || isset($data['message'])))) {
+        require_once __DIR__ . '/../classes/ErrorLogger.php';
+        $message = $data['error'] ?? $data['message'] ?? 'API request failed';
+        ErrorLogger::log('api', (string) $message, [
+            'http_code' => $code,
+            'response'  => $data,
+        ], null, $code >= 500 ? 'error' : 'warning', 'jsonResponse');
+    }
+
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data, JSON_UNESCAPED_UNICODE);

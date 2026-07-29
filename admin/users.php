@@ -112,6 +112,7 @@ function deleteUserAndData(int $userId): void {
     } catch (Exception $e) {
         Database::rollback();
         error_log("Delete user error: " . $e->getMessage());
+        ErrorLogger::logException($e, 'system', $userId, 'admin/users.php');
     }
 }
 
@@ -263,6 +264,11 @@ include __DIR__ . '/admin_header.php';
                                         <?php endif; ?>
                                         <?php endforeach; ?>
                                     <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="<?= SITE_URL ?>/admin/error-logs?<?= http_build_query(['user_id' => $u['id']]) ?>">
+                                            <i class="fas fa-bug me-1"></i> Error Logs
+                                        </a>
+                                    </li>
                                     <li>
                                         <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#emailModal" data-user-id="<?= $u['id'] ?>" data-user-name="<?= sanitize($u['full_name']) ?>" data-user-email="<?= sanitize($u['email'] ?? '') ?>">
                                             <i class="fas fa-envelope me-1"></i> Edit Email

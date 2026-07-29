@@ -15,6 +15,7 @@ require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/classes/SnippePayment.php';
 require_once dirname(__DIR__) . '/classes/CommissionEngine.php';
 require_once dirname(__DIR__) . '/classes/Wallet.php';
+require_once dirname(__DIR__) . '/classes/ErrorLogger.php';
 
 // Ensure logs directory exists
 $logDir = dirname(__DIR__) . '/logs';
@@ -32,6 +33,9 @@ function webhookLog(string $msg): void {
 
 // Only accept POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    ErrorLogger::log('webhook', 'Webhook rejected: method not allowed', [
+        'method' => $_SERVER['REQUEST_METHOD'] ?? null,
+    ], null, 'warning', 'webhooks/snippe.php');
     http_response_code(405);
     exit;
 }
@@ -42,6 +46,10 @@ $body = json_decode($rawBody, true);
 
 if (!$body) {
     webhookLog('REJECT: Invalid JSON body');
+    ErrorLogger::log('webhook', 'Webhook rejected: invalid JSON body', [
+        'body_length' => strlen($rawBody),
+        'json_error'  => json_last_error_msg(),
+    ], null, 'warning', 'webhooks/snippe.php');
     http_response_code(400);
     exit;
 }
@@ -89,6 +97,10 @@ if (function_exists('fastcgi_finish_request')) {
 }
 
 if (!$signatureValid) {
+    ErrorLogger::log('webhook', 'Webhook rejected: invalid signature', [
+        'event' => $webhookEvent,
+        'timestamp' => $webhookTimestamp,
+    ], null, 'warning', 'webhooks/snippe.php');
     exit;
 }
 
@@ -161,6 +173,12 @@ try {
 
     if (!$payment) {
         webhookLog("ERROR: No payment found for ref={$reference} payment_id={$paymentId}");
+        ErrorLogger::log('webhook', 'Webhook processing failed: payment not found', [
+            'reference'  => $reference,
+            'payment_id' => $paymentId,
+            'event_type' => $eventType,
+            'payload'    => $eventData,
+        ], !empty($eventData['metadata']['user_id']) ? (int) $eventData['metadata']['user_id'] : null, 'error', 'webhooks/snippe.php');
         exit;
     }
 
@@ -201,19 +219,32 @@ try {
                 webhookLog("ALREADY ACTIVE user_id={$payment['user_id']}");
             } else {
                 webhookLog("ERROR: User not found user_id={$payment['user_id']}");
+                ErrorLogger::log('payment', 'Webhook activation failed: user not found', [
+                    'payment_id' => $payment['id'],
+                    'reference'  => $reference,
+                ], (int) $payment['user_id'], 'error', 'webhooks/snippe.php');
             }
             
             Database::commit();
         } catch (Exception $e) {
             Database::rollback();
             webhookLog("ACTIVATION ERROR: " . $e->getMessage());
+            ErrorLogger::logException($e, 'payment', (int) $payment['user_id'], 'webhooks/snippe.php');
         }
     } elseif ($newStatus === 'failed') {
         webhookLog("PAYMENT FAILED id={$payment['id']} reason={$failureReason}");
+        ErrorLogger::log('payment', 'Payment failed from webhook', [
+            'payment_id' => $payment['id'],
+            'reference'  => $reference,
+            'status'     => $apiStatus,
+            'reason'     => $failureReason,
+            'payload'    => $eventData,
+        ], (int) $payment['user_id'], 'error', 'webhooks/snippe.php');
     }
 
 } catch (Exception $e) {
     webhookLog("EXCEPTION: " . $e->getMessage() . ' | ' . $e->getTraceAsString());
+    ErrorLogger::logException($e, 'webhook', null, 'webhooks/snippe.php');
 }
 
 webhookLog("DONE");

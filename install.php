@@ -160,6 +160,39 @@ try {
         }
     }
     
+    // Error logs table
+    $errorLogsExists = $pdo->query("SHOW TABLES LIKE 'error_logs'")->fetch();
+    if ($errorLogsExists) {
+        echo "<div class='text-muted small'>✓ error_logs table (exists)</div>";
+    } else {
+        try {
+            $pdo->exec("CREATE TABLE `error_logs` (
+                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `user_id` INT UNSIGNED DEFAULT NULL,
+                `category` VARCHAR(50) NOT NULL DEFAULT 'system',
+                `severity` VARCHAR(20) NOT NULL DEFAULT 'error',
+                `source` VARCHAR(150) DEFAULT NULL,
+                `message` TEXT NOT NULL,
+                `context` JSON DEFAULT NULL,
+                `request_method` VARCHAR(10) DEFAULT NULL,
+                `request_uri` VARCHAR(255) DEFAULT NULL,
+                `ip_address` VARCHAR(45) DEFAULT NULL,
+                `user_agent` TEXT DEFAULT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `idx_error_user` (`user_id`),
+                KEY `idx_error_category` (`category`),
+                KEY `idx_error_severity` (`severity`),
+                KEY `idx_error_created_at` (`created_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            echo "<div class='text-success small'><i class='fas fa-plus-circle me-1'></i> error_logs table created</div>";
+            $migOk++;
+        } catch (PDOException $e) {
+            echo "<div class='text-danger small'>✗ error_logs: " . $e->getMessage() . "</div>";
+            $migFail++;
+        }
+    }
+    
     // Payout settings
     $payoutSettings = [
         ['payout_channel', 'mobile', 'Default payout channel'],
@@ -203,6 +236,13 @@ try {
         echo "<div class='text-success small'><i class='fas fa-check me-1'></i> payouts table</div>";
     } else {
         echo "<div class='text-danger small'><i class='fas fa-times me-1'></i> payouts table MISSING</div>";
+        $allGood = false;
+    }
+    
+    if ($pdo->query("SHOW TABLES LIKE 'error_logs'")->fetch()) {
+        echo "<div class='text-success small'><i class='fas fa-check me-1'></i> error_logs table</div>";
+    } else {
+        echo "<div class='text-danger small'><i class='fas fa-times me-1'></i> error_logs table MISSING</div>";
         $allGood = false;
     }
     

@@ -154,3 +154,6 @@ function app_setting(string $key, $default = null) {
     $cache[$key] = $value;
     return $value;
 }
+
+require_once __DIR__ . '/../classes/ErrorLogger.php';
+ErrorLogger::registerHandlers();

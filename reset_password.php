@@ -23,6 +23,7 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
+        ErrorLogger::log('login', 'Password reset failed: invalid CSRF token', [], $userId, 'warning', 'reset_password.php');
     } else {
         $password = $_POST['password'] ?? '';
         $confirm  = $_POST['confirm_password'] ?? '';
@@ -49,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $e) {
                 Database::rollback();
                 error_log("Reset password error: " . $e->getMessage());
+                ErrorLogger::logException($e, 'login', $userId, 'reset_password.php');
                 $error = 'System error. Please try again.';
             }
         }

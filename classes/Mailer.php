@@ -32,6 +32,14 @@ class Mailer {
 
         // Fallback to PHP mail()
         error_log("Mailer: SMTP failed, falling back to PHP mail()");
+        if (class_exists('ErrorLogger')) {
+            ErrorLogger::log('system', 'SMTP mail failed, falling back to PHP mail()', [
+                'to'      => $to,
+                'subject' => $subject,
+                'host'    => $this->host,
+                'port'    => $this->port,
+            ], null, 'warning', 'Mailer::send');
+        }
         return $this->sendPHPMail($to, $subject, $htmlBody);
     }
 
@@ -53,6 +61,14 @@ class Mailer {
         $socket = @stream_socket_client($remote, $errno, $errstr, 10, STREAM_CLIENT_CONNECT, $context);
         if (!$socket) {
             error_log("Mailer: SMTP connection failed: {$errstr} ({$errno})");
+            if (class_exists('ErrorLogger')) {
+                ErrorLogger::log('system', 'SMTP connection failed', [
+                    'host'  => $this->host,
+                    'port'  => $this->port,
+                    'errno' => $errno,
+                    'error' => $errstr,
+                ], null, 'warning', 'Mailer::sendSMTP');
+            }
             return false;
         }
 
@@ -115,6 +131,12 @@ class Mailer {
         $result = @mail($to, $subject, $htmlBody, $headers);
         if (!$result) {
             error_log("Mailer: PHP mail() failed for {$to}");
+            if (class_exists('ErrorLogger')) {
+                ErrorLogger::log('system', 'PHP mail failed', [
+                    'to'      => $to,
+                    'subject' => $subject,
+                ], null, 'error', 'Mailer::sendPHPMail');
+            }
         }
         return $result;
     }

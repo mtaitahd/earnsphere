@@ -31,6 +31,7 @@ require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/classes/SnippePayment.php';
 require_once dirname(__DIR__) . '/classes/Wallet.php';
 require_once dirname(__DIR__) . '/classes/CommissionEngine.php';
+require_once dirname(__DIR__) . '/classes/ErrorLogger.php';
 
 $snippe = new SnippePayment();
 
@@ -56,7 +57,16 @@ foreach ($pendingPayments as $payment) {
     try {
         $verify = $snippe->verifyPayment($payment['snippe_reference']);
         
-        if (!$verify['success']) { $failed++; continue; }
+        if (!$verify['success']) {
+            $failed++;
+            ErrorLogger::log('payment', 'Cron payment verification failed', [
+                'payment_id' => $payment['id'],
+                'order_id'   => $payment['order_id'],
+                'reference'  => $payment['snippe_reference'],
+                'error'      => $verify['error'] ?? 'Unknown verification error',
+            ], (int) $payment['user_id'], 'error', 'cron/verify-pending-payments.php');
+            continue;
+        }
         
         $newStatus = $verify['status'];
         $statusPriority = ['pending' => 0, 'failed' => 1, 'voided' => 1, 'expired' => 1, 'completed' => 2];
@@ -84,13 +94,22 @@ foreach ($pendingPayments as $payment) {
                     } catch (Exception $e) {
                         Database::rollback();
                         error_log("EarnSphere: Cron activation error: " . $e->getMessage());
+                        ErrorLogger::logException($e, 'payment', (int) $payment['user_id'], 'cron/verify-pending-payments.php');
                     }
                 }
+            } elseif ($newStatus === 'failed') {
+                ErrorLogger::log('payment', 'Payment failed during cron verification', [
+                    'payment_id' => $payment['id'],
+                    'order_id'   => $payment['order_id'],
+                    'reference'  => $payment['snippe_reference'],
+                    'response'   => $verify['data'],
+                ], (int) $payment['user_id'], 'error', 'cron/verify-pending-payments.php');
             }
         }
     } catch (Exception $e) {
         $failed++;
         error_log("EarnSphere: Cron verify error: " . $e->getMessage());
+        ErrorLogger::logException($e, 'payment', (int) $payment['user_id'], 'cron/verify-pending-payments.php');
     }
 }
 
@@ -123,6 +142,12 @@ foreach ($stuckPayouts as $payout) {
 
         if (!$verify['success']) {
             $pwFailed++;
+            ErrorLogger::log('withdrawal', 'Cron payout verification failed', [
+                'payout_id'     => $payout['id'],
+                'withdrawal_id' => $payout['withdrawal_id'],
+                'reference'     => $payout['reference'],
+                'error'         => $verify['error'] ?? 'Unknown verification error',
+            ], (int) $payout['user_id'], 'error', 'cron/verify-pending-payments.php');
             if ($isCLI) echo "  Payout #{$payout['id']}: API error\n";
             continue;
         }
@@ -147,6 +172,7 @@ foreach ($stuckPayouts as $payout) {
     } catch (Exception $e) {
         $pwFailed++;
         error_log("EarnSphere: Cron payout verify error #{$payout['id']}: " . $e->getMessage());
+        ErrorLogger::logException($e, 'withdrawal', (int) $payout['user_id'], 'cron/verify-pending-payments.php');
         if ($isCLI) echo "  Payout #{$payout['id']}: error\n";
     }
 }
@@ -211,12 +237,19 @@ foreach ($expiredWithdrawals as $wd) {
         
         Database::commit();
         $expired++;
+
+        ErrorLogger::log('withdrawal', 'Withdrawal auto-expired by cron', [
+            'withdrawal_id' => $wd['id'],
+            'amount'        => $wd['amount'],
+            'created_at'    => $wd['created_at'],
+        ], (int) $wd['user_id'], 'warning', 'cron/verify-pending-payments.php');
         
         if ($isCLI) echo "  Withdrawal #{$wd['id']}: expired (TZS " . number_format($wd['amount']) . ") - wallet restored\n";
         
     } catch (Exception $e) {
         Database::rollback();
         error_log("EarnSphere: Cron expire withdrawal error #{$wd['id']}: " . $e->getMessage());
+        ErrorLogger::logException($e, 'withdrawal', (int) $wd['user_id'], 'cron/verify-pending-payments.php');
         if ($isCLI) echo "  Withdrawal #{$wd['id']}: error\n";
     }
 }

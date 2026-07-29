@@ -11,6 +11,7 @@
  */
 
 require_once __DIR__ . '/../config/snippe.php';
+require_once __DIR__ . '/ErrorLogger.php';
 
 class SnippePayment {
     
@@ -39,6 +40,10 @@ class SnippePayment {
         
         $user = Database::fetchOne("SELECT id, full_name, email, phone FROM users WHERE id = ?", [$userId]);
         if (!$user) {
+            ErrorLogger::log('payment', 'Payment initiation failed: user not found', [
+                'user_id' => $userId,
+                'phone'   => $phone,
+            ], $userId, 'warning', 'SnippePayment::initiatePayment');
             return ['success' => false, 'error' => 'User not found'];
         }
         
@@ -119,6 +124,14 @@ class SnippePayment {
         ], 'id = ?', [$paymentId]);
         
         Auth::logActivity($userId, 'payment_failed', "Payment TZS " . number_format($amount) . " failed: {$errorMsg}");
+        ErrorLogger::log('payment', 'Payment initiation failed at Snippe API', [
+            'payment_id' => $paymentId,
+            'order_id'   => $orderId,
+            'amount'     => $amount,
+            'phone'      => $phone,
+            'error'      => $errorMsg,
+            'error_code' => $response['error_code'] ?? null,
+        ], $userId, 'error', 'SnippePayment::initiatePayment');
         
         return [
             'success' => false,
@@ -150,6 +163,11 @@ class SnippePayment {
             ];
         }
         
+        ErrorLogger::log('api', 'Payment verification API failed', [
+            'reference' => $reference,
+            'response'  => $response,
+        ], null, 'error', 'SnippePayment::verifyPayment');
+
         return [
             'success' => false,
             'error'   => $response['error'] ?? 'Failed to verify payment',
@@ -167,6 +185,11 @@ class SnippePayment {
         $phone = $this->normalizePhone($phone);
         
         if ($amount < app_setting('min_withdrawal', MIN_WITHDRAWAL)) {
+            ErrorLogger::log('withdrawal', 'Payout failed validation: amount below minimum', [
+                'withdrawal_id' => $withdrawalId,
+                'amount'        => $amount,
+                'minimum'       => app_setting('min_withdrawal', MIN_WITHDRAWAL),
+            ], $userId, 'warning', 'SnippePayment::sendPayout');
             return ['success' => false, 'error' => 'Minimum payout amount is TZS ' . number_format(app_setting('min_withdrawal', MIN_WITHDRAWAL))];
         }
         
@@ -175,9 +198,19 @@ class SnippePayment {
             [$withdrawalId, $userId]
         );
         if (!$withdrawal) {
+            ErrorLogger::log('withdrawal', 'Payout failed: withdrawal request not found', [
+                'withdrawal_id' => $withdrawalId,
+                'amount'        => $amount,
+                'phone'         => $phone,
+            ], $userId, 'warning', 'SnippePayment::sendPayout');
             return ['success' => false, 'error' => 'Withdrawal request not found'];
         }
         if (!in_array($withdrawal['status'], ['pending', 'approved', 'failed'])) {
+            ErrorLogger::log('withdrawal', 'Payout failed: withdrawal status cannot be retried', [
+                'withdrawal_id' => $withdrawalId,
+                'status'        => $withdrawal['status'],
+                'amount'        => $amount,
+            ], $userId, 'warning', 'SnippePayment::sendPayout');
             return ['success' => false, 'error' => 'This request cannot be retried (status: ' . $withdrawal['status'] . ')'];
         }
         
@@ -186,6 +219,10 @@ class SnippePayment {
             [$withdrawalId]
         );
         if ($existingPayout) {
+            ErrorLogger::log('withdrawal', 'Payout failed: completed payout already exists', [
+                'withdrawal_id' => $withdrawalId,
+                'payout_id'     => $existingPayout['id'],
+            ], $userId, 'warning', 'SnippePayment::sendPayout');
             return ['success' => false, 'error' => 'Payout already completed for this request'];
         }
         
@@ -246,6 +283,12 @@ class SnippePayment {
             if (!in_array($payoutStatus, $validStatuses)) {
                 // Unknown status — don't restore wallet, Snippe may have sent money
                 error_log("Snippe Payout unknown status for withdrawal #{$withdrawalId}: {$payoutStatus}");
+                ErrorLogger::log('withdrawal', 'Payout returned unknown Snippe status', [
+                    'withdrawal_id' => $withdrawalId,
+                    'payout_id'     => $payoutId,
+                    'status'        => $payoutStatus,
+                    'response'      => $data,
+                ], $userId, 'error', 'SnippePayment::sendPayout');
                 
                 Database::update('payouts', [
                     'status'       => 'pending',
@@ -290,6 +333,15 @@ class SnippePayment {
             
             if ($payoutStatus === 'failed') {
                 error_log("Snippe API returned failed for withdrawal #{$withdrawalId}: {$errorMsg}. Waiting for webhook confirmation before restoring wallet.");
+                ErrorLogger::log('withdrawal', 'Payout rejected by Snippe API', [
+                    'withdrawal_id' => $withdrawalId,
+                    'payout_id'     => $payoutId,
+                    'reference'     => $payoutRef,
+                    'amount'        => $amount,
+                    'phone'         => $phone,
+                    'error'         => $errorMsg,
+                    'response'      => $data,
+                ], $userId, 'error', 'SnippePayment::sendPayout');
                 
                 Database::update('withdrawals', [
                     'status' => 'pending',
@@ -324,6 +376,13 @@ class SnippePayment {
         // DO NOT restore wallet — Snippe may have actually sent the money.
         // Mark as pending so webhook/cron can verify later.
         error_log("Snippe Payout API error for withdrawal #{$withdrawalId}: " . ($response['error'] ?? 'unknown'));
+        ErrorLogger::log('withdrawal', 'Payout API request failed', [
+            'withdrawal_id' => $withdrawalId,
+            'payout_id'     => $payoutId,
+            'amount'        => $amount,
+            'phone'         => $phone,
+            'response'      => $response,
+        ], $userId, 'error', 'SnippePayment::sendPayout');
         
         Database::update('payouts', [
             'error_message' => $response['error'] ?? 'Network/API error',
@@ -357,6 +416,13 @@ class SnippePayment {
         $response = $this->makeRequest('POST', "/v1/payments/{$reference}/push", $payload);
         
         error_log("Snippe Retry Push Response: " . json_encode($response));
+        if (!$response['success']) {
+            ErrorLogger::log('payment', 'Payment retry push failed', [
+                'reference' => $reference,
+                'phone'     => $phone,
+                'response'  => $response,
+            ], null, 'error', 'SnippePayment::retryPush');
+        }
         
         return $response;
     }
@@ -387,6 +453,11 @@ class SnippePayment {
             ];
         }
         
+        ErrorLogger::log('api', 'Payout verification API failed', [
+            'reference' => $reference,
+            'response'  => $response,
+        ], null, 'error', 'SnippePayment::verifyPayout');
+
         return [
             'success' => false,
             'error'   => $response['error'] ?? 'Failed to verify payout',
@@ -436,6 +507,9 @@ class SnippePayment {
         // 1. Verify webhook HMAC signature using raw body
         if (!$this->verifyWebhookSignature($headers, $rawBody)) {
             error_log("EarnSphere: Webhook HMAC verification failed");
+            ErrorLogger::log('webhook', 'Webhook rejected: HMAC verification failed', [
+                'headers' => array_keys($headers),
+            ], null, 'warning', 'SnippePayment::processWebhook');
             return ['success' => false, 'error' => 'Invalid webhook signature'];
         }
         
@@ -519,6 +593,12 @@ class SnippePayment {
         
         if (!$paymentRecord) {
             error_log("EarnSphere: Collection webhook - payment not found for ref={$reference} pid={$paymentId} order={$orderId}");
+            ErrorLogger::log('webhook', 'Collection webhook failed: payment record not found', [
+                'reference'  => $reference,
+                'payment_id' => $paymentId,
+                'order_id'   => $orderId,
+                'payload'    => $paymentData,
+            ], !empty($paymentData['metadata']['user_id']) ? (int) $paymentData['metadata']['user_id'] : null, 'error', 'SnippePayment::processCollectionWebhook');
             return ['success' => false, 'error' => 'Payment record not found'];
         }
         
@@ -544,6 +624,16 @@ class SnippePayment {
         
         if ($mappedStatus === 'completed' && $paymentRecord['status'] !== 'completed') {
             $this->activateUserAccount($paymentRecord['user_id']);
+        }
+
+        if ($mappedStatus === 'failed') {
+            ErrorLogger::log('payment', 'Payment failed from Snippe webhook', [
+                'payment_id' => $paymentRecord['id'],
+                'reference'  => $reference,
+                'status'     => $status,
+                'reason'     => $failureReason,
+                'payload'    => $paymentData,
+            ], (int) $paymentRecord['user_id'], 'error', 'SnippePayment::processCollectionWebhook');
         }
         
         return [
@@ -580,6 +670,11 @@ class SnippePayment {
         
         if (!$payoutRecord) {
             error_log("EarnSphere: Payout webhook - payout not found for ref={$reference} wd_id={$withdrawalId}");
+            ErrorLogger::log('webhook', 'Payout webhook failed: payout record not found', [
+                'reference'     => $reference,
+                'withdrawal_id' => $withdrawalId,
+                'payload'       => $payoutData,
+            ], !empty($userId) ? (int) $userId : null, 'error', 'SnippePayment::processPayoutWebhook');
             return ['success' => false, 'error' => 'Payout record not found'];
         }
         
@@ -656,6 +751,7 @@ class SnippePayment {
         } catch (Exception $e) {
             Database::rollback();
             error_log("EarnSphere: Activation error for user {$userId}: " . $e->getMessage());
+            ErrorLogger::logException($e, 'payment', $userId, 'SnippePayment::activateUserAccount');
         }
     }
     
@@ -695,6 +791,7 @@ class SnippePayment {
         } catch (Exception $e) {
             Database::rollback();
             error_log("EarnSphere: Payout finalize error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'withdrawal', $userId, 'SnippePayment::finalizePayoutSuccess');
         }
     }
     
@@ -742,9 +839,17 @@ class SnippePayment {
             Auth::logActivity($userId, 'payout_failed', "Payout TZS " . number_format($amount) . " failed: {$reason}");
             
             Database::commit();
+
+            ErrorLogger::log('withdrawal', 'Payout failed and wallet hold was restored', [
+                'payout_id'     => $payoutId,
+                'withdrawal_id' => $withdrawalId,
+                'amount'        => $amount,
+                'reason'        => $reason,
+            ], $userId, 'error', 'SnippePayment::handlePayoutFailure');
         } catch (Exception $e) {
             Database::rollback();
             error_log("EarnSphere: Payout failure handling error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'withdrawal', $userId, 'SnippePayment::handlePayoutFailure');
         }
     }
     
@@ -822,6 +927,13 @@ class SnippePayment {
         
         if ($curlErr) {
             error_log("Snippe API cURL error [{$method} {$endpoint}]: {$curlErr} (errno: {$curlErrno})");
+            ErrorLogger::log('api', 'Snippe API cURL error', [
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'errno' => $curlErrno,
+                'error' => $curlErr,
+                'payload' => $data,
+            ], null, 'error', 'SnippePayment::makeRequest');
             return ['success' => false, 'error' => "Payment service unavailable: {$curlErr}"];
         }
         
@@ -835,6 +947,15 @@ class SnippePayment {
         $errorCode = $decoded['error_code'] ?? null;
         
         error_log("Snippe API error [{$method} {$endpoint}] HTTP {$httpCode}: {$response}");
+        ErrorLogger::log('api', 'Snippe API returned an error', [
+            'method'     => $method,
+            'endpoint'   => $endpoint,
+            'http_code'  => $httpCode,
+            'error'      => $errorMsg,
+            'error_code' => $errorCode,
+            'response'   => $decoded ?? $response,
+            'payload'    => $data,
+        ], null, 'error', 'SnippePayment::makeRequest');
         
         return [
             'success'    => false,
@@ -867,6 +988,7 @@ class SnippePayment {
         
         if (empty($timestamp) || empty($signature)) {
             error_log("EarnSphere: Webhook rejected - missing timestamp or signature");
+            ErrorLogger::log('webhook', 'Webhook rejected: missing timestamp or signature', [], null, 'warning', 'SnippePayment::verifyWebhookSignature');
             return false;
         }
         
@@ -874,6 +996,10 @@ class SnippePayment {
         $currentTime = time();
         if (abs($currentTime - $webhookTime) > 300) {
             error_log("EarnSphere: Webhook rejected - stale timestamp (diff=" . abs($currentTime - $webhookTime) . "s)");
+            ErrorLogger::log('webhook', 'Webhook rejected: stale timestamp', [
+                'timestamp' => $timestamp,
+                'diff'      => abs($currentTime - $webhookTime),
+            ], null, 'warning', 'SnippePayment::verifyWebhookSignature');
             return false;
         }
         

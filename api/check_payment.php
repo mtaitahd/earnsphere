@@ -10,12 +10,14 @@ require_once dirname(__DIR__) . '/config/database.php';
 require_once dirname(__DIR__) . '/config/snippe.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/classes/SnippePayment.php';
+require_once dirname(__DIR__) . '/classes/ErrorLogger.php';
 
 header('Content-Type: application/json');
 
 $order_id = trim($_GET['order_id'] ?? '');
 
 if (empty($order_id)) {
+    ErrorLogger::log('api', 'Payment status check failed: order ID missing', [], null, 'warning', 'api/check_payment.php');
     echo json_encode(['status' => 'error', 'message' => 'Order ID required']);
     exit;
 }
@@ -26,6 +28,9 @@ $payment = Database::fetchOne(
 );
 
 if (!$payment) {
+    ErrorLogger::log('payment', 'Payment status check failed: payment not found', [
+        'order_id' => $order_id,
+    ], null, 'warning', 'api/check_payment.php');
     echo json_encode(['status' => 'not_found']);
     exit;
 }
@@ -78,15 +83,33 @@ if ($payment['status'] === 'pending' && !empty($payment['snippe_reference'])) {
                         } catch (Exception $e) {
                             Database::rollback();
                             error_log("EarnSphere: Polling activation error: " . $e->getMessage());
+                            ErrorLogger::logException($e, 'payment', (int) $payment['user_id'], 'api/check_payment.php');
                         }
                     }
                 }
                 
+                if ($newStatus === 'failed') {
+                    ErrorLogger::log('payment', 'Payment failed during status polling', [
+                        'payment_id' => $payment['id'],
+                        'order_id'   => $order_id,
+                        'reference'  => $payment['snippe_reference'],
+                        'response'   => $verify['data'],
+                    ], (int) $payment['user_id'], 'error', 'api/check_payment.php');
+                }
+                
                 $payment['status'] = $newStatus;
             }
+        } else {
+            ErrorLogger::log('payment', 'Payment status verification failed', [
+                'payment_id' => $payment['id'],
+                'order_id'   => $order_id,
+                'reference'  => $payment['snippe_reference'],
+                'error'      => $verify['error'] ?? 'Unknown verification error',
+            ], (int) $payment['user_id'], 'error', 'api/check_payment.php');
         }
     } catch (Exception $e) {
         error_log("Payment verify error: " . $e->getMessage());
+        ErrorLogger::logException($e, 'payment', (int) $payment['user_id'], 'api/check_payment.php');
     }
 }
 

@@ -22,12 +22,17 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
+        ErrorLogger::log('login', 'Admin login failed: invalid CSRF token', [], null, 'warning', 'admin/login.php');
     } else {
         $identifier = trim($_POST['identifier'] ?? '');
         $password = $_POST['password'] ?? '';
         
         if (empty($identifier) || empty($password)) {
             $error = 'Please fill all fields.';
+            ErrorLogger::log('login', 'Admin login failed: missing identifier or password', [
+                'identifier_present' => $identifier !== '',
+                'password_present'   => $password !== '',
+            ], null, 'notice', 'admin/login.php');
         } else {
             $result = Auth::login($identifier, $password);
             
@@ -36,6 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: ' . SITE_URL . '/admin/index');
                     exit;
                 } else {
+                    ErrorLogger::log('login', 'Admin login failed: non-admin user attempted admin panel', [
+                        'identifier' => $identifier,
+                    ], (int) $result['user']['id'], 'warning', 'admin/login.php');
                     Auth::logout();
                     $error = 'You cannot access the admin panel.';
                 }

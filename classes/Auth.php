@@ -173,6 +173,7 @@ class Auth {
         } catch (Exception $e) {
             Database::rollback();
             error_log("Registration error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'registration', null, 'Auth::register');
             return ['success' => false, 'errors' => ['System error. Please try again.']];
         }
     }
@@ -231,14 +232,27 @@ class Auth {
         );
         
         if (!$user) {
+            ErrorLogger::log('login', 'Login failed: user not found', [
+                'identifier' => $identifier,
+                'normalized' => $normalized,
+            ], null, 'warning', 'Auth::login');
             return ['success' => false, 'errors' => ['User not found']];
         }
         
         if (!password_verify($password, $user['password'])) {
+            ErrorLogger::log('login', 'Login failed: incorrect password', [
+                'identifier' => $identifier,
+                'phone'      => $user['phone'] ?? null,
+                'email'      => $user['email'] ?? null,
+            ], (int) $user['id'], 'warning', 'Auth::login');
             return ['success' => false, 'errors' => ['Incorrect password']];
         }
         
         if ($user['status'] === 'suspended') {
+            ErrorLogger::log('login', 'Login failed: account suspended', [
+                'identifier' => $identifier,
+                'status'     => $user['status'],
+            ], (int) $user['id'], 'warning', 'Auth::login');
             return ['success' => false, 'errors' => ['Your account has been suspended']];
         }
         
@@ -384,6 +398,7 @@ class Auth {
             ]);
         } catch (Exception $e) {
             error_log("Activity log error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'system', $userId, 'Auth::logActivity');
         }
     }
     

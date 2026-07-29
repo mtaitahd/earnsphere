@@ -84,6 +84,7 @@ class Wallet {
         } catch (Exception $e) {
             Database::rollback();
             error_log("Wallet credit error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'wallet', $userId, 'Wallet::credit');
             throw $e;
         }
     }
@@ -105,6 +106,11 @@ class Wallet {
         $balanceBefore = (float) $wallet['balance'];
         
         if ($balanceBefore < $amount) {
+            ErrorLogger::log('wallet', 'Wallet debit failed: insufficient balance', [
+                'amount'          => $amount,
+                'balance_before'  => $balanceBefore,
+                'transaction_type'=> $type,
+            ], $userId, 'warning', 'Wallet::debit');
             throw new Exception("Insufficient balance");
         }
         
@@ -147,6 +153,7 @@ class Wallet {
         } catch (Exception $e) {
             Database::rollback();
             error_log("Wallet debit error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'wallet', $userId, 'Wallet::debit');
             throw $e;
         }
     }
@@ -209,6 +216,11 @@ class Wallet {
         }
         
         if (!empty($errors)) {
+            ErrorLogger::log('withdrawal', 'Withdrawal request failed validation', [
+                'amount' => $amount,
+                'phone'  => $phone,
+                'errors' => $errors,
+            ], $userId, 'warning', 'Wallet::requestWithdrawal');
             return ['success' => false, 'errors' => $errors];
         }
         
@@ -295,6 +307,7 @@ class Wallet {
             
         } catch (Exception $e) {
             error_log("Withdrawal error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'withdrawal', $userId, 'Wallet::requestWithdrawal');
             return ['success' => false, 'errors' => ['System error: ' . $e->getMessage()]];
         }
     }
@@ -325,6 +338,7 @@ class Wallet {
             
         } catch (Exception $e) {
             error_log("Reverse withdrawal error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'withdrawal', $userId, 'Wallet::reverseWithdrawal');
         }
     }
     
@@ -338,10 +352,20 @@ class Wallet {
         );
         
         if (!$withdrawal) {
+            ErrorLogger::log('withdrawal', 'Admin withdrawal processing failed: request not found', [
+                'withdrawal_id' => $withdrawalId,
+                'admin_id'      => $adminId,
+            ], $adminId ?: null, 'warning', 'Wallet::processWithdrawal');
             return ['success' => false, 'errors' => ['Withdrawal request not found']];
         }
         
         if ($withdrawal['status'] !== 'pending') {
+            ErrorLogger::log('withdrawal', 'Admin withdrawal processing failed: invalid status', [
+                'withdrawal_id' => $withdrawalId,
+                'current_status'=> $withdrawal['status'],
+                'new_status'    => $status,
+                'admin_id'      => $adminId,
+            ], (int) $withdrawal['user_id'], 'warning', 'Wallet::processWithdrawal');
             return ['success' => false, 'errors' => ['This request has already been processed']];
         }
         
@@ -382,6 +406,7 @@ class Wallet {
         } catch (Exception $e) {
             Database::rollback();
             error_log("Process withdrawal error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'withdrawal', (int) $withdrawal['user_id'], 'Wallet::processWithdrawal');
             return ['success' => false, 'errors' => ['System error']];
         }
     }

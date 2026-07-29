@@ -20,12 +20,17 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
+        ErrorLogger::log('login', 'Login failed: invalid CSRF token', [], null, 'warning', 'login.php');
     } else {
         $identifier = trim($_POST['identifier'] ?? '');
         $password = $_POST['password'] ?? '';
         
         if (empty($identifier) || empty($password)) {
             $error = 'Please fill in all fields.';
+            ErrorLogger::log('login', 'Login failed: missing identifier or password', [
+                'identifier_present' => $identifier !== '',
+                'password_present'   => $password !== '',
+            ], null, 'notice', 'login.php');
         } else {
             $result = Auth::login($identifier, $password);
             

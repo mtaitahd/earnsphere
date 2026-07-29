@@ -8,12 +8,14 @@
 require_once dirname(__DIR__) . '/config/database.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/classes/SnippePayment.php';
+require_once dirname(__DIR__) . '/classes/ErrorLogger.php';
 
 header('Content-Type: application/json');
 
 $order_id = trim($_GET['order_id'] ?? '');
 
 if (empty($order_id)) {
+    ErrorLogger::log('api', 'Retry payment failed: order ID missing', [], null, 'warning', 'api/retry_push.php');
     echo json_encode(['success' => false, 'message' => 'Order ID required']);
     exit;
 }
@@ -24,6 +26,9 @@ $payment = Database::fetchOne(
 );
 
 if (!$payment) {
+    ErrorLogger::log('payment', 'Retry payment failed: payment not found', [
+        'order_id' => $order_id,
+    ], null, 'warning', 'api/retry_push.php');
     echo json_encode(['success' => false, 'message' => 'Payment not found']);
     exit;
 }
@@ -37,6 +42,11 @@ if ($payment['status'] === 'completed') {
 $created = strtotime($payment['created_at'] ?? 'now');
 if (time() - $created > 14400) {
     Database::update('payments', ['status' => 'expired'], 'id = ?', [$payment['id']]);
+    ErrorLogger::log('payment', 'Payment expired before confirmation', [
+        'payment_id' => $payment['id'],
+        'order_id'   => $order_id,
+        'created_at' => $payment['created_at'] ?? null,
+    ], (int) $payment['user_id'], 'warning', 'api/retry_push.php');
     echo json_encode(['success' => false, 'status' => 'expired', 'message' => 'Payment expired. Please create a new payment.']);
     exit;
 }
@@ -51,8 +61,17 @@ if (!empty($payment['snippe_reference'])) {
             echo json_encode(['success' => true, 'status' => 'completed', 'message' => 'Payment confirmed!']);
             exit;
         }
+        if (!$verify['success']) {
+            ErrorLogger::log('payment', 'Retry payment verification failed', [
+                'payment_id' => $payment['id'],
+                'order_id'   => $order_id,
+                'reference'  => $payment['snippe_reference'],
+                'error'      => $verify['error'] ?? 'Unknown verification error',
+            ], (int) $payment['user_id'], 'error', 'api/retry_push.php');
+        }
     } catch (Exception $e) {
         error_log("Retry verify error: " . $e->getMessage());
+        ErrorLogger::logException($e, 'payment', (int) $payment['user_id'], 'api/retry_push.php');
     }
 }
 
