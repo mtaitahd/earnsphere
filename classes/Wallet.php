@@ -419,7 +419,7 @@ class Wallet {
         $stuck = Database::fetchAll(
             "SELECT w.id, w.user_id, w.amount, w.created_at
              FROM withdrawals w
-             WHERE w.user_id = ? AND w.status = 'pending'
+             WHERE w.user_id = ? AND w.status IN ('pending', 'processing')
              AND w.created_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)
              ORDER BY w.created_at ASC
              LIMIT 10",
