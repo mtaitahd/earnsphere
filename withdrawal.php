@@ -11,6 +11,8 @@ require_once __DIR__ . '/includes/helpers.php';
 Auth::initSession();
 Auth::requireAuth();
 
+Wallet::autoExpirePending((int) $_SESSION['user_id']);
+
 $user = Auth::getUser();
 $wallet = Wallet::getWallet($_SESSION['user_id']);
 
