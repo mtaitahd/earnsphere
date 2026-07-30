@@ -686,15 +686,8 @@ include __DIR__ . '/includes/public_head.php';
 }
 </style>
 
-<script>
-if (typeof QRCode !== 'undefined') {
-    QRCode.toCanvas(document.getElementById('referralQR'), <?= json_encode($referralLink) ?>, {
-        width: 160,
-        margin: 1,
-        color: { dark: '#72578B', light: '#FFFFFF' }
-    });
-}
 
+<script>
 <?php if ($showMissionAnimation): ?>
 showMissionConfetti();
 <?php endif; ?>
@@ -869,3 +862,15 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php include __DIR__ . '/includes/public_foot.php'; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof QRCode !== 'undefined') {
+        QRCode.toCanvas(document.getElementById('referralQR'), <?= json_encode($referralLink) ?>, {
+            width: 160,
+            margin: 1,
+            color: { dark: '#72578B', light: '#FFFFFF' }
+        });
+    }
+});
+</script>
