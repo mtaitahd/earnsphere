@@ -304,7 +304,7 @@ include __DIR__ . '/includes/public_head.php';
                 <i class="fas fa-history me-1"></i> History
             </a>
             <?php if ($user['status'] === 'active'): ?>
-            <a href="ai-assistant" class="btn btn-outline-primary" style="padding:0.75rem;border-color:#D4A843;color:#0A3622;">
+            <a href="ai-assistant" class="btn btn-outline-primary" style="padding:0.75rem;border-color:#D4A843;color:#72578B;">
                 <i class="fas fa-wand-magic-sparkles me-1" style="color:#D4A843;"></i> AI Assistant
             </a>
             <?php endif; ?>
@@ -706,11 +706,11 @@ include __DIR__ . '/includes/public_head.php';
 
 <style>
 .mission-card {
-    background: linear-gradient(135deg, #0A3622, #0d4a2e);
+    background: linear-gradient(135deg, #72578B, #5a3f72);
     border-radius: var(--radius-lg);
     padding: 1.25rem;
     color: #fff;
-    box-shadow: 0 4px 15px rgba(10, 54, 34, 0.3);
+    box-shadow: 0 4px 15px rgba(114, 87, 139, 0.3);
     margin-bottom: 1rem;
     position: relative;
     overflow: hidden;
@@ -870,7 +870,7 @@ function showMissionConfetti() {
     const container = document.createElement('div');
     container.className = 'confetti-container';
     document.body.appendChild(container);
-    const colors = ['#D4A843', '#0A3622', '#F5D77B', '#10b981', '#72578B', '#fff'];
+    const colors = ['#D4A843', '#5a3f72', '#F5D77B', '#10b981', '#72578B', '#fff'];
 
     for (let i = 0; i < 60; i++) {
         const piece = document.createElement('div');
@@ -892,7 +892,7 @@ function showMissionConfetti() {
 
     const toast = document.createElement('div');
     toast.className = 'custom-toast';
-    toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0A3622;color:#fff;padding:1.5rem 2rem;border-radius:16px;text-align:center;z-index:10000;box-shadow:0 10px 40px rgba(0,0,0,0.3);min-width:280px;';
+    toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#72578B;color:#fff;padding:1.5rem 2rem;border-radius:16px;text-align:center;z-index:10000;box-shadow:0 10px 40px rgba(0,0,0,0.3);min-width:280px;';
     toast.innerHTML = '<div style="font-size:3rem;margin-bottom:0.5rem;">🎉</div>' +
         '<div style="font-size:1.25rem;font-weight:800;color:#D4A843;">Mission Complete!</div>' +
         '<div style="font-size:0.9rem;margin-top:0.25rem;">Hongera! Umepata bonus ya leo!</div>';

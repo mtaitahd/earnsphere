@@ -228,7 +228,7 @@ class AIAssistant {
         $prompt .= "Style: $style. ";
         $prompt .= "Lighting: Soft, professional, well-lit, golden hour quality. ";
         $prompt .= "Typography: Bold modern sans-serif headlines, clean readable body text, mobile-first sizing. ";
-        $prompt .= "Color Palette: Deep green (#0A3622) as primary, gold (#D4A843) as accent, white text, soft gray backgrounds. ";
+        $prompt .= "Color Palette: Deep purple (#72578B) as primary, gold (#D4A843) as accent, white text, soft gray backgrounds. ";
         $prompt .= "Composition: Clean layout with ample white space, balanced elements, visual hierarchy. ";
         $prompt .= "Icons: Modern line icons representing referrals, network growth, earnings, mobile money, connections. ";
         $prompt .= "Premium Style: Looks like leading fintech marketing material from a top African company. ";
@@ -766,7 +766,7 @@ class AIAssistant {
             : "• One-time payment TZS $f\n• Earn TZS $c1 per referral\n• Instant withdrawal M-Pesa/Airtel";
         $cta = $sw ? "ANZA SASA!" : "START NOW!";
         $tags = $sw ? '#EarnSphere #Kipato #Mapato #Tanzania #Fursa' : '#EarnSphere #ExtraIncome #Referral #Tanzania';
-        return "HEADLINE: $h\nSUBHEADLINE: $sh\n\nBENEFITS:\n$b\n\nCTA: $cta\n\nHASHTAGS: $tags\n\nCOLORS: Dark Green (#0A3622), Gold (#D4A843)\nLAYOUT: Mobile-friendly vertical poster";
+        return "HEADLINE: $h\nSUBHEADLINE: $sh\n\nBENEFITS:\n$b\n\nCTA: $cta\n\nHASHTAGS: $tags\n\nCOLORS: Purple (#72578B), Gold (#D4A843)\nLAYOUT: Mobile-friendly vertical poster";
     }
 
     private static function generateShortAd(bool $sw, bool $mixed, array $ctx, array $tw): string {

@@ -101,7 +101,7 @@ include __DIR__ . '/includes/public_head.php';
 .content-type-btn.active {
     border-color: #D4A843;
     background: #fffbeb;
-    color: #0A3622;
+    color: #72578B;
 }
 .content-type-btn.active i {
     color: #D4A843;
@@ -124,11 +124,11 @@ include __DIR__ . '/includes/public_head.php';
 }
 .tone-btn:hover {
     border-color: #D4A843;
-    color: #0A3622;
+    color: #72578B;
 }
 .tone-btn.active {
     border-color: #D4A843;
-    background: #0A3622;
+    background: #72578B;
     color: #fff;
 }
 .ai-result {
@@ -201,7 +201,7 @@ include __DIR__ . '/includes/public_head.php';
 .share-btn.telegram { background: #0088cc; }
 .share-btn.twitter { background: #1DA1F2; }
 .share-btn.linkedin { background: #0A66C2; }
-.share-btn.sms { background: #0A3622; }
+.share-btn.sms { background: #72578B; }
 .share-btn.copy { background: #6b7280; }
 .rate-limit-badge {
     display: inline-flex;
@@ -590,7 +590,7 @@ async function shareContent(platform) {
 function showConfetti() {
     const container = document.getElementById('confettiContainer');
     container.style.display = 'block';
-    const colors = ['#D4A843', '#0A3622', '#F5D77B', '#10b981', '#72578B', '#f59e0b'];
+    const colors = ['#D4A843', '#5a3f72', '#F5D77B', '#10b981', '#72578B', '#f59e0b'];
 
     for (let i = 0; i < 60; i++) {
         const piece = document.createElement('div');
