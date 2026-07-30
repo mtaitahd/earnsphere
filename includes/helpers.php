@@ -81,7 +81,7 @@ function statusBadge(string $status): string {
  */
 function generateQRCodeUrl(string $data, int $size = 200): string {
     $encoded = urlencode($data);
-    return "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&data={$encoded}&bgcolor=FFFFFF&color=72578B&margin=10";
+    return "https://chart.googleapis.com/chart?chs={$size}x{$size}&cht=qr&chl={$encoded}&chco=72578B";
 }
 
 /**
