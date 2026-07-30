@@ -567,7 +567,7 @@ class AIAssistant {
 
     private static function generateTikTok(bool $sw, bool $mixed, array $ctx, array $tw): string {
         $s = self::pickSentence($sw, $mixed, $ctx);
-        if (strlen($s) > 100) $s = substr($s, 0, 97) . '...';
+        if (mb_strlen($s) > 100) $s = mb_substr($s, 0, 97) . '...';
         $hook = $sw
             ? self::pick(["Hii ni fursa yako! 🚀", "Usikose hii! 🔥", "Njoo tuoneshwe! 💰"])
             : self::pick(["Don't scroll past this! 🚀", "This is your sign! 🔥", "Watch this! 💰"]);
@@ -589,7 +589,7 @@ class AIAssistant {
         $content = $sw
             ? "$e $s $e\n📲 $link\n#EarnSphere #Tanzania"
             : "$e $s $e\n📲 $link\n#EarnSphere #Tanzania";
-        if (strlen($content) > 280) $content = substr($content, 0, 277) . '...';
+        if (mb_strlen($content) > 280) $content = mb_substr($content, 0, 277) . '...';
         return $content;
     }
 
@@ -598,7 +598,7 @@ class AIAssistant {
         $content = $sw
             ? "$s 📲 $link"
             : "$s 📲 $link";
-        if (strlen($content) > 160) $content = substr($content, 0, 157) . '...';
+        if (mb_strlen($content) > 160) $content = mb_substr($content, 0, 157) . '...';
         return $content;
     }
 
@@ -960,7 +960,7 @@ class AIAssistant {
         $desc = $sw
             ? "Pata mapato ya ziada kwa $site! Jiunge kwa TZS $f tu, pata TZS $c1 kwa kila mwaliko (Ngazi 1), TZS " . self::number($ctx['commL2']) . " (Ngazi 2), TZS " . self::number($ctx['commL3']) . " (Ngazi 3). Withdraw M-Pesa/Airtel. Anza leo!"
             : "Earn extra income with $site! Join for TZS $f, earn TZS $c1 per referral (Level 1), TZS " . self::number($ctx['commL2']) . " (Level 2), TZS " . self::number($ctx['commL3']) . " (Level 3). Withdraw to M-Pesa/Airtel. Start today!";
-        if (strlen($desc) > 160) $desc = substr($desc, 0, 157) . '...';
+        if (mb_strlen($desc) > 160) $desc = mb_substr($desc, 0, 157) . '...';
         return $desc;
     }
 
