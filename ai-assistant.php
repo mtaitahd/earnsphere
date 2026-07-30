@@ -24,7 +24,7 @@ include __DIR__ . '/includes/public_head.php';
 
 <style>
 .ai-header {
-    background: linear-gradient(135deg, #0A3622, #0d4a2e);
+    background: linear-gradient(135deg, #72578B, #5a3f72);
     color: #fff;
     padding: 1.25rem 1.25rem 2.5rem;
 }
@@ -156,7 +156,7 @@ include __DIR__ . '/includes/public_head.php';
     color: var(--gray-300);
 }
 .generate-btn {
-    background: linear-gradient(135deg, #0A3622, #0d4a2e);
+    background: linear-gradient(135deg, #72578B, #5a3f72);
     border: none;
     color: #fff;
     border-radius: var(--radius-md);
@@ -167,7 +167,7 @@ include __DIR__ . '/includes/public_head.php';
     transition: all 0.2s ease;
 }
 .generate-btn:hover {
-    background: linear-gradient(135deg, #0d4a2e, #0A3622);
+    background: linear-gradient(135deg, #5a3f72, #72578B);
     color: #fff;
 }
 .generate-btn:disabled {
@@ -256,7 +256,7 @@ include __DIR__ . '/includes/public_head.php';
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0A3622, #0d4a2e);
+    background: linear-gradient(135deg, #72578B, #5a3f72);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -392,7 +392,7 @@ include __DIR__ . '/includes/public_head.php';
     </button>
 
     <div id="loadingSpinner" style="display:none;text-align:center;padding:2rem;">
-        <div style="width:48px;height:48px;border:4px solid var(--gray-200);border-top-color:#0A3622;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem;"></div>
+        <div style="width:48px;height:48px;border:4px solid var(--gray-200);border-top-color:#72578B;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem;"></div>
         <div style="font-size:0.85rem;color:var(--gray-500);">AI inaandaa maudhui yako...</div>
     </div>
 
