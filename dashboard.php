@@ -75,8 +75,9 @@ include __DIR__ . '/includes/public_head.php';
                 <i class="fas fa-wand-magic-sparkles" style="color:#D4A843;"></i>
                 <span style="position:absolute;top:-4px;right:-6px;width:10px;height:10px;background:#D4A843;border-radius:50%;border:2px solid #72578B;"></span>
             </a>
-            <a href="profile" class="notification-btn" style="text-decoration:none;">
+            <a href="javascript:void(0)" class="notification-btn" style="text-decoration:none;position:relative;" onclick="openAnnouncements()" title="Announcements" id="announcementBell">
                 <i class="fas fa-bell"></i>
+                <span id="annBadge" class="ann-badge"></span>
             </a>
             <a href="profile" style="text-decoration:none;">
                 <div class="avatar" style="background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">
@@ -645,7 +646,174 @@ include __DIR__ . '/includes/public_head.php';
     </a>
 </nav>
 
+<!-- Announcement Modal -->
+<div id="annModal" class="ann-modal" style="display:none;">
+    <div class="ann-modal-overlay" onclick="closeAnnModal()"></div>
+    <div class="ann-modal-content">
+        <div class="ann-modal-header">
+            <div class="ann-modal-header-icon"><i class="fas fa-bullhorn"></i></div>
+            <h5>Announcements</h5>
+            <button class="ann-modal-close" onclick="closeAnnModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ann-modal-body" id="annModalBody">
+            <div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+    </div>
+</div>
+
 <style>
+/* Announcement Modal */
+.ann-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10500;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.ann-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+}
+.ann-modal-content {
+    position: relative;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: annSlideUp 0.3s ease;
+}
+@keyframes annSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+.ann-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--gray-100);
+}
+.ann-modal-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #f0ebf5;
+    color: #72578B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+.ann-modal-header h5 {
+    flex: 1;
+    font-weight: 800;
+    font-size: 1rem;
+    margin: 0;
+}
+.ann-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--gray-100);
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.ann-modal-close:hover { background: var(--gray-200); }
+.ann-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 1.25rem 1.5rem;
+}
+.ann-item {
+    background: var(--gray-50);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid #72578B;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.ann-item:hover { background: #f0ebf5; }
+.ann-item.unread {
+    background: #f8f5fc;
+    border-left-color: #D4A843;
+}
+.ann-item-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--gray-800);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.ann-item-date {
+    font-size: 0.7rem;
+    color: var(--gray-400);
+    margin-bottom: 0.4rem;
+}
+.ann-item-preview {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.ann-badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.6rem;
+    font-weight: 800;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #72578B;
+    line-height: 1;
+}
+.ann-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-400);
+}
+.ann-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-400);
+}
+.ann-empty i { font-size: 2rem; margin-bottom: 0.5rem; color: var(--gray-300); }
+.ann-detail {
+    padding: 0.5rem 0;
+}
+.ann-detail h4 {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+.ann-detail p {
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
 .mission-card {
     background: linear-gradient(135deg, #72578B, #5a3f72);
     border-radius: var(--radius-lg);
@@ -880,6 +1048,100 @@ function checkMissionProgress() {
 
 setInterval(checkMissionProgress, 30000);
 <?php endif; ?>
+
+/* --- Announcement Functions --- */
+let annData = [];
+
+function openAnnouncements() {
+    const modal = document.getElementById('annModal');
+    const body = document.getElementById('annModalBody');
+    modal.style.display = 'flex';
+    body.innerHTML = '<div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    fetch('api/announcements.php?action=fetch', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success && res.data && res.data.length > 0) {
+            annData = res.data;
+            let html = '';
+            const unread = res.data.filter(a => !a.viewed).length;
+            res.data.forEach(a => {
+                html += '<div class="ann-item' + (a.viewed ? '' : ' unread') + '" onclick="viewAnnouncement(' + a.id + ')">' +
+                    '<div class="ann-item-title">' +
+                        (!a.viewed ? '<i class="fas fa-circle" style="color:#D4A843;font-size:0.5rem;"></i>' : '') +
+                        escapeHtml(a.title) +
+                    '</div>' +
+                    '<div class="ann-item-date">' + a.created_at + '</div>' +
+                    '<div class="ann-item-preview">' + escapeHtml(a.content) + '</div>' +
+                '</div>';
+            });
+            body.innerHTML = html;
+            updateAnnBadge(unread);
+        } else {
+            body.innerHTML = '<div class="ann-empty"><i class="fas fa-bullhorn"></i><p>No announcements</p></div>';
+        }
+    })
+    .catch(() => {
+        body.innerHTML = '<div class="ann-empty"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i><p>Failed to load</p></div>';
+    });
+}
+
+function viewAnnouncement(id) {
+    const a = annData.find(item => item.id === id);
+    if (!a) return;
+    const body = document.getElementById('annModalBody');
+    body.innerHTML = '<div class="ann-detail">' +
+        '<button onclick="openAnnouncements()" style="background:none;border:none;color:#72578B;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.75rem;padding:0;"><i class="fas fa-arrow-left me-1"></i> Back</button>' +
+        '<h4>' + escapeHtml(a.title) + '</h4>' +
+        '<div style="font-size:0.75rem;color:var(--gray-400);margin-bottom:0.75rem;">' + a.created_at + '</div>' +
+        '<p>' + escapeHtml(a.content) + '</p>' +
+    '</div>';
+    if (!a.viewed) {
+        fetch('api/announcements.php?action=mark_read&id=' + id, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(r => r.json()).then(() => {
+            a.viewed = true;
+            updateAnnBadge(annData.filter(x => !x.viewed).length);
+        }).catch(() => {});
+    }
+}
+
+function closeAnnModal() {
+    document.getElementById('annModal').style.display = 'none';
+}
+
+function updateAnnBadge(count) {
+    const badge = document.getElementById('annBadge');
+    if (count > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = count > 99 ? '99+' : count;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+/* Check for unread announcements on load */
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('api/announcements.php?action=fetch', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success && res.data) {
+            const unread = res.data.filter(a => !a.viewed).length;
+            updateAnnBadge(unread);
+        }
+    })
+    .catch(() => {});
+});
 </script>
 
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

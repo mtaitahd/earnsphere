@@ -121,7 +121,15 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
             <span>Settings</span>
         </a>
     </li>
-    
+
+    <!-- Announcements -->
+    <li class="nav-item <?= $currentPage === 'announcements' ? 'active' : '' ?>">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/announcements">
+            <i class="fas fa-fw fa-bullhorn"></i>
+            <span>Announcements</span>
+        </a>
+    </li>
+
     <!-- Profile -->
     <li class="nav-item <?= $currentPage === 'profile' ? 'active' : '' ?>">
         <a class="nav-link" href="<?= SITE_URL ?>/admin/profile">

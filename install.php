@@ -301,11 +301,52 @@ try {
     }
 
     // ---- Step 6: Admin password ----
-    echo "<h6 class='mt-3'><i class='fas fa-user-shield me-1'></i> Hatua 4: Admin</h6>";
+    echo "<h6 class='mt-3'><i class='fas fa-user-shield me-1'></i> Hatua 6: Admin</h6>";
     $hash = password_hash('Admin@123', PASSWORD_BCRYPT, ['cost' => 12]);
     $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE role = 'admin' AND email = 'admin@earnsphere.com'");
     $stmt->execute([$hash]);
     echo "<div class='alert alert-success'><i class='fas fa-user-shield me-1'></i> Admin password: Admin@123</div>";
+
+    // ---- Step 7: Announcements Migration ----
+    echo "<h6 class='mt-3'><i class='fas fa-bullhorn me-1'></i> Hatua 7: Announcements</h6>";
+    $annOk = 0; $annFail = 0;
+    $annTables = [
+        "CREATE TABLE IF NOT EXISTS `announcements` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `title` VARCHAR(200) NOT NULL,
+            `content` TEXT NOT NULL,
+            `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+            `created_by` INT UNSIGNED NOT NULL,
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_active` (`is_active`),
+            KEY `idx_created_by` (`created_by`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        "CREATE TABLE IF NOT EXISTS `user_announcement_views` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `user_id` INT UNSIGNED NOT NULL,
+            `announcement_id` INT UNSIGNED NOT NULL,
+            `viewed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uk_user_announcement` (`user_id`, `announcement_id`),
+            KEY `idx_user_id` (`user_id`),
+            CONSTRAINT `fk_uav_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+            CONSTRAINT `fk_uav_announcement` FOREIGN KEY (`announcement_id`) REFERENCES `announcements` (`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    ];
+    foreach ($annTables as $annSql) {
+        try {
+            $pdo->exec($annSql);
+            $annOk++;
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'already exists') === false && strpos($e->getMessage(), 'Duplicate') === false) {
+                $annFail++;
+                echo "<div class='text-warning small'>⚠ " . htmlspecialchars($e->getMessage()) . "</div>";
+            }
+        }
+    }
+    echo "<div class='alert alert-info'><i class='fas fa-info-circle me-1'></i> Announcements: {$annOk} ok, {$annFail} errors</div>";
     
     echo "<hr>";
     echo "<div class='text-center'>";
