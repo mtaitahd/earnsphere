@@ -260,9 +260,11 @@ try {
         $missionStmts = array_filter(array_map('trim', explode(';', $missionSql)));
         $misOk = 0; $misFail = 0;
         foreach ($missionStmts as $stmt) {
-            if (empty($stmt) || strpos($stmt, '--') === 0) continue;
+            $stmtLines = array_filter(explode("\n", $stmt), fn($line) => trim($line) === '' || strpos(trim($line), '--') !== 0);
+            $cleanStmt = trim(implode("\n", $stmtLines));
+            if (empty($cleanStmt)) continue;
             try {
-                $pdo->exec($stmt);
+                $pdo->exec($cleanStmt);
                 $misOk++;
             } catch (PDOException $e) {
                 if (strpos($e->getMessage(), 'already exists') === false) {
@@ -282,9 +284,11 @@ try {
         $aiStmts = array_filter(array_map('trim', explode(';', $aiSql)));
         $aiOk = 0; $aiFail = 0;
         foreach ($aiStmts as $stmt) {
-            if (empty($stmt) || strpos($stmt, '--') === 0) continue;
+            $stmtLines = array_filter(explode("\n", $stmt), fn($line) => trim($line) === '' || strpos(trim($line), '--') !== 0);
+            $cleanStmt = trim(implode("\n", $stmtLines));
+            if (empty($cleanStmt)) continue;
             try {
-                $pdo->exec($stmt);
+                $pdo->exec($cleanStmt);
                 $aiOk++;
             } catch (PDOException $e) {
                 if (strpos($e->getMessage(), 'already exists') === false && strpos($e->getMessage(), 'Duplicate') === false) {
