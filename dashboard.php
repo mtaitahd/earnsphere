@@ -316,89 +316,88 @@ include __DIR__ . '/includes/public_head.php';
     <?php if ($user['status'] === 'active'): ?>
     <div class="dash-section" id="earningsCalculator">
         <div class="calc-card">
-            <div class="calc-header">
+            <div class="calc-head">
                 <i class="fas fa-calculator"></i> Earnings Calculator
             </div>
 
-            <div class="calc-screen">
-                <div class="calc-screen-label">Paid Direct Referrals</div>
-                <div class="calc-screen-value" id="calcDisplay">10</div>
-            </div>
-
-            <div class="calc-numpad">
-                <div class="calc-numpad-grid">
-                    <button class="calc-num-btn cmd-util" data-action="clear">C</button>
-                    <button class="calc-num-btn cmd-util" data-action="back"><i class="fas fa-delete-left"></i></button>
-                    <button class="calc-num-btn cmd-util" data-action="max">MAX</button>
-
-                    <button class="calc-num-btn num" data-num="7">7</button>
-                    <button class="calc-num-btn num" data-num="8">8</button>
-                    <button class="calc-num-btn num" data-num="9">9</button>
-
-                    <button class="calc-num-btn num" data-num="4">4</button>
-                    <button class="calc-num-btn num" data-num="5">5</button>
-                    <button class="calc-num-btn num" data-num="6">6</button>
-
-                    <button class="calc-num-btn num" data-num="1">1</button>
-                    <button class="calc-num-btn num" data-num="2">2</button>
-                    <button class="calc-num-btn num" data-num="3">3</button>
-
-                    <button class="calc-num-btn num" data-num="00">00</button>
-                    <button class="calc-num-btn num" data-num="0">0</button>
-                    <button class="calc-num-btn cmd-eq" data-action="calc"><i class="fas fa-equals"></i></button>
-                </div>
-            </div>
-
-            <div class="calc-results">
-                <div class="calc-lvl-row">
-                    <span class="calc-lvl-name"><i class="fas fa-user-plus" style="color:#72578B;"></i> L1</span>
-                    <span class="calc-lvl-detail" id="calcL1Count">10</span>
-                    <span class="calc-lvl-amt" id="calcL1Amount">TZS 25,000</span>
-                </div>
-                <div class="calc-lvl-row l2">
-                    <span class="calc-lvl-name"><i class="fas fa-user-group" style="color:#D4A843;"></i> L2</span>
-                    <span class="calc-lvl-detail" id="calcL2Count">30</span>
-                    <span class="calc-lvl-amt" id="calcL2Amount">TZS 45,000</span>
-                </div>
-                <div class="calc-lvl-row l3">
-                    <span class="calc-lvl-name"><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> L3</span>
-                    <span class="calc-lvl-detail" id="calcL3Count">90</span>
-                    <span class="calc-lvl-amt" id="calcL3Amount">TZS 90,000</span>
+            <div class="calc-body">
+                <div class="calc-display">
+                    <div class="calc-display-label">Paid Direct Referrals</div>
+                    <div class="calc-display-val" id="calcDisplay">10</div>
                 </div>
 
-                <div class="calc-total-row" id="calcTotal">
-                    <span>Total</span>
-                    <span class="calc-total-val" id="calcTotalAmount">TZS 160,000</span>
+                <div class="calc-pad">
+                    <button class="calc-pad-btn util" data-action="clear">C</button>
+                    <button class="calc-pad-btn util" data-action="back"><i class="fas fa-delete-left"></i></button>
+                    <button class="calc-pad-btn util" data-action="max">MAX</button>
+
+                    <button class="calc-pad-btn" data-num="7">7</button>
+                    <button class="calc-pad-btn" data-num="8">8</button>
+                    <button class="calc-pad-btn" data-num="9">9</button>
+
+                    <button class="calc-pad-btn" data-num="4">4</button>
+                    <button class="calc-pad-btn" data-num="5">5</button>
+                    <button class="calc-pad-btn" data-num="6">6</button>
+
+                    <button class="calc-pad-btn" data-num="1">1</button>
+                    <button class="calc-pad-btn" data-num="2">2</button>
+                    <button class="calc-pad-btn" data-num="3">3</button>
+
+                    <button class="calc-pad-btn" data-num="00">00</button>
+                    <button class="calc-pad-btn" data-num="0">0</button>
+                    <button class="calc-pad-btn primary" data-action="calc"><i class="fas fa-equals"></i></button>
                 </div>
 
-                <div class="calc-network-row">
-                    <span class="network-node root">YOU</span>
-                    <span class="network-arr"><i class="fas fa-chevron-right"></i></span>
-                    <span class="network-lvl" id="networkL1">10</span>
-                    <span class="network-arr"><i class="fas fa-chevron-right"></i></span>
-                    <span class="network-lvl" id="networkL2">30</span>
-                    <span class="network-arr"><i class="fas fa-chevron-right"></i></span>
-                    <span class="network-lvl" id="networkL3">90</span>
-                </div>
+                <div class="calc-result">
+                    <div class="calc-row">
+                        <span class="calc-row-name"><i class="fas fa-user-plus" style="color:#72578B;"></i> L1</span>
+                        <span class="calc-row-count" id="calcL1Count">10</span>
+                        <span class="calc-row-amt" id="calcL1Amount">TZS 25,000</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-row-name"><i class="fas fa-user-group" style="color:#D4A843;"></i> L2</span>
+                        <span class="calc-row-count" id="calcL2Count">30</span>
+                        <span class="calc-row-amt" id="calcL2Amount">TZS 45,000</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-row-name"><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> L3</span>
+                        <span class="calc-row-count" id="calcL3Count">90</span>
+                        <span class="calc-row-amt" id="calcL3Amount">TZS 90,000</span>
+                    </div>
 
-                <?php if ($missionStatus && $missionStatus['has_mission']): ?>
-                <div class="calc-mission-sm" id="calcMission">
-                    <span><i class="fas fa-trophy" style="color:#D4A843;"></i> Mission:</span>
-                    <span>Invite 2 Paid Members</span>
-                    <span class="calc-mission-rew">+TZS <?= number_format((int)($missionStatus['reward_amount'] ?? 500)) ?></span>
-                    <span id="calcMissionStatus"><i class="fas fa-check-circle" style="color:#10b981;"></i></span>
-                </div>
-                <?php endif; ?>
+                    <div class="calc-total" id="calcTotal">
+                        <span>Total Earnings</span>
+                        <span class="calc-total-val" id="calcTotalAmount">TZS 160,000</span>
+                    </div>
 
-                <div class="calc-actions">
-                    <button class="calc-btn" onclick="copyEarningsSummary()"><i class="fas fa-copy"></i></button>
-                    <button class="calc-btn" onclick="exportCalcPNG()"><i class="fas fa-image"></i></button>
-                    <button class="calc-btn" onclick="window.print()"><i class="fas fa-file-pdf"></i></button>
-                </div>
+                    <div class="calc-net">
+                        <span class="net-node">YOU</span>
+                        <i class="fas fa-chevron-right" style="font-size:0.5rem;color:var(--gray-400);"></i>
+                        <span class="net-lvl" id="networkL1">10</span>
+                        <i class="fas fa-chevron-right" style="font-size:0.5rem;color:var(--gray-400);"></i>
+                        <span class="net-lvl" id="networkL2">30</span>
+                        <i class="fas fa-chevron-right" style="font-size:0.5rem;color:var(--gray-400);"></i>
+                        <span class="net-lvl" id="networkL3">90</span>
+                    </div>
 
-                <div class="calc-cta">
-                    <span>Want to earn faster?</span>
-                    <a href="ai-assistant"><i class="fas fa-wand-magic-sparkles"></i> AI Marketing</a>
+                    <?php if ($missionStatus && $missionStatus['has_mission']): ?>
+                    <div class="calc-mission">
+                        <span><i class="fas fa-trophy" style="color:#D4A843;"></i> Mission: Invite 2 Paid Members</span>
+                        <span class="calc-mission-rew">+TZS <?= number_format((int)($missionStatus['reward_amount'] ?? 500)) ?></span>
+                        <span id="calcMissionStatus"><i class="fas fa-check-circle" style="color:#10b981;"></i></span>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="calc-acts">
+                        <button class="calc-act" onclick="copyEarningsSummary()"><i class="fas fa-copy"></i></button>
+                        <button class="calc-act" onclick="exportCalcPNG()"><i class="fas fa-image"></i></button>
+                        <button class="calc-act" onclick="window.print()"><i class="fas fa-file-pdf"></i></button>
+                    </div>
+
+                    <div class="calc-foot">
+                        <span>Want to earn faster?</span>
+                        <a href="ai-assistant"><i class="fas fa-wand-magic-sparkles"></i> AI Marketing</a>
+                    </div>
                 </div>
             </div>
         </div>
