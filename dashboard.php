@@ -376,7 +376,7 @@ include __DIR__ . '/includes/public_head.php';
 
             <div class="calc-chart-row">
                 <div class="calc-chart-container">
-                    <canvas id="calcChart"></canvas>
+                    <canvas id="calcChart" width="120" height="120" style="width:120px;height:120px;display:block;"></canvas>
                 </div>
                 <div class="calc-legend">
                     <div class="legend-item"><span class="legend-dot" style="background:#72578B;"></span> Level 1</div>
@@ -439,6 +439,9 @@ include __DIR__ . '/includes/public_head.php';
     <script>
     let calcChart = null;
     const COMM_L1 = 2500, COMM_L2 = 1500, COMM_L3 = 1000;
+
+    // Initial render on load
+    document.addEventListener('DOMContentLoaded', updateCalculator);
 
     function updateCalculator() {
         const slider = document.getElementById('calcSlider');
@@ -555,6 +558,7 @@ include __DIR__ . '/includes/public_head.php';
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
                     cutout: '70%',
                     plugins: {
                         legend: { display: false },
@@ -641,10 +645,6 @@ include __DIR__ . '/includes/public_head.php';
         link.click();
         App.showToast('Image downloaded!', 'success');
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        updateCalculator();
-    });
     </script>
     <?php endif; ?>
 
