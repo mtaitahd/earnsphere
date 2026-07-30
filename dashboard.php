@@ -311,6 +311,343 @@ include __DIR__ . '/includes/public_head.php';
         </div>
     </div>
     
+    <!-- Earnings Calculator -->
+    <?php if ($user['status'] === 'active'): ?>
+    <div class="dash-section" id="earningsCalculator">
+        <div class="section-header">
+            <h6><i class="fas fa-calculator me-1" style="color:#72578B;"></i> Earnings Calculator</h6>
+        </div>
+
+        <div class="calc-card">
+            <div class="calc-input-group">
+                <label class="calc-label">Paid Direct Referrals</label>
+                <div class="calc-input-row">
+                    <input type="range" id="calcSlider" class="calc-slider" min="0" max="1000" value="10" oninput="updateCalculator()">
+                    <input type="number" id="calcInput" class="calc-number" min="0" max="1000" value="10" oninput="syncSlider(this.value)">
+                </div>
+            </div>
+
+            <div class="calc-grid">
+                <div class="calc-level">
+                    <div class="calc-level-header">
+                        <span><i class="fas fa-user-plus" style="color:#72578B;"></i> Level 1 (Direct)</span>
+                        <span class="calc-level-amount" id="calcL1Amount">TZS 25,000</span>
+                    </div>
+                    <div class="calc-bar-track">
+                        <div class="calc-bar-fill" id="calcL1Bar" style="width:15.6%;background:#72578B;"></div>
+                    </div>
+                    <div class="calc-level-detail">
+                        <span class="calc-count" id="calcL1Count">10</span>
+                        <span class="calc-rate">× TZS 2,500</span>
+                    </div>
+                </div>
+                <div class="calc-level">
+                    <div class="calc-level-header">
+                        <span><i class="fas fa-user-group" style="color:#D4A843;"></i> Level 2</span>
+                        <span class="calc-level-amount" id="calcL2Amount">TZS 45,000</span>
+                    </div>
+                    <div class="calc-bar-track">
+                        <div class="calc-bar-fill" id="calcL2Bar" style="width:28.1%;background:#D4A843;"></div>
+                    </div>
+                    <div class="calc-level-detail">
+                        <span class="calc-count" id="calcL2Count">30</span>
+                        <span class="calc-rate">× TZS 1,500</span>
+                    </div>
+                </div>
+                <div class="calc-level">
+                    <div class="calc-level-header">
+                        <span><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> Level 3</span>
+                        <span class="calc-level-amount" id="calcL3Amount">TZS 90,000</span>
+                    </div>
+                    <div class="calc-bar-track">
+                        <div class="calc-bar-fill" id="calcL3Bar" style="width:56.3%;background:#0EA5E9;"></div>
+                    </div>
+                    <div class="calc-level-detail">
+                        <span class="calc-count" id="calcL3Count">90</span>
+                        <span class="calc-rate">× TZS 1,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="calc-total" id="calcTotal">
+                <div class="calc-total-label">Estimated Total Earnings</div>
+                <div class="calc-total-amount" id="calcTotalAmount">TZS 160,000</div>
+            </div>
+
+            <div class="calc-chart-row">
+                <div class="calc-chart-container">
+                    <canvas id="calcChart"></canvas>
+                </div>
+                <div class="calc-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#72578B;"></span> Level 1</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#D4A843;"></span> Level 2</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#0EA5E9;"></span> Level 3</div>
+                </div>
+            </div>
+
+            <div class="calc-network">
+                <div class="calc-network-title"><i class="fas fa-sitemap me-1"></i> Network Preview</div>
+                <div class="network-tree" id="networkTree">
+                    <div class="network-node root">YOU</div>
+                    <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                    <div class="network-level" id="networkL1"><span class="network-badge">10</span></div>
+                    <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                    <div class="network-level" id="networkL2"><span class="network-badge">30</span></div>
+                    <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                    <div class="network-level" id="networkL3"><span class="network-badge">90</span></div>
+                </div>
+            </div>
+
+            <?php if ($missionStatus && $missionStatus['has_mission']): ?>
+            <div class="calc-mission" id="calcMission">
+                <div class="calc-mission-header">
+                    <i class="fas fa-trophy me-1" style="color:#D4A843;"></i>
+                    <strong>Today's Mission</strong>
+                </div>
+                <div class="calc-mission-body">
+                    <span>Invite 2 Paid Members</span>
+                    <span class="calc-mission-reward">+ TZS <?= number_format((int)($missionStatus['reward_amount'] ?? 500)) ?></span>
+                </div>
+                <div class="calc-mission-status" id="calcMissionStatus">
+                    <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                    <span id="calcMissionText">Mission Achievable Today</span>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <div class="calc-actions">
+                <button class="calc-btn" onclick="copyEarningsSummary()"><i class="fas fa-copy me-1"></i> Copy Summary</button>
+                <button class="calc-btn" onclick="exportCalcPNG()"><i class="fas fa-image me-1"></i> Download PNG</button>
+                <button class="calc-btn" onclick="window.print()"><i class="fas fa-file-pdf me-1"></i> Download PDF</button>
+            </div>
+
+            <div class="calc-cta">
+                <p>Want to reach this income faster?</p>
+                <a href="ai-assistant" class="calc-cta-btn">
+                    <i class="fas fa-wand-magic-sparkles me-1"></i> Generate Marketing Content
+                </a>
+            </div>
+
+            <div class="calc-disclaimer">
+                <i class="fas fa-info-circle me-1"></i>
+                This is an estimated earning based on average referral growth. Actual earnings depend on referral activity.
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+    let calcChart = null;
+    const COMM_L1 = 2500, COMM_L2 = 1500, COMM_L3 = 1000;
+
+    function updateCalculator() {
+        const slider = document.getElementById('calcSlider');
+        const input = document.getElementById('calcInput');
+        const x = parseInt(slider.value) || 0;
+        input.value = x;
+
+        const l1 = x;
+        const l2 = x * 3;
+        const l3 = x * 3 * 3;
+        const amt1 = l1 * COMM_L1;
+        const amt2 = l2 * COMM_L2;
+        const amt3 = l3 * COMM_L3;
+        const total = amt1 + amt2 + amt3;
+        const maxTotal = 1000 * COMM_L1 + 3000 * COMM_L2 + 9000 * COMM_L3;
+
+        animateNumber('calcL1Amount', amt1, 'TZS ');
+        animateNumber('calcL2Amount', amt2, 'TZS ');
+        animateNumber('calcL3Amount', amt3, 'TZS ');
+        animateTotal('calcTotalAmount', total);
+
+        document.getElementById('calcL1Count').textContent = l1.toLocaleString();
+        document.getElementById('calcL2Count').textContent = l2.toLocaleString();
+        document.getElementById('calcL3Count').textContent = l3.toLocaleString();
+
+        document.getElementById('calcL1Bar').style.width = (maxTotal > 0 ? (amt1 / maxTotal * 100) : 0) + '%';
+        document.getElementById('calcL2Bar').style.width = (maxTotal > 0 ? (amt2 / maxTotal * 100) : 0) + '%';
+        document.getElementById('calcL3Bar').style.width = (maxTotal > 0 ? (amt3 / maxTotal * 100) : 0) + '%';
+
+        document.getElementById('networkL1').innerHTML = `<span class="network-badge">${l1.toLocaleString()}</span>`;
+        document.getElementById('networkL2').innerHTML = `<span class="network-badge">${l2.toLocaleString()}</span>`;
+        document.getElementById('networkL3').innerHTML = `<span class="network-badge">${l3.toLocaleString()}</span>`;
+
+        // Mission check
+        const missionStatus = document.getElementById('calcMissionStatus');
+        if (missionStatus) {
+            const missionText = document.getElementById('calcMissionText');
+            if (x >= 2) {
+                missionStatus.innerHTML = '<i class="fas fa-check-circle" style="color:#10b981;"></i> <span>Mission Achievable Today</span>';
+            } else {
+                const needed = 2 - x;
+                missionStatus.innerHTML = '<i class="fas fa-hourglass-half" style="color:#D4A843;"></i> <span>Need ' + needed + ' more referral' + (needed > 1 ? 's' : '') + '</span>';
+            }
+        }
+
+        updateChart(l1, l2, l3, amt1, amt2, amt3);
+        triggerCoinAnimation();
+    }
+
+    function syncSlider(val) {
+        const v = Math.min(1000, Math.max(0, parseInt(val) || 0));
+        document.getElementById('calcSlider').value = v;
+        updateCalculator();
+    }
+
+    function animateNumber(elId, value, prefix) {
+        const el = document.getElementById(elId);
+        const current = parseInt(el.textContent.replace(/[^0-9]/g, '')) || 0;
+        const start = current;
+        const duration = 500;
+        const startTime = performance.now();
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const currentVal = Math.round(start + (value - start) * eased);
+            el.textContent = prefix + currentVal.toLocaleString();
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    function animateTotal(elId, value) {
+        const el = document.getElementById(elId);
+        const current = parseInt(el.textContent.replace(/[^0-9]/g, '')) || 0;
+        const start = current;
+        const duration = 800;
+        const startTime = performance.now();
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const currentVal = Math.round(start + (value - start) * eased);
+            el.textContent = 'TZS ' + currentVal.toLocaleString();
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    function updateChart(l1, l2, l3, a1, a2, a3) {
+        const total = a1 + a2 + a3;
+        if (total === 0) {
+            if (calcChart) calcChart.destroy();
+            calcChart = null;
+            return;
+        }
+        const ctx = document.getElementById('calcChart').getContext('2d');
+        if (calcChart) {
+            calcChart.data.datasets[0].data = [a1, a2, a3];
+            calcChart.update();
+        } else {
+            calcChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Level 1', 'Level 2', 'Level 3'],
+                    datasets: [{
+                        data: [a1, a2, a3],
+                        backgroundColor: ['#72578B', '#D4A843', '#0EA5E9'],
+                        borderWidth: 0,
+                        hoverOffset: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.label + ': TZS ' + ctx.parsed.toLocaleString()
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function triggerCoinAnimation() {
+        const total = document.getElementById('calcTotal');
+        total.classList.remove('coin-flash');
+        void total.offsetWidth;
+        total.classList.add('coin-flash');
+    }
+
+    function copyEarningsSummary() {
+        const x = parseInt(document.getElementById('calcInput').value) || 0;
+        const l1 = x, l2 = x * 3, l3 = x * 3 * 3;
+        const a1 = l1 * COMM_L1, a2 = l2 * COMM_L2, a3 = l3 * COMM_L3;
+        const total = a1 + a2 + a3;
+        const text = `EarnSphere Earnings Estimate\n\n` +
+            `Direct Referrals: ${x}\n` +
+            `Level 1 (${l1} × TZS ${COMM_L1.toLocaleString()}): TZS ${a1.toLocaleString()}\n` +
+            `Level 2 (${l2} × TZS ${COMM_L2.toLocaleString()}): TZS ${a2.toLocaleString()}\n` +
+            `Level 3 (${l3} × TZS ${COMM_L3.toLocaleString()}): TZS ${a3.toLocaleString()}\n` +
+            `\nEstimated Total: TZS ${total.toLocaleString()}\n\n` +
+            `Join EarnSphere today: ${window.location.origin}/register`;
+        navigator.clipboard.writeText(text).then(() => {
+            App.showToast('Summary copied!', 'success');
+        }).catch(() => {
+            App.showToast('Failed to copy', 'error');
+        });
+    }
+
+    function exportCalcPNG() {
+        const canvas = document.getElementById('calcChart');
+        const total = document.getElementById('calcTotalAmount').textContent;
+        if (!canvas) { App.showToast('No data to export', 'error'); return; }
+        const chartCanvas = document.createElement('canvas');
+        chartCanvas.width = 400;
+        chartCanvas.height = 500;
+        const ctx = chartCanvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, 400, 500);
+        ctx.fillStyle = '#72578B';
+        ctx.font = 'bold 20px Nunito, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('EarnSphere Earnings Estimate', 200, 40);
+        ctx.fillStyle = '#333';
+        ctx.font = '14px Nunito, sans-serif';
+        ctx.fillText('Total: ' + total, 200, 70);
+        ctx.drawImage(canvas, 100, 90, 200, 200);
+        const x = document.getElementById('calcInput').value;
+        const l1 = document.getElementById('calcL1Count').textContent;
+        const l2 = document.getElementById('calcL2Count').textContent;
+        const l3 = document.getElementById('calcL3Count').textContent;
+        ctx.textAlign = 'left';
+        ctx.font = '13px Nunito, sans-serif';
+        ctx.fillStyle = '#72578B';
+        ctx.fillRect(40, 310, 12, 12);
+        ctx.fillStyle = '#333';
+        ctx.fillText('Level 1: ' + l1 + ' referrals', 60, 322);
+        ctx.fillStyle = '#D4A843';
+        ctx.fillRect(40, 335, 12, 12);
+        ctx.fillStyle = '#333';
+        ctx.fillText('Level 2: ' + l2 + ' referrals', 60, 347);
+        ctx.fillStyle = '#0EA5E9';
+        ctx.fillRect(40, 360, 12, 12);
+        ctx.fillStyle = '#333';
+        ctx.fillText('Level 3: ' + l3 + ' referrals', 60, 372);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#999';
+        ctx.font = '11px Nunito, sans-serif';
+        ctx.fillText('earnsphere.co.tz', 200, 480);
+        const link = document.createElement('a');
+        link.download = 'earnsphere-estimate.png';
+        link.href = chartCanvas.toDataURL('image/png');
+        link.click();
+        App.showToast('Image downloaded!', 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCalculator();
+    });
+    </script>
+    <?php endif; ?>
+
     <!-- Recent Transactions -->
     <div class="dash-section">
         <div class="section-header">
