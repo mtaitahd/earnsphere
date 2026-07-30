@@ -317,58 +317,63 @@ include __DIR__ . '/includes/public_head.php';
     <div class="dash-section" id="earningsCalculator">
         <div class="calc-card">
             <div class="calc-hero">
-                <div class="calc-hero-icon"><i class="fas fa-calculator"></i></div>
-                <h5>Earnings Calculator</h5>
-                <p>See what you could earn with your referral network</p>
+                <h5><i class="fas fa-calculator me-1"></i> Earnings Calculator</h5>
+                <p>Tap numbers to calculate your referral earnings</p>
             </div>
 
-            <div class="calc-body">
-                <div class="calc-input-group">
-                    <label class="calc-label"><i class="fas fa-user-plus me-1" style="color:#72578B;"></i> Paid Direct Referrals</label>
-                    <div class="calc-input-row">
-                        <input type="range" id="calcSlider" class="calc-slider" min="0" max="1000" value="10" oninput="updateCalculator()">
-                        <input type="number" id="calcInput" class="calc-number" min="0" max="1000" value="10" oninput="syncSlider(this.value)">
-                    </div>
-                </div>
+            <!-- Calculator Screen -->
+            <div class="calc-screen">
+                <div class="calc-screen-label">Paid Direct Referrals</div>
+                <div class="calc-screen-value" id="calcDisplay">10</div>
+            </div>
 
-                <div class="calc-grid">
+            <!-- Number Pad -->
+            <div class="calc-numpad">
+                <div class="calc-numpad-grid">
+                    <button class="calc-num-btn num" data-num="1">1</button>
+                    <button class="calc-num-btn num" data-num="2">2</button>
+                    <button class="calc-num-btn num" data-num="3">3</button>
+                    <button class="calc-num-btn cmd-clear" data-action="clear">C</button>
+
+                    <button class="calc-num-btn num" data-num="4">4</button>
+                    <button class="calc-num-btn num" data-num="5">5</button>
+                    <button class="calc-num-btn num" data-num="6">6</button>
+                    <button class="calc-num-btn cmd-back" data-action="back"><i class="fas fa-delete-left"></i></button>
+
+                    <button class="calc-num-btn num" data-num="7">7</button>
+                    <button class="calc-num-btn num" data-num="8">8</button>
+                    <button class="calc-num-btn num" data-num="9">9</button>
+                    <button class="calc-num-btn cmd-eq" data-action="calc"><i class="fas fa-check"></i></button>
+
+                    <button class="calc-num-btn num" data-num="0">0</button>
+                    <button class="calc-num-btn num" data-num="00">00</button>
+                    <button class="calc-num-btn num" data-num="100">100</button>
+                    <button class="calc-num-btn cmd-back" data-action="max"><i class="fas fa-chevron-up"></i></button>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="calc-results">
+                <div class="calc-grid" id="calcResults">
                     <div class="calc-level">
-                        <div class="calc-level-header">
-                            <span><i class="fas fa-user-plus" style="color:#72578B;"></i> Level 1 (Direct)</span>
-                            <span class="calc-level-amount" id="calcL1Amount">TZS 25,000</span>
-                        </div>
-                        <div class="calc-bar-track">
-                            <div class="calc-bar-fill" id="calcL1Bar" style="width:15.6%;background:#72578B;"></div>
-                        </div>
-                        <div class="calc-level-detail">
-                            <span class="calc-count" id="calcL1Count">10</span>
-                            <span class="calc-rate">× TZS 2,500</span>
+                        <div class="calc-level-left"><i class="fas fa-user-plus" style="color:#72578B;"></i> Level 1 (Direct)</div>
+                        <div class="calc-level-right">
+                            <div class="calc-level-amount" id="calcL1Amount">TZS 25,000</div>
+                            <div class="calc-level-detail"><span id="calcL1Count">10</span> × TZS 2,500</div>
                         </div>
                     </div>
                     <div class="calc-level l2">
-                        <div class="calc-level-header">
-                            <span><i class="fas fa-user-group" style="color:#D4A843;"></i> Level 2</span>
-                            <span class="calc-level-amount" id="calcL2Amount">TZS 45,000</span>
-                        </div>
-                        <div class="calc-bar-track">
-                            <div class="calc-bar-fill" id="calcL2Bar" style="width:28.1%;background:#D4A843;"></div>
-                        </div>
-                        <div class="calc-level-detail">
-                            <span class="calc-count" id="calcL2Count">30</span>
-                            <span class="calc-rate">× TZS 1,500</span>
+                        <div class="calc-level-left"><i class="fas fa-user-group" style="color:#D4A843;"></i> Level 2</div>
+                        <div class="calc-level-right">
+                            <div class="calc-level-amount" id="calcL2Amount">TZS 45,000</div>
+                            <div class="calc-level-detail"><span id="calcL2Count">30</span> × TZS 1,500</div>
                         </div>
                     </div>
                     <div class="calc-level l3">
-                        <div class="calc-level-header">
-                            <span><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> Level 3</span>
-                            <span class="calc-level-amount" id="calcL3Amount">TZS 90,000</span>
-                        </div>
-                        <div class="calc-bar-track">
-                            <div class="calc-bar-fill" id="calcL3Bar" style="width:56.3%;background:#0EA5E9;"></div>
-                        </div>
-                        <div class="calc-level-detail">
-                            <span class="calc-count" id="calcL3Count">90</span>
-                            <span class="calc-rate">× TZS 1,000</span>
+                        <div class="calc-level-left"><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> Level 3</div>
+                        <div class="calc-level-right">
+                            <div class="calc-level-amount" id="calcL3Amount">TZS 90,000</div>
+                            <div class="calc-level-detail"><span id="calcL3Count">90</span> × TZS 1,000</div>
                         </div>
                     </div>
                 </div>
@@ -382,11 +387,11 @@ include __DIR__ . '/includes/public_head.php';
                     <div class="calc-network-title"><i class="fas fa-sitemap me-1" style="color:#72578B;"></i> Your Network</div>
                     <div class="network-tree">
                         <div class="network-node root">YOU</div>
-                        <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                        <div class="network-conn"><i class="fas fa-chevron-right"></i></div>
                         <div class="network-level" id="networkL1"><span class="network-badge">10</span></div>
-                        <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                        <div class="network-conn"><i class="fas fa-chevron-right"></i></div>
                         <div class="network-level" id="networkL2"><span class="network-badge">30</span></div>
-                        <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                        <div class="network-conn"><i class="fas fa-chevron-right"></i></div>
                         <div class="network-level" id="networkL3"><span class="network-badge">90</span></div>
                     </div>
                 </div>
@@ -431,16 +436,44 @@ include __DIR__ . '/includes/public_head.php';
 
     <script>
     const COMM_L1 = 2500, COMM_L2 = 1500, COMM_L3 = 1000;
+    let calcValue = 10;
 
-    // Initial render on load
-    document.addEventListener('DOMContentLoaded', updateCalculator);
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCalculator();
+        document.querySelectorAll('.calc-num-btn').forEach(btn => {
+            btn.addEventListener('click', handleCalcBtn);
+        });
+    });
+
+    function handleCalcBtn(e) {
+        const btn = e.currentTarget;
+        const num = btn.dataset.num;
+        const action = btn.dataset.action;
+
+        if (num !== undefined) {
+            let newVal = parseInt(String(calcValue) + String(num));
+            if (newVal > 1000) newVal = 1000;
+            calcValue = newVal;
+            updateCalculator();
+        } else if (action === 'clear') {
+            calcValue = 0;
+            updateCalculator();
+        } else if (action === 'back') {
+            calcValue = Math.floor(calcValue / 10);
+            updateCalculator();
+        } else if (action === 'max') {
+            calcValue = 1000;
+            updateCalculator();
+        } else if (action === 'calc') {
+            triggerCoinAnimation();
+        }
+    }
 
     function updateCalculator() {
-        const slider = document.getElementById('calcSlider');
-        const input = document.getElementById('calcInput');
-        const x = parseInt(slider.value) || 0;
-        input.value = x;
+        const display = document.getElementById('calcDisplay');
+        display.textContent = calcValue;
 
+        const x = calcValue;
         const l1 = x;
         const l2 = x * 3;
         const l3 = x * 3 * 3;
@@ -448,7 +481,6 @@ include __DIR__ . '/includes/public_head.php';
         const amt2 = l2 * COMM_L2;
         const amt3 = l3 * COMM_L3;
         const total = amt1 + amt2 + amt3;
-        const maxTotal = 1000 * COMM_L1 + 3000 * COMM_L2 + 9000 * COMM_L3;
 
         animateNumber('calcL1Amount', amt1, 'TZS ');
         animateNumber('calcL2Amount', amt2, 'TZS ');
@@ -459,15 +491,10 @@ include __DIR__ . '/includes/public_head.php';
         document.getElementById('calcL2Count').textContent = l2.toLocaleString();
         document.getElementById('calcL3Count').textContent = l3.toLocaleString();
 
-        document.getElementById('calcL1Bar').style.width = (maxTotal > 0 ? (amt1 / maxTotal * 100) : 0) + '%';
-        document.getElementById('calcL2Bar').style.width = (maxTotal > 0 ? (amt2 / maxTotal * 100) : 0) + '%';
-        document.getElementById('calcL3Bar').style.width = (maxTotal > 0 ? (amt3 / maxTotal * 100) : 0) + '%';
-
         document.getElementById('networkL1').innerHTML = `<span class="network-badge">${l1.toLocaleString()}</span>`;
         document.getElementById('networkL2').innerHTML = `<span class="network-badge">${l2.toLocaleString()}</span>`;
         document.getElementById('networkL3').innerHTML = `<span class="network-badge">${l3.toLocaleString()}</span>`;
 
-        // Mission check
         const missionStatus = document.getElementById('calcMissionStatus');
         if (missionStatus) {
             const missionText = document.getElementById('calcMissionText');
@@ -478,14 +505,6 @@ include __DIR__ . '/includes/public_head.php';
                 missionStatus.innerHTML = '<i class="fas fa-hourglass-half" style="color:#D4A843;"></i> <span>Need ' + needed + ' more referral' + (needed > 1 ? 's' : '') + '</span>';
             }
         }
-
-        triggerCoinAnimation();
-    }
-
-    function syncSlider(val) {
-        const v = Math.min(1000, Math.max(0, parseInt(val) || 0));
-        document.getElementById('calcSlider').value = v;
-        updateCalculator();
     }
 
     function animateNumber(elId, value, prefix) {
@@ -532,7 +551,7 @@ include __DIR__ . '/includes/public_head.php';
     }
 
     function copyEarningsSummary() {
-        const x = parseInt(document.getElementById('calcInput').value) || 0;
+        const x = calcValue;
         const l1 = x, l2 = x * 3, l3 = x * 3 * 3;
         const a1 = l1 * COMM_L1, a2 = l2 * COMM_L2, a3 = l3 * COMM_L3;
         const total = a1 + a2 + a3;
@@ -551,7 +570,7 @@ include __DIR__ . '/includes/public_head.php';
     }
 
     function exportCalcPNG() {
-        const x = document.getElementById('calcInput').value;
+        const x = calcValue;
         const l1 = parseInt(document.getElementById('calcL1Count').textContent) || 0;
         const l2 = parseInt(document.getElementById('calcL2Count').textContent) || 0;
         const l3 = parseInt(document.getElementById('calcL3Count').textContent) || 0;
