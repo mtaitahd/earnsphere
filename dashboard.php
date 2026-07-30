@@ -374,17 +374,6 @@ include __DIR__ . '/includes/public_head.php';
                 <div class="calc-total-amount" id="calcTotalAmount">TZS 160,000</div>
             </div>
 
-            <div class="calc-chart-row">
-                <div class="calc-chart-container">
-                    <canvas id="calcChart" width="120" height="120" style="width:120px;height:120px;display:block;"></canvas>
-                </div>
-                <div class="calc-legend">
-                    <div class="legend-item"><span class="legend-dot" style="background:#72578B;"></span> Level 1</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#D4A843;"></span> Level 2</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#0EA5E9;"></span> Level 3</div>
-                </div>
-            </div>
-
             <div class="calc-network">
                 <div class="calc-network-title"><i class="fas fa-sitemap me-1"></i> Network Preview</div>
                 <div class="network-tree" id="networkTree">
@@ -435,9 +424,7 @@ include __DIR__ . '/includes/public_head.php';
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
-    let calcChart = null;
     const COMM_L1 = 2500, COMM_L2 = 1500, COMM_L3 = 1000;
 
     // Initial render on load
@@ -487,7 +474,6 @@ include __DIR__ . '/includes/public_head.php';
             }
         }
 
-        updateChart(l1, l2, l3, amt1, amt2, amt3);
         triggerCoinAnimation();
     }
 
@@ -533,46 +519,6 @@ include __DIR__ . '/includes/public_head.php';
         requestAnimationFrame(step);
     }
 
-    function updateChart(l1, l2, l3, a1, a2, a3) {
-        const total = a1 + a2 + a3;
-        if (total === 0) {
-            if (calcChart) calcChart.destroy();
-            calcChart = null;
-            return;
-        }
-        const ctx = document.getElementById('calcChart').getContext('2d');
-        if (calcChart) {
-            calcChart.data.datasets[0].data = [a1, a2, a3];
-            calcChart.update();
-        } else {
-            calcChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Level 1', 'Level 2', 'Level 3'],
-                    datasets: [{
-                        data: [a1, a2, a3],
-                        backgroundColor: ['#72578B', '#D4A843', '#0EA5E9'],
-                        borderWidth: 0,
-                        hoverOffset: 8,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => ctx.label + ': TZS ' + ctx.parsed.toLocaleString()
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
     function triggerCoinAnimation() {
         const total = document.getElementById('calcTotal');
         total.classList.remove('coin-flash');
@@ -600,48 +546,39 @@ include __DIR__ . '/includes/public_head.php';
     }
 
     function exportCalcPNG() {
-        const canvas = document.getElementById('calcChart');
-        const total = document.getElementById('calcTotalAmount').textContent;
-        if (!canvas) { App.showToast('No data to export', 'error'); return; }
-        const chartCanvas = document.createElement('canvas');
-        chartCanvas.width = 400;
-        chartCanvas.height = 500;
-        const ctx = chartCanvas.getContext('2d');
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, 400, 500);
-        ctx.fillStyle = '#72578B';
-        ctx.font = 'bold 20px Nunito, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('EarnSphere Earnings Estimate', 200, 40);
-        ctx.fillStyle = '#333';
-        ctx.font = '14px Nunito, sans-serif';
-        ctx.fillText('Total: ' + total, 200, 70);
-        ctx.drawImage(canvas, 100, 90, 200, 200);
         const x = document.getElementById('calcInput').value;
-        const l1 = document.getElementById('calcL1Count').textContent;
-        const l2 = document.getElementById('calcL2Count').textContent;
-        const l3 = document.getElementById('calcL3Count').textContent;
+        const l1 = parseInt(document.getElementById('calcL1Count').textContent) || 0;
+        const l2 = parseInt(document.getElementById('calcL2Count').textContent) || 0;
+        const l3 = parseInt(document.getElementById('calcL3Count').textContent) || 0;
+        const total = document.getElementById('calcTotalAmount').textContent;
+        const c = document.createElement('canvas');
+        c.width = 400; c.height = 460;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 400, 460);
+        ctx.fillStyle = '#72578B'; ctx.font = 'bold 20px Nunito, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('EarnSphere Earnings Estimate', 200, 45);
+        ctx.font = 'bold 28px Nunito, sans-serif'; ctx.fillStyle = '#333';
+        ctx.fillText(total, 200, 90);
+        ctx.font = '14px Nunito, sans-serif'; ctx.fillStyle = '#666';
         ctx.textAlign = 'left';
-        ctx.font = '13px Nunito, sans-serif';
-        ctx.fillStyle = '#72578B';
-        ctx.fillRect(40, 310, 12, 12);
-        ctx.fillStyle = '#333';
-        ctx.fillText('Level 1: ' + l1 + ' referrals', 60, 322);
-        ctx.fillStyle = '#D4A843';
-        ctx.fillRect(40, 335, 12, 12);
-        ctx.fillStyle = '#333';
-        ctx.fillText('Level 2: ' + l2 + ' referrals', 60, 347);
-        ctx.fillStyle = '#0EA5E9';
-        ctx.fillRect(40, 360, 12, 12);
-        ctx.fillStyle = '#333';
-        ctx.fillText('Level 3: ' + l3 + ' referrals', 60, 372);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#999';
-        ctx.font = '11px Nunito, sans-serif';
-        ctx.fillText('earnsphere.co.tz', 200, 480);
+        const items = [
+            ['Level 1 (Direct)', l1 + ' × TZS 2,500', '#72578B'],
+            ['Level 2', l2 + ' × TZS 1,500', '#D4A843'],
+            ['Level 3', l3 + ' × TZS 1,000', '#0EA5E9'],
+        ];
+        items.forEach((item, i) => {
+            const y = 140 + i * 60;
+            ctx.fillStyle = item[2]; ctx.fillRect(40, y, 14, 14);
+            ctx.fillStyle = '#333'; ctx.font = 'bold 14px Nunito, sans-serif';
+            ctx.fillText(item[0], 68, y + 12);
+            ctx.font = '13px Nunito, sans-serif'; ctx.fillStyle = '#666';
+            ctx.fillText(item[1], 68, y + 34);
+        });
+        ctx.textAlign = 'center'; ctx.fillStyle = '#999'; ctx.font = '11px Nunito, sans-serif';
+        ctx.fillText('earnsphere.co.tz', 200, 430);
         const link = document.createElement('a');
-        link.download = 'earnsphere-estimate.png';
-        link.href = chartCanvas.toDataURL('image/png');
+        link.download = 'earnsphere-summary.png';
+        link.href = c.toDataURL('image/png');
         link.click();
         App.showToast('Image downloaded!', 'success');
     }
