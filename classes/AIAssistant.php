@@ -537,6 +537,7 @@ class AIAssistant {
         $s = self::pickSentence($sw, $mixed, $ctx);
         $e = self::pick($tw['emoji']);
         $a = self::pick($tw['adj']);
+        $link = $ctx['link'];
         $greet = $sw ? self::pick(['Habari! 👋', 'Mambo! 😊', 'Niaje! ✌️', 'Sema! 👋']) : self::pick(["Hey! 👋", "Hello! 👋", "Hi there! 😊", "What's up! ✌️"]);
         $close = $sw ? self::pick(["📲 $link", "👇 $link", "👉 $link", "🔗 $link"]) : self::pick(["📲 $link", "👇 $link", "👉 $link", "🔗 $link"]);
         return "$greet\n$s\n\n$e $a opportunity! Withdraw to M-Pesa/Airtel instantly.\n\n$close";
@@ -546,6 +547,7 @@ class AIAssistant {
         $s1 = self::pickSentence($sw, $mixed, $ctx);
         $s2 = self::pickSentence($sw, $mixed, $ctx);
         $e = self::pick($tw['emoji']);
+        $link = $ctx['link'];
         $tag1 = $sw ? '#EarnSphere' : '#EarnSphere';
         $tags = $sw
             ? self::pick([['#Kipato', '#Mapato', '#Tanzania', '#Fursa'], ['#Biashara', '#Mtandao', '#KipatoChaZiada'], ['#Pesa', '#FursaTanzania', '#MapatoYaZiada']])
@@ -578,6 +580,7 @@ class AIAssistant {
         $s1 = self::pickSentence($sw, $mixed, $ctx);
         $s2 = self::pickSentence($sw, $mixed, $ctx);
         $e = self::pick($tw['emoji']);
+        $link = $ctx['link'];
         $head = $sw ? "🚀 **Fursa ya Kipato cha Ziada!**" : "🚀 **Extra Income Opportunity!**";
         $close = $sw ? "@EarnSphere - Fursa Yako ya Mapato!" : "@EarnSphere - Your Income Opportunity!";
         return "$head\n\n$s1\n\n$s2\n\n$e Withdraw via M-Pesa / Airtel Money\n\n🔗 $link\n\n$close";
@@ -586,6 +589,7 @@ class AIAssistant {
     private static function generateTwitter(bool $sw, bool $mixed, array $ctx, array $tw): string {
         $s = self::pickSentence($sw, $mixed, $ctx);
         $e = self::pick($tw['emoji']);
+        $link = $ctx['link'];
         $content = $sw
             ? "$e $s $e\n📲 $link\n#EarnSphere #Tanzania"
             : "$e $s $e\n📲 $link\n#EarnSphere #Tanzania";
@@ -595,6 +599,7 @@ class AIAssistant {
 
     private static function generateSMS(bool $sw, bool $mixed, array $ctx, array $tw): string {
         $s = self::pickSentence($sw, $mixed, $ctx);
+        $link = $ctx['link'];
         $content = $sw
             ? "$s 📲 $link"
             : "$s 📲 $link";
@@ -607,6 +612,7 @@ class AIAssistant {
         $s2 = self::pickSentence($sw, $mixed, $ctx);
         $s3 = self::pickSentence($sw, $mixed, $ctx);
         $greet = $sw ? "Habari rafiki!" : "Hello friend!";
+        $link = $ctx['link'];
         $body = $sw
             ? "Nina fursa nzuri ya kukutambulisha. $siteName inalipa wanachama wake kwa kualika marafiki."
             : "I have an amazing opportunity to share with you. $siteName pays its members for inviting friends.";
@@ -619,6 +625,7 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $c1 = self::number($ctx['commL1']);
         $site = $ctx['siteName'];
+        $link = $ctx['link'];
         $t = $sw ? "Jinsi Ya Kupata Mapato Ya Ziada Na $site" : "How To Earn Extra Income With $site";
         $p1 = $sw
             ? "Katika makala hii, utajifunza jinsi ya kuanza kupata mapato ya ziada kwa kutumia $site. Ni rahisi na unaweza kufanya kutoka nyumbani."
@@ -664,6 +671,7 @@ class AIAssistant {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
         $f = self::number($ctx['regFee']);
+        $link = $ctx['link'];
         $hook = $sw ? "Unataka kupata TZS $c1 kwa kushare link tu?" : "Want to earn TZS $c1 just by sharing a link?";
         $body = $sw
             ? "Hii ndiyo $site. Jiunge kwa TZS $f, alika marafiki, na kila mtu anayekubali anakuletea TZS $c1 moja kwa moja."
@@ -677,6 +685,7 @@ class AIAssistant {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
         $f = self::number($ctx['regFee']);
+        $link = $ctx['link'];
         $lines = [];
         if ($sw) {
             $lines[] = self::pick(["Hujambo, nina fursa ya kipekee kwako.", "Habari, nina kitu cha kushiriana nawe."]);
@@ -697,6 +706,7 @@ class AIAssistant {
     private static function generateCTA(bool $sw, bool $mixed, array $ctx, array $tw): string {
         $f = self::number($ctx['regFee']);
         $e = self::pick($tw['emoji']);
+        $link = $ctx['link'];
         if ($sw) {
             return self::pick([
                 "ANZA SASA! Bonyeza link, jiunge kwa TZS $f, na anza kupata mapato leo! $e",
@@ -716,6 +726,7 @@ class AIAssistant {
         $c1 = self::number($ctx['commL1']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
+        $link = $ctx['link'];
         $names = $sw ? ['Juma', 'Asha', 'Baraka', 'Neema', 'Salum', 'Mwajuma'] : ['John', 'Sarah', 'Peter', 'Grace', 'David', 'Mary'];
         $name = self::pick($names);
         if ($sw) {
@@ -728,6 +739,7 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $c1 = self::number($ctx['commL1']);
         $site = $ctx['siteName'];
+        $link = $ctx['link'];
         if ($sw) {
             $slides = [
                 "SLIDE 1: Unataka Mapato Ya Ziada?",
@@ -774,6 +786,7 @@ class AIAssistant {
         $c1 = self::number($ctx['commL1']);
         $site = $ctx['siteName'];
         $e = self::pick($tw['emoji']);
+        $link = $ctx['link'];
         $s = self::pickSentence($sw, $mixed, $ctx);
         if ($sw) {
             return "$e **MAPATO YAKO HAPA!**\n\n$site inakupa TZS $c1 kwa kila mtu unayemwalika. Malipo ya mara moja TZS $f.\n\n✅ Halali\n✅ Haraka\n✅ Hakuna vikwazo\n\n👉 $link";
@@ -787,6 +800,7 @@ class AIAssistant {
         $s3 = self::pickSentence($sw, $mixed, $ctx);
         $site = $ctx['siteName'];
         $e = self::pick($tw['emoji']);
+        $link = $ctx['link'];
         if ($sw) {
             $h = "FURSA YA MAPATO YA ZIADA";
             $close = "Usikose nafasi hii. Tuma ujumbe au bonyeza link leo!";
