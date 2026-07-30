@@ -316,119 +316,89 @@ include __DIR__ . '/includes/public_head.php';
     <?php if ($user['status'] === 'active'): ?>
     <div class="dash-section" id="earningsCalculator">
         <div class="calc-card">
-            <div class="calc-hero">
-                <h5><i class="fas fa-calculator me-1"></i> Earnings Calculator</h5>
-                <p>Tap numbers to calculate your referral earnings</p>
+            <div class="calc-header">
+                <i class="fas fa-calculator"></i> Earnings Calculator
             </div>
 
-            <!-- Calculator Screen -->
             <div class="calc-screen">
                 <div class="calc-screen-label">Paid Direct Referrals</div>
                 <div class="calc-screen-value" id="calcDisplay">10</div>
             </div>
 
-            <!-- Number Pad -->
             <div class="calc-numpad">
                 <div class="calc-numpad-grid">
-                    <button class="calc-num-btn num" data-num="1">1</button>
-                    <button class="calc-num-btn num" data-num="2">2</button>
-                    <button class="calc-num-btn num" data-num="3">3</button>
-                    <button class="calc-num-btn cmd-clear" data-action="clear">C</button>
-
-                    <button class="calc-num-btn num" data-num="4">4</button>
-                    <button class="calc-num-btn num" data-num="5">5</button>
-                    <button class="calc-num-btn num" data-num="6">6</button>
-                    <button class="calc-num-btn cmd-back" data-action="back"><i class="fas fa-delete-left"></i></button>
+                    <button class="calc-num-btn cmd-util" data-action="clear">C</button>
+                    <button class="calc-num-btn cmd-util" data-action="back"><i class="fas fa-delete-left"></i></button>
+                    <button class="calc-num-btn cmd-util" data-action="max">MAX</button>
 
                     <button class="calc-num-btn num" data-num="7">7</button>
                     <button class="calc-num-btn num" data-num="8">8</button>
                     <button class="calc-num-btn num" data-num="9">9</button>
-                    <button class="calc-num-btn cmd-eq" data-action="calc"><i class="fas fa-check"></i></button>
 
-                    <button class="calc-num-btn num" data-num="0">0</button>
+                    <button class="calc-num-btn num" data-num="4">4</button>
+                    <button class="calc-num-btn num" data-num="5">5</button>
+                    <button class="calc-num-btn num" data-num="6">6</button>
+
+                    <button class="calc-num-btn num" data-num="1">1</button>
+                    <button class="calc-num-btn num" data-num="2">2</button>
+                    <button class="calc-num-btn num" data-num="3">3</button>
+
                     <button class="calc-num-btn num" data-num="00">00</button>
-                    <button class="calc-num-btn num" data-num="100">100</button>
-                    <button class="calc-num-btn cmd-back" data-action="max"><i class="fas fa-chevron-up"></i></button>
+                    <button class="calc-num-btn num" data-num="0">0</button>
+                    <button class="calc-num-btn cmd-eq" data-action="calc"><i class="fas fa-equals"></i></button>
                 </div>
             </div>
 
-            <!-- Results -->
             <div class="calc-results">
-                <div class="calc-grid" id="calcResults">
-                    <div class="calc-level">
-                        <div class="calc-level-left"><i class="fas fa-user-plus" style="color:#72578B;"></i> Level 1 (Direct)</div>
-                        <div class="calc-level-right">
-                            <div class="calc-level-amount" id="calcL1Amount">TZS 25,000</div>
-                            <div class="calc-level-detail"><span id="calcL1Count">10</span> × TZS 2,500</div>
-                        </div>
-                    </div>
-                    <div class="calc-level l2">
-                        <div class="calc-level-left"><i class="fas fa-user-group" style="color:#D4A843;"></i> Level 2</div>
-                        <div class="calc-level-right">
-                            <div class="calc-level-amount" id="calcL2Amount">TZS 45,000</div>
-                            <div class="calc-level-detail"><span id="calcL2Count">30</span> × TZS 1,500</div>
-                        </div>
-                    </div>
-                    <div class="calc-level l3">
-                        <div class="calc-level-left"><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> Level 3</div>
-                        <div class="calc-level-right">
-                            <div class="calc-level-amount" id="calcL3Amount">TZS 90,000</div>
-                            <div class="calc-level-detail"><span id="calcL3Count">90</span> × TZS 1,000</div>
-                        </div>
-                    </div>
+                <div class="calc-lvl-row">
+                    <span class="calc-lvl-name"><i class="fas fa-user-plus" style="color:#72578B;"></i> L1</span>
+                    <span class="calc-lvl-detail" id="calcL1Count">10</span>
+                    <span class="calc-lvl-amt" id="calcL1Amount">TZS 25,000</span>
+                </div>
+                <div class="calc-lvl-row l2">
+                    <span class="calc-lvl-name"><i class="fas fa-user-group" style="color:#D4A843;"></i> L2</span>
+                    <span class="calc-lvl-detail" id="calcL2Count">30</span>
+                    <span class="calc-lvl-amt" id="calcL2Amount">TZS 45,000</span>
+                </div>
+                <div class="calc-lvl-row l3">
+                    <span class="calc-lvl-name"><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> L3</span>
+                    <span class="calc-lvl-detail" id="calcL3Count">90</span>
+                    <span class="calc-lvl-amt" id="calcL3Amount">TZS 90,000</span>
                 </div>
 
-                <div class="calc-total" id="calcTotal">
-                    <div class="calc-total-label">Estimated Total Earnings</div>
-                    <div class="calc-total-amount" id="calcTotalAmount">TZS 160,000</div>
+                <div class="calc-total-row" id="calcTotal">
+                    <span>Total</span>
+                    <span class="calc-total-val" id="calcTotalAmount">TZS 160,000</span>
                 </div>
 
-                <div class="calc-network">
-                    <div class="calc-network-title"><i class="fas fa-sitemap me-1" style="color:#72578B;"></i> Your Network</div>
-                    <div class="network-tree">
-                        <div class="network-node root">YOU</div>
-                        <div class="network-conn"><i class="fas fa-chevron-right"></i></div>
-                        <div class="network-level" id="networkL1"><span class="network-badge">10</span></div>
-                        <div class="network-conn"><i class="fas fa-chevron-right"></i></div>
-                        <div class="network-level" id="networkL2"><span class="network-badge">30</span></div>
-                        <div class="network-conn"><i class="fas fa-chevron-right"></i></div>
-                        <div class="network-level" id="networkL3"><span class="network-badge">90</span></div>
-                    </div>
+                <div class="calc-network-row">
+                    <span class="network-node root">YOU</span>
+                    <span class="network-arr"><i class="fas fa-chevron-right"></i></span>
+                    <span class="network-lvl" id="networkL1">10</span>
+                    <span class="network-arr"><i class="fas fa-chevron-right"></i></span>
+                    <span class="network-lvl" id="networkL2">30</span>
+                    <span class="network-arr"><i class="fas fa-chevron-right"></i></span>
+                    <span class="network-lvl" id="networkL3">90</span>
                 </div>
 
                 <?php if ($missionStatus && $missionStatus['has_mission']): ?>
-                <div class="calc-mission" id="calcMission">
-                    <div class="calc-mission-header">
-                        <i class="fas fa-trophy me-1" style="color:#D4A843;"></i>
-                        <strong>Today's Mission</strong>
-                    </div>
-                    <div class="calc-mission-body">
-                        <span>Invite 2 Paid Members</span>
-                        <span class="calc-mission-reward">+ TZS <?= number_format((int)($missionStatus['reward_amount'] ?? 500)) ?></span>
-                    </div>
-                    <div class="calc-mission-status" id="calcMissionStatus">
-                        <i class="fas fa-check-circle" style="color:#10b981;"></i>
-                        <span id="calcMissionText">Mission Achievable Today</span>
-                    </div>
+                <div class="calc-mission-sm" id="calcMission">
+                    <span><i class="fas fa-trophy" style="color:#D4A843;"></i> Mission:</span>
+                    <span>Invite 2 Paid Members</span>
+                    <span class="calc-mission-rew">+TZS <?= number_format((int)($missionStatus['reward_amount'] ?? 500)) ?></span>
+                    <span id="calcMissionStatus"><i class="fas fa-check-circle" style="color:#10b981;"></i></span>
                 </div>
                 <?php endif; ?>
 
                 <div class="calc-actions">
-                    <button class="calc-btn" onclick="copyEarningsSummary()"><i class="fas fa-copy"></i> Copy</button>
-                    <button class="calc-btn" onclick="exportCalcPNG()"><i class="fas fa-image"></i> PNG</button>
-                    <button class="calc-btn" onclick="window.print()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="calc-btn" onclick="copyEarningsSummary()"><i class="fas fa-copy"></i></button>
+                    <button class="calc-btn" onclick="exportCalcPNG()"><i class="fas fa-image"></i></button>
+                    <button class="calc-btn" onclick="window.print()"><i class="fas fa-file-pdf"></i></button>
                 </div>
 
                 <div class="calc-cta">
-                    <p><i class="fas fa-rocket me-1" style="color:#72578B;"></i> Want to reach this income faster?</p>
-                    <a href="ai-assistant" class="calc-cta-btn">
-                        <i class="fas fa-wand-magic-sparkles"></i> Generate Marketing Content
-                    </a>
-                </div>
-
-                <div class="calc-disclaimer">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Estimated earnings based on average referral growth. Actual results vary.
+                    <span>Want to earn faster?</span>
+                    <a href="ai-assistant"><i class="fas fa-wand-magic-sparkles"></i> AI Marketing</a>
                 </div>
             </div>
         </div>
@@ -491,18 +461,16 @@ include __DIR__ . '/includes/public_head.php';
         document.getElementById('calcL2Count').textContent = l2.toLocaleString();
         document.getElementById('calcL3Count').textContent = l3.toLocaleString();
 
-        document.getElementById('networkL1').innerHTML = `<span class="network-badge">${l1.toLocaleString()}</span>`;
-        document.getElementById('networkL2').innerHTML = `<span class="network-badge">${l2.toLocaleString()}</span>`;
-        document.getElementById('networkL3').innerHTML = `<span class="network-badge">${l3.toLocaleString()}</span>`;
+        document.getElementById('networkL1').textContent = l1.toLocaleString();
+        document.getElementById('networkL2').textContent = l2.toLocaleString();
+        document.getElementById('networkL3').textContent = l3.toLocaleString();
 
         const missionStatus = document.getElementById('calcMissionStatus');
         if (missionStatus) {
-            const missionText = document.getElementById('calcMissionText');
             if (x >= 2) {
-                missionStatus.innerHTML = '<i class="fas fa-check-circle" style="color:#10b981;"></i> <span>Mission Achievable Today</span>';
+                missionStatus.innerHTML = '<i class="fas fa-check-circle" style="color:#10b981;"></i>';
             } else {
-                const needed = 2 - x;
-                missionStatus.innerHTML = '<i class="fas fa-hourglass-half" style="color:#D4A843;"></i> <span>Need ' + needed + ' more referral' + (needed > 1 ? 's' : '') + '</span>';
+                missionStatus.innerHTML = '<i class="fas fa-hourglass-half" style="color:#D4A843;"></i>';
             }
         }
     }

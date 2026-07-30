@@ -1870,385 +1870,287 @@ img {
 }
 
 /* ============================================================
-   EARNINGS CALCULATOR — Calculator Style
+   EARNINGS CALCULATOR — Phone Calculator Style
    ============================================================ */
 .calc-card {
-    background: #fff;
-    border-radius: 20px;
+    background: #000;
+    border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 30px rgba(0,0,0,0.15);
 }
-
-/* --- Hero header --- */
-.calc-hero {
-    background: linear-gradient(135deg, #72578B 0%, #5a3f72 50%, #4a2f5e 100%);
-    padding: 1rem 1.25rem;
-    color: #fff;
-}
-.calc-hero h5 {
-    font-weight: 800;
-    font-size: 1rem;
-    margin: 0;
-}
-.calc-hero p {
-    font-size: 0.7rem;
-    opacity: 0.7;
-    margin: 0.1rem 0 0;
-}
-
-/* --- Calculator screen --- */
-.calc-screen {
+.calc-header {
     background: #1a1a2e;
-    padding: 1rem 1.25rem 0.75rem;
+    padding: 0.6rem 1rem;
+    color: rgba(255,255,255,0.35);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Screen */
+.calc-screen {
+    background: #000;
+    padding: 1.5rem 1.25rem 0.75rem;
     color: #fff;
+    text-align: right;
 }
 .calc-screen-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: rgba(255,255,255,0.4);
-    font-weight: 600;
+    color: rgba(255,255,255,0.25);
+    font-weight: 500;
 }
 .calc-screen-value {
-    font-size: 2.2rem;
-    font-weight: 800;
-    font-family: 'Nunito', monospace;
-    letter-spacing: -1px;
+    font-size: 3rem;
+    font-weight: 300;
+    font-family: 'Nunito', sans-serif;
     line-height: 1.1;
-    margin-top: 0.15rem;
-    color: #D4A843;
+    margin-top: 0.1rem;
+    color: #fff;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: color 0.15s;
 }
 
-/* --- Numpad --- */
+/* Numpad */
 .calc-numpad {
-    padding: 0.75rem;
-    background: #f5f3f7;
+    padding: 0.5rem 0.75rem 0.75rem;
+    background: #000;
 }
 .calc-numpad-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
 }
 .calc-num-btn {
-    padding: 0.9rem 0;
+    aspect-ratio: 1 / 1;
     border: none;
-    border-radius: 14px;
-    font-size: 1.2rem;
-    font-weight: 800;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.1s ease;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: 'Nunito', sans-serif;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 .calc-num-btn.num {
-    background: #fff;
-    color: var(--gray-800);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    background: #333;
+    color: #fff;
 }
 .calc-num-btn.num:active {
-    transform: scale(0.94);
-    background: var(--gray-100);
+    background: #555;
+    transform: scale(0.92);
 }
-.calc-num-btn.cmd-clear {
-    background: #fee2e2;
-    color: #dc2626;
-    box-shadow: 0 2px 6px rgba(220,38,38,0.1);
+.calc-num-btn.cmd-util {
+    background: #a5a5a5;
+    color: #000;
+    font-size: 1rem;
+    font-weight: 600;
 }
-.calc-num-btn.cmd-clear:active {
-    transform: scale(0.94);
-    background: #fecaca;
-}
-.calc-num-btn.cmd-back {
-    background: var(--gray-200);
-    color: var(--gray-600);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
-.calc-num-btn.cmd-back:active {
-    transform: scale(0.94);
-    background: var(--gray-300);
+.calc-num-btn.cmd-util:active {
+    background: #c5c5c5;
+    transform: scale(0.92);
 }
 .calc-num-btn.cmd-eq {
-    background: linear-gradient(135deg, #72578B, #5a3f72);
+    background: #ff9f0a;
     color: #fff;
-    box-shadow: 0 2px 8px rgba(114,87,139,0.25);
+    font-size: 1.3rem;
 }
 .calc-num-btn.cmd-eq:active {
-    transform: scale(0.94);
+    background: #ffb84d;
+    transform: scale(0.92);
 }
 
-/* --- Results area --- */
+/* Results */
 .calc-results {
-    padding: 0.75rem 1.25rem 1.25rem;
+    background: #1a1a2e;
+    padding: 0.75rem 1rem 1rem;
+    color: #fff;
 }
-.calc-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-}
-.calc-level {
+.calc-lvl-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--gray-50);
-    border-radius: 12px;
-    padding: 0.6rem 0.85rem;
-    border-left: 4px solid #72578B;
-}
-.calc-level.l2 { border-left-color: #D4A843; }
-.calc-level.l3 { border-left-color: #0EA5E9; }
-.calc-level-left {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
     font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--gray-700);
 }
-.calc-level-right {
-    text-align: right;
-}
-.calc-level-amount {
-    font-weight: 800;
-    color: var(--gray-800);
-    font-size: 0.85rem;
-}
-.calc-level-detail {
-    font-size: 0.65rem;
-    color: var(--gray-400);
-}
-
-/* --- Total --- */
-.calc-total {
-    text-align: center;
-    padding: 0.9rem 1rem;
-    background: linear-gradient(135deg, #72578B 0%, #5a3f72 50%, #3d2660 100%);
-    border-radius: 14px;
-    color: #fff;
-    margin-bottom: 0.75rem;
-    position: relative;
-    overflow: hidden;
-}
-.calc-total::before {
-    content: '';
-    position: absolute;
-    top: -30%;
-    left: -10%;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: rgba(212,168,67,0.08);
-}
-.calc-total.coin-flash {
-    animation: coinFlash 0.4s ease;
-}
-@keyframes coinFlash {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(212,168,67,0.35); }
-    100% { transform: scale(1); }
-}
-.calc-total-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    opacity: 0.7;
-    font-weight: 600;
-}
-.calc-total-amount {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #D4A843;
-    margin-top: 0.15rem;
-    position: relative;
-}
-
-/* --- Network --- */
-.calc-network {
-    background: var(--gray-50);
-    border-radius: 14px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-    text-align: center;
-}
-.calc-network-title {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--gray-500);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.network-tree {
+.calc-lvl-row.l2 { border-bottom-color: rgba(212,168,67,0.06); }
+.calc-lvl-row.l3 { border-bottom: none; margin-bottom: 0.25rem; }
+.calc-lvl-name {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 0.3rem;
-}
-.network-node {
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-align: center;
-}
-.network-node.root {
-    background: linear-gradient(135deg, #72578B, #5a3f72);
-    color: #fff;
-    min-width: 50px;
-    box-shadow: 0 2px 6px rgba(114,87,139,0.2);
-}
-.network-conn {
-    color: #c4b3d9;
-    font-size: 0.65rem;
-}
-.network-level {
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
-    background: #fff;
-    border: 2px solid var(--gray-200);
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-align: center;
-    color: var(--gray-600);
-    min-width: 40px;
-}
-.network-badge {
-    font-weight: 800;
-    color: #72578B;
-}
-
-/* --- Mission --- */
-.calc-mission {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 12px;
-    padding: 0.65rem 0.85rem;
-    margin-bottom: 0.75rem;
-}
-.calc-mission-header {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #92400e;
-    margin-bottom: 0.2rem;
-}
-.calc-mission-body {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--gray-700);
-}
-.calc-mission-reward {
-    color: #72578B;
-    font-weight: 800;
-    font-size: 0.9rem;
-}
-.calc-mission-status {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.7rem;
-    margin-top: 0.2rem;
-    color: var(--gray-600);
-}
-
-/* --- Actions --- */
-.calc-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-}
-.calc-btn {
-    padding: 0.55rem 0.3rem;
-    border: 2px solid var(--gray-200);
-    border-radius: 12px;
-    background: #fff;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--gray-600);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    line-height: 1.2;
-}
-.calc-btn:hover {
-    border-color: #72578B;
-    color: #72578B;
-    background: #f8f5fc;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(114,87,139,0.1);
-}
-.calc-btn:active {
-    transform: scale(0.97);
-}
-
-/* --- CTA --- */
-.calc-cta {
-    text-align: center;
-    margin-bottom: 0;
-    padding: 0.85rem;
-    background: linear-gradient(135deg, #f8f5fc, #f0ebf5);
-    border-radius: 14px;
-}
-.calc-cta p {
-    font-size: 0.75rem;
-    color: var(--gray-500);
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-.calc-cta-btn {
-    display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.6rem 1.25rem;
-    background: linear-gradient(135deg, #72578B, #5a3f72);
-    color: #fff;
-    border-radius: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.7rem;
+}
+.calc-lvl-detail {
+    color: rgba(255,255,255,0.3);
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+.calc-lvl-amt {
     font-weight: 700;
-    font-size: 0.8rem;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    box-shadow: 0 3px 12px rgba(114,87,139,0.25);
-}
-.calc-cta-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(114,87,139,0.35);
+    font-size: 0.85rem;
     color: #fff;
-}
-.calc-cta-btn:active {
-    transform: scale(0.97);
+    min-width: 90px;
+    text-align: right;
 }
 
-/* --- Disclaimer --- */
-.calc-disclaimer {
+.calc-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0 0.5rem;
+    font-weight: 700;
+    color: #fff;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.3s ease;
+}
+.calc-total-row.coin-flash .calc-total-val {
+    color: #ff9f0a;
+}
+.calc-total-val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    transition: color 0.3s ease;
+}
+
+/* Network */
+.calc-network-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.5rem 0;
+    margin-top: 0.15rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
     font-size: 0.65rem;
-    color: var(--gray-400);
+}
+.network-node.root {
+    background: #ff9f0a;
+    color: #000;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.6rem;
+}
+.network-arr {
+    color: rgba(255,255,255,0.15);
+    font-size: 0.5rem;
+}
+.network-lvl {
+    background: rgba(255,255,255,0.08);
+    padding: 0.15rem 0.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.8);
+    min-width: 28px;
     text-align: center;
-    padding: 0.5rem 0.75rem;
-    background: var(--gray-50);
+}
+
+/* Mission */
+.calc-mission-sm {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    margin-top: 0.4rem;
+    background: rgba(212,168,67,0.08);
     border-radius: 10px;
-    line-height: 1.4;
-    margin-top: 0.75rem;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.7);
+    flex-wrap: wrap;
+}
+.calc-mission-sm span:first-child {
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+}
+.calc-mission-rew {
+    color: #ff9f0a;
+    font-weight: 700;
+    margin-left: auto;
+}
+#calcMissionStatus {
+    display: inline-flex;
+}
+
+/* Actions */
+.calc-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+}
+.calc-btn {
+    flex: 1;
+    padding: 0.5rem 0;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+}
+.calc-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+.calc-btn:active {
+    transform: scale(0.95);
+}
+
+/* CTA */
+.calc-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.6rem;
+    padding: 0.5rem 0.6rem;
+    background: rgba(114,87,139,0.15);
+    border-radius: 10px;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.4);
+}
+.calc-cta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    background: #ff9f0a;
+    color: #000;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.65rem;
+    transition: all 0.15s ease;
+}
+.calc-cta a:active {
+    transform: scale(0.95);
 }
 
 @media (max-width: 480px) {
-    .calc-actions {
-        grid-template-columns: 1fr;
-    }
     .calc-screen-value {
-        font-size: 1.8rem;
+        font-size: 2.5rem;
     }
     .calc-num-btn {
-        padding: 0.8rem 0;
-        font-size: 1.1rem;
+        font-size: 1.3rem;
     }
 }
