@@ -615,8 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const list = document.getElementById('historyList');
             card.style.display = 'block';
             list.innerHTML = data.data.items.slice(0, 5).map(item => {
-                const label = '<?php foreach ($contentTypes as $t) { echo "'$t':" . AIAssistant::getContentTypeLabel($t) . "|"; } ?>';
-                const labels = Object.fromEntries(label.split('|').filter(Boolean).map(s => s.split(':')));
+                const labels = <?= json_encode(array_combine($contentTypes, array_map('AIAssistant::getContentTypeLabel', $contentTypes))) ?>;
                 const typeLabel = labels[item.content_type] || item.content_type;
                 return '<div class="history-item" onclick="loadHistoryContent(' + item.id + ')">' +
                     '<div style="font-weight:600;font-size:0.85rem;">' + typeLabel + '</div>' +
