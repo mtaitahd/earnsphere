@@ -314,112 +314,116 @@ include __DIR__ . '/includes/public_head.php';
     <!-- Earnings Calculator -->
     <?php if ($user['status'] === 'active'): ?>
     <div class="dash-section" id="earningsCalculator">
-        <div class="section-header">
-            <h6><i class="fas fa-calculator me-1" style="color:#72578B;"></i> Earnings Calculator</h6>
-        </div>
-
         <div class="calc-card">
-            <div class="calc-input-group">
-                <label class="calc-label">Paid Direct Referrals</label>
-                <div class="calc-input-row">
-                    <input type="range" id="calcSlider" class="calc-slider" min="0" max="1000" value="10" oninput="updateCalculator()">
-                    <input type="number" id="calcInput" class="calc-number" min="0" max="1000" value="10" oninput="syncSlider(this.value)">
-                </div>
+            <div class="calc-hero">
+                <div class="calc-hero-icon"><i class="fas fa-calculator"></i></div>
+                <h5>Earnings Calculator</h5>
+                <p>See what you could earn with your referral network</p>
             </div>
 
-            <div class="calc-grid">
-                <div class="calc-level">
-                    <div class="calc-level-header">
-                        <span><i class="fas fa-user-plus" style="color:#72578B;"></i> Level 1 (Direct)</span>
-                        <span class="calc-level-amount" id="calcL1Amount">TZS 25,000</span>
-                    </div>
-                    <div class="calc-bar-track">
-                        <div class="calc-bar-fill" id="calcL1Bar" style="width:15.6%;background:#72578B;"></div>
-                    </div>
-                    <div class="calc-level-detail">
-                        <span class="calc-count" id="calcL1Count">10</span>
-                        <span class="calc-rate">× TZS 2,500</span>
+            <div class="calc-body">
+                <div class="calc-input-group">
+                    <label class="calc-label"><i class="fas fa-user-plus me-1" style="color:#72578B;"></i> Paid Direct Referrals</label>
+                    <div class="calc-input-row">
+                        <input type="range" id="calcSlider" class="calc-slider" min="0" max="1000" value="10" oninput="updateCalculator()">
+                        <input type="number" id="calcInput" class="calc-number" min="0" max="1000" value="10" oninput="syncSlider(this.value)">
                     </div>
                 </div>
-                <div class="calc-level">
-                    <div class="calc-level-header">
-                        <span><i class="fas fa-user-group" style="color:#D4A843;"></i> Level 2</span>
-                        <span class="calc-level-amount" id="calcL2Amount">TZS 45,000</span>
-                    </div>
-                    <div class="calc-bar-track">
-                        <div class="calc-bar-fill" id="calcL2Bar" style="width:28.1%;background:#D4A843;"></div>
-                    </div>
-                    <div class="calc-level-detail">
-                        <span class="calc-count" id="calcL2Count">30</span>
-                        <span class="calc-rate">× TZS 1,500</span>
-                    </div>
-                </div>
-                <div class="calc-level">
-                    <div class="calc-level-header">
-                        <span><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> Level 3</span>
-                        <span class="calc-level-amount" id="calcL3Amount">TZS 90,000</span>
-                    </div>
-                    <div class="calc-bar-track">
-                        <div class="calc-bar-fill" id="calcL3Bar" style="width:56.3%;background:#0EA5E9;"></div>
-                    </div>
-                    <div class="calc-level-detail">
-                        <span class="calc-count" id="calcL3Count">90</span>
-                        <span class="calc-rate">× TZS 1,000</span>
-                    </div>
-                </div>
-            </div>
 
-            <div class="calc-total" id="calcTotal">
-                <div class="calc-total-label">Estimated Total Earnings</div>
-                <div class="calc-total-amount" id="calcTotalAmount">TZS 160,000</div>
-            </div>
-
-            <div class="calc-network">
-                <div class="calc-network-title"><i class="fas fa-sitemap me-1"></i> Network Preview</div>
-                <div class="network-tree" id="networkTree">
-                    <div class="network-node root">YOU</div>
-                    <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
-                    <div class="network-level" id="networkL1"><span class="network-badge">10</span></div>
-                    <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
-                    <div class="network-level" id="networkL2"><span class="network-badge">30</span></div>
-                    <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
-                    <div class="network-level" id="networkL3"><span class="network-badge">90</span></div>
+                <div class="calc-grid">
+                    <div class="calc-level">
+                        <div class="calc-level-header">
+                            <span><i class="fas fa-user-plus" style="color:#72578B;"></i> Level 1 (Direct)</span>
+                            <span class="calc-level-amount" id="calcL1Amount">TZS 25,000</span>
+                        </div>
+                        <div class="calc-bar-track">
+                            <div class="calc-bar-fill" id="calcL1Bar" style="width:15.6%;background:#72578B;"></div>
+                        </div>
+                        <div class="calc-level-detail">
+                            <span class="calc-count" id="calcL1Count">10</span>
+                            <span class="calc-rate">× TZS 2,500</span>
+                        </div>
+                    </div>
+                    <div class="calc-level l2">
+                        <div class="calc-level-header">
+                            <span><i class="fas fa-user-group" style="color:#D4A843;"></i> Level 2</span>
+                            <span class="calc-level-amount" id="calcL2Amount">TZS 45,000</span>
+                        </div>
+                        <div class="calc-bar-track">
+                            <div class="calc-bar-fill" id="calcL2Bar" style="width:28.1%;background:#D4A843;"></div>
+                        </div>
+                        <div class="calc-level-detail">
+                            <span class="calc-count" id="calcL2Count">30</span>
+                            <span class="calc-rate">× TZS 1,500</span>
+                        </div>
+                    </div>
+                    <div class="calc-level l3">
+                        <div class="calc-level-header">
+                            <span><i class="fas fa-people-arrows" style="color:#0EA5E9;"></i> Level 3</span>
+                            <span class="calc-level-amount" id="calcL3Amount">TZS 90,000</span>
+                        </div>
+                        <div class="calc-bar-track">
+                            <div class="calc-bar-fill" id="calcL3Bar" style="width:56.3%;background:#0EA5E9;"></div>
+                        </div>
+                        <div class="calc-level-detail">
+                            <span class="calc-count" id="calcL3Count">90</span>
+                            <span class="calc-rate">× TZS 1,000</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <?php if ($missionStatus && $missionStatus['has_mission']): ?>
-            <div class="calc-mission" id="calcMission">
-                <div class="calc-mission-header">
-                    <i class="fas fa-trophy me-1" style="color:#D4A843;"></i>
-                    <strong>Today's Mission</strong>
+                <div class="calc-total" id="calcTotal">
+                    <div class="calc-total-label">Estimated Total Earnings</div>
+                    <div class="calc-total-amount" id="calcTotalAmount">TZS 160,000</div>
                 </div>
-                <div class="calc-mission-body">
-                    <span>Invite 2 Paid Members</span>
-                    <span class="calc-mission-reward">+ TZS <?= number_format((int)($missionStatus['reward_amount'] ?? 500)) ?></span>
+
+                <div class="calc-network">
+                    <div class="calc-network-title"><i class="fas fa-sitemap me-1" style="color:#72578B;"></i> Your Network</div>
+                    <div class="network-tree">
+                        <div class="network-node root">YOU</div>
+                        <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                        <div class="network-level" id="networkL1"><span class="network-badge">10</span></div>
+                        <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                        <div class="network-level" id="networkL2"><span class="network-badge">30</span></div>
+                        <div class="network-conn"><i class="fas fa-chevron-down"></i></div>
+                        <div class="network-level" id="networkL3"><span class="network-badge">90</span></div>
+                    </div>
                 </div>
-                <div class="calc-mission-status" id="calcMissionStatus">
-                    <i class="fas fa-check-circle" style="color:#10b981;"></i>
-                    <span id="calcMissionText">Mission Achievable Today</span>
+
+                <?php if ($missionStatus && $missionStatus['has_mission']): ?>
+                <div class="calc-mission" id="calcMission">
+                    <div class="calc-mission-header">
+                        <i class="fas fa-trophy me-1" style="color:#D4A843;"></i>
+                        <strong>Today's Mission</strong>
+                    </div>
+                    <div class="calc-mission-body">
+                        <span>Invite 2 Paid Members</span>
+                        <span class="calc-mission-reward">+ TZS <?= number_format((int)($missionStatus['reward_amount'] ?? 500)) ?></span>
+                    </div>
+                    <div class="calc-mission-status" id="calcMissionStatus">
+                        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                        <span id="calcMissionText">Mission Achievable Today</span>
+                    </div>
                 </div>
-            </div>
-            <?php endif; ?>
+                <?php endif; ?>
 
-            <div class="calc-actions">
-                <button class="calc-btn" onclick="copyEarningsSummary()"><i class="fas fa-copy me-1"></i> Copy Summary</button>
-                <button class="calc-btn" onclick="exportCalcPNG()"><i class="fas fa-image me-1"></i> Download PNG</button>
-                <button class="calc-btn" onclick="window.print()"><i class="fas fa-file-pdf me-1"></i> Download PDF</button>
-            </div>
+                <div class="calc-actions">
+                    <button class="calc-btn" onclick="copyEarningsSummary()"><i class="fas fa-copy"></i> Copy</button>
+                    <button class="calc-btn" onclick="exportCalcPNG()"><i class="fas fa-image"></i> PNG</button>
+                    <button class="calc-btn" onclick="window.print()"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
 
-            <div class="calc-cta">
-                <p>Want to reach this income faster?</p>
-                <a href="ai-assistant" class="calc-cta-btn">
-                    <i class="fas fa-wand-magic-sparkles me-1"></i> Generate Marketing Content
-                </a>
-            </div>
+                <div class="calc-cta">
+                    <p><i class="fas fa-rocket me-1" style="color:#72578B;"></i> Want to reach this income faster?</p>
+                    <a href="ai-assistant" class="calc-cta-btn">
+                        <i class="fas fa-wand-magic-sparkles"></i> Generate Marketing Content
+                    </a>
+                </div>
 
-            <div class="calc-disclaimer">
-                <i class="fas fa-info-circle me-1"></i>
-                This is an estimated earning based on average referral growth. Actual earnings depend on referral activity.
+                <div class="calc-disclaimer">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Estimated earnings based on average referral growth. Actual results vary.
+                </div>
             </div>
         </div>
     </div>
