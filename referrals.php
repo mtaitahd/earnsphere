@@ -71,8 +71,8 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         
         <div class="qr-container">
-            <canvas id="referralQR"></canvas>
-            <p>Scan to join your network</p>
+            <img src="<?= generateQRCodeUrl($referralLink, 180) ?>" alt="QR Code" width="180" height="180">
+            <p>Scan QR code to join</p>
         </div>
     </div>
     
@@ -172,15 +172,3 @@ include __DIR__ . '/includes/public_head.php';
 </nav>
 
 <?php include __DIR__ . '/includes/public_foot.php'; ?>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof QRCode !== 'undefined') {
-        QRCode.toCanvas(document.getElementById('referralQR'), <?= json_encode($referralLink) ?>, {
-            width: 160,
-            margin: 1,
-            color: { dark: '#72578B', light: '#FFFFFF' }
-        });
-    }
-});
-</script>

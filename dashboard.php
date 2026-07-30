@@ -254,7 +254,7 @@ include __DIR__ . '/includes/public_head.php';
         
         <!-- QR Code -->
         <div class="qr-container">
-            <canvas id="referralQR"></canvas>
+            <img src="<?= generateQRCodeUrl($referralLink, 180) ?>" alt="QR Code" width="180" height="180">
             <p>Scan QR code to join</p>
         </div>
     </div>
@@ -861,16 +861,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php include __DIR__ . '/includes/public_foot.php'; ?>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof QRCode !== 'undefined') {
-        QRCode.toCanvas(document.getElementById('referralQR'), <?= json_encode($referralLink) ?>, {
-            width: 160,
-            margin: 1,
-            color: { dark: '#72578B', light: '#FFFFFF' }
-        });
-    }
-});
-</script>
+<?php include __DIR__ . '/includes/public_foot.php'; ?>
