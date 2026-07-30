@@ -6,6 +6,8 @@
 
 require_once dirname(__DIR__) . '/config/database.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
+require_once dirname(__DIR__) . '/classes/CommissionEngine.php';
+require_once dirname(__DIR__) . '/classes/Wallet.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
@@ -57,6 +59,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($user) {
             deleteUserAndData($userId);
             setFlash('success', 'User "' . sanitize($user['full_name']) . '" deleted permanently');
+        }
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
+    if ($action === 'mark_as_paid') {
+        $userId = (int)($_POST['user_id'] ?? 0);
+        $user = Database::fetchOne("SELECT id, full_name, phone, status FROM users WHERE id = ? AND role = 'user'", [$userId]);
+        if ($user && $user['status'] !== 'active') {
+            $existingPayment = Database::fetchOne("SELECT id FROM payments WHERE user_id = ? AND status = 'completed' LIMIT 1", [$userId]);
+            if (!$existingPayment) {
+                $fee = (int) app_setting('registration_fee', REGISTRATION_FEE);
+                Database::beginTransaction();
+                try {
+                    Database::insert('payments', [
+                        'user_id'         => $userId,
+                        'order_id'        => 'ADMIN-' . time() . '-' . $userId,
+                        'amount'          => $fee,
+                        'currency'        => 'TZS',
+                        'payment_method'  => 'manual_admin',
+                        'phone'           => $user['phone'] ?? '',
+                        'status'          => 'completed',
+                        'completed_at'    => date('Y-m-d H:i:s'),
+                        'metadata'        => json_encode(['marked_by' => $_SESSION['user_id'], 'method' => 'admin']),
+                    ]);
+                    Database::update('users', ['status' => 'active'], 'id = ?', [$userId]);
+                    CommissionEngine::processRegistrationCommissions($userId);
+                    Auth::logActivity($userId, 'account_activated', 'Account activated by admin (Mark as Paid)');
+                    Database::commit();
+                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as paid — TZS ' . number_format($fee) . ' — account activated + commissions processed');
+                } catch (Exception $e) {
+                    Database::rollback();
+                    setFlash('error', 'Error: ' . $e->getMessage());
+                    ErrorLogger::logException($e, 'system', $userId, 'admin/users.php');
+                }
+            } else {
+                setFlash('warning', 'User already has a completed payment record');
+            }
+        } else {
+            setFlash('error', 'User not found or already active');
         }
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
@@ -140,12 +182,14 @@ if ($status) {
 $total = Database::count('users', $where, $params);
 
 $users = Database::fetchAll(
-    "SELECT u.*, 
+    "SELECT u.*,
             (SELECT COUNT(*) FROM users WHERE referred_by = u.id) as direct_referrals,
-            (SELECT COALESCE(SUM(amount),0) FROM commissions WHERE earner_id = u.id AND status != 'cancelled') as total_earned
-     FROM users u 
-     WHERE {$where} 
-     ORDER BY u.created_at DESC 
+            (SELECT COALESCE(SUM(amount),0) FROM commissions WHERE earner_id = u.id AND status != 'cancelled') as total_earned,
+            (SELECT amount FROM payments WHERE user_id = u.id AND status = 'completed' ORDER BY id DESC LIMIT 1) as paid_amount,
+            (SELECT completed_at FROM payments WHERE user_id = u.id AND status = 'completed' ORDER BY id DESC LIMIT 1) as paid_date
+     FROM users u
+     WHERE {$where}
+     ORDER BY u.created_at DESC
      LIMIT {$perPage} OFFSET {$offset}",
     $params
 );
@@ -219,6 +263,7 @@ include __DIR__ . '/admin_header.php';
                             <th>Code</th>
                             <th>Referrals</th>
                             <th>Earnings</th>
+                            <th>Payment</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th>Action</th>
@@ -239,6 +284,14 @@ include __DIR__ . '/admin_header.php';
                             <td><code style="font-size:0.75rem;"><?= $u['referral_code'] ?></code></td>
                             <td><strong><?= number_format($u['direct_referrals']) ?></strong></td>
                             <td><strong style="color:#10b981;"><?= formatCurrency($u['total_earned']) ?></strong></td>
+                            <td>
+                                <?php if ($u['paid_amount']): ?>
+                                    <span style="color:#10b981;font-weight:700;font-size:0.85rem;"><?= formatCurrency($u['paid_amount']) ?></span>
+                                    <br><small style="color:#9ca3af;font-size:0.7rem;"><?= date('d M Y', strtotime($u['paid_date'])) ?></small>
+                                <?php else: ?>
+                                    <span class="text-muted" style="font-size:0.85rem;">—</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?= statusBadge($u['status']) ?></td>
                             <td><small><?= date('d M Y', strtotime($u['created_at'])) ?></small></td>
                             <td>
@@ -263,6 +316,18 @@ include __DIR__ . '/admin_header.php';
                                         </li>
                                         <?php endif; ?>
                                         <?php endforeach; ?>
+                                        <?php if ($u['status'] === 'pending' && !$u['paid_amount']): ?>
+                                        <li>
+                                            <form method="POST" class="d-inline" onsubmit="return confirm('Mark <?= sanitize($u['full_name']) ?> as PAID? Their account will be activated and commissions will be processed.')">
+                                                <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+                                                <input type="hidden" name="action" value="mark_as_paid">
+                                                <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                <button type="submit" class="dropdown-item text-success">
+                                                    <i class="fas fa-check-circle me-1"></i> Mark as Paid
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <?php endif; ?>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item" href="<?= SITE_URL ?>/admin/error-logs?<?= http_build_query(['user_id' => $u['id']]) ?>">
@@ -292,7 +357,7 @@ include __DIR__ . '/admin_header.php';
                         
                         <?php if (empty($users)): ?>
                         <tr>
-                            <td colspan="10" class="text-center py-4">
+                            <td colspan="11" class="text-center py-4">
                                 <i class="fas fa-users fa-2x mb-2" style="color:#d1d5db;"></i>
                                 <p class="text-muted mb-0">No users found</p>
                             </td>
