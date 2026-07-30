@@ -18,9 +18,11 @@ class AIAssistant {
         'marketing_slogan',
         'catchy_headline',
         'video_script',
+        'youtube_script',
         'voiceover_script',
         'cta',
         'referral_story',
+        'success_story',
         'carousel_text',
         'poster_content',
         'short_ad',
@@ -29,6 +31,12 @@ class AIAssistant {
         'follow_up_message',
         'customer_reply',
         'objection_handling',
+        'seo_title',
+        'seo_description',
+        'landing_page_copy',
+        'homepage_hero',
+        'referral_landing_copy',
+        'faq',
     ];
 
     const TONES = [
@@ -56,29 +64,37 @@ class AIAssistant {
 
     public static function getContentTypeLabel(string $type): string {
         $labels = [
-            'whatsapp_message'   => 'WhatsApp Message',
-            'facebook_post'      => 'Facebook Post',
-            'instagram_caption'  => 'Instagram Caption',
-            'tiktok_caption'     => 'TikTok Caption',
-            'telegram_message'   => 'Telegram Message',
-            'twitter_post'       => 'Twitter Post',
-            'blog_article'       => 'Blog Article',
-            'referral_sms'       => 'Referral SMS',
-            'referral_email'     => 'Referral Email',
-            'marketing_slogan'   => 'Marketing Slogan',
-            'catchy_headline'    => 'Catchy Headline',
-            'video_script'       => 'Video Script',
-            'voiceover_script'   => 'Voice-over Script',
-            'cta'                => 'Call To Action',
-            'referral_story'     => 'Referral Story',
-            'carousel_text'      => 'Carousel Text',
-            'poster_content'     => 'Poster Content',
-            'short_ad'           => 'Short Ad',
-            'long_ad'            => 'Long Ad',
-            'hook'               => 'Hook',
-            'follow_up_message'  => 'Follow-up Message',
-            'customer_reply'     => 'Customer Reply',
-            'objection_handling' => 'Objection Handling',
+            'whatsapp_message'     => 'WhatsApp Message',
+            'facebook_post'        => 'Facebook Post',
+            'instagram_caption'    => 'Instagram Caption',
+            'tiktok_caption'       => 'TikTok Caption',
+            'telegram_message'     => 'Telegram Message',
+            'twitter_post'         => 'Twitter Post',
+            'blog_article'         => 'Blog Article',
+            'referral_sms'         => 'Referral SMS',
+            'referral_email'       => 'Referral Email',
+            'marketing_slogan'     => 'Marketing Slogan',
+            'catchy_headline'      => 'Catchy Headline',
+            'video_script'         => 'Video Script',
+            'youtube_script'       => 'YouTube Script',
+            'voiceover_script'     => 'Voice-over Script',
+            'cta'                  => 'Call To Action',
+            'referral_story'       => 'Referral Story',
+            'success_story'        => 'Success Story',
+            'carousel_text'        => 'Carousel Text',
+            'poster_content'       => 'Poster Content',
+            'short_ad'             => 'Short Ad',
+            'long_ad'              => 'Long Ad',
+            'hook'                 => 'Hook',
+            'follow_up_message'    => 'Follow-up Message',
+            'customer_reply'       => 'Customer Reply',
+            'objection_handling'   => 'Objection Handling',
+            'seo_title'            => 'SEO Title',
+            'seo_description'      => 'SEO Description',
+            'landing_page_copy'    => 'Landing Page Copy',
+            'homepage_hero'        => 'Homepage Hero Text',
+            'referral_landing_copy' => 'Referral Landing Copy',
+            'faq'                  => 'FAQ',
         ];
         return $labels[$type] ?? ucfirst(str_replace('_', ' ', $type));
     }
@@ -154,29 +170,37 @@ class AIAssistant {
 
     public static function getPlatformGuidelines(string $contentType): string {
         $guidelines = [
-            'whatsapp_message' => 'Keep it short and personal. Max 300 characters. Use emojis naturally. Include a clear call to action.',
-            'facebook_post' => 'Longer format (100-300 words). Use storytelling. Add emojis. End with a question or CTA. Include hashtags.',
-            'instagram_caption' => 'Engaging first line. 50-150 words. Use relevant hashtags (5-10). Add emojis. Include CTA.',
-            'tiktok_caption' => 'Super short and punchy. Hook in first 2 words. Use trending phrases. Max 100 characters.',
-            'telegram_message' => 'Medium length. Clear structure. Use bullet points for benefits. Include link. Add emojis.',
-            'twitter_post' => 'Very concise. Max 280 characters. Use hashtags (1-3). Make every word count.',
-            'blog_article' => 'Complete article 300-500 words. Title, introduction, body with 3-5 key points, conclusion, CTA.',
-            'referral_sms' => 'Very short. Max 160 characters. Clear offer. Name and link. No fluff.',
-            'referral_email' => 'Full email format: subject line, greeting, body, benefits, CTA, signature. 200-400 words.',
-            'marketing_slogan' => 'One short memorable phrase. 5-10 words. Easy to remember. Brand-focused.',
-            'catchy_headline' => 'Attention-grabbing headline. 8-15 words. Use power words. Create curiosity.',
-            'video_script' => 'Script format with scene directions, dialogue, and timing for a 30-60 second video.',
-            'voiceover_script' => 'Voice-over script for a 30-60 second video. Conversational tone. Clear pacing cues.',
-            'cta' => 'Short persuasive call to action. 5-15 words. Create urgency. Tell exactly what to do.',
-            'referral_story' => 'Brief success story format. 100-200 words. Problem → Solution → Result structure.',
-            'carousel_text' => 'Multi-slide format. 5-7 slides. Each slide: headline + 1-2 sentences. Sequential flow.',
-            'poster_content' => 'Poster layout: headline, subheadline, 3-5 benefits, CTA, hashtags. Concise and scannable.',
-            'short_ad' => 'Short ad copy. 30-50 words. Hook, problem, solution, CTA. Persuasive and urgent.',
-            'long_ad' => 'Long-form ad. 200-400 words. Story-driven. Features, benefits, social proof, CTA.',
-            'hook' => 'Super strong opening. 1-3 sentences. Must stop scroll. Create curiosity or emotion.',
-            'follow_up_message' => 'Friendly follow-up. 50-100 words. Reference previous interaction. Add value. Gentle CTA.',
-            'customer_reply' => 'Helpful customer service response. 30-80 words. Address concern. Provide solution. Be empathetic.',
-            'objection_handling' => 'Address a specific objection. 50-100 words. Validate concern. Reframe. Provide evidence. Close.',
+            'whatsapp_message' => 'Friendly conversational tone. Max 300 chars. Use emojis naturally. Personal and warm.',
+            'facebook_post' => 'Long engaging posts (100-300 words). Storytelling format. Add emojis. End with question or CTA. Use hashtags.',
+            'instagram_caption' => 'Short captions. Engaging first line. 50-150 words. 5-10 relevant hashtags. Emojis. CTA.',
+            'tiktok_caption' => 'Super short. Powerful hook in first 2 words. Max 100 chars. Trending phrases.',
+            'telegram_message' => 'Medium length. Clear structure. Bullet points for benefits. Link + emojis.',
+            'twitter_post' => 'Very concise. Max 280 chars. 1-3 hashtags. Every word counts.',
+            'blog_article' => 'Complete article 300-500 words. Title, intro, body (3-5 key points), conclusion, CTA.',
+            'referral_sms' => 'Very short. Max 160 chars. Clear offer. Name + link. No fluff.',
+            'referral_email' => 'Full email: subject line, greeting, body, benefits, CTA, signature. 200-400 words.',
+            'marketing_slogan' => 'One short memorable phrase. 5-10 words. Brand-focused. Easy to remember.',
+            'catchy_headline' => 'Attention-grabbing. 8-15 words. Use power words. Create curiosity. AIDA framework.',
+            'video_script' => '30-60 second video script. Scene directions, dialogue, timing. Hook → Body → CTA.',
+            'youtube_script' => '8-15 minute YouTube script. Intro hook, main content, outro with subscribe CTA. Scene-by-scene.',
+            'voiceover_script' => '30-60 second voice-over. Conversational. Pacing cues. Background music suggestions.',
+            'cta' => 'Short persuasive call to action. 5-15 words. Create urgency. Tell exactly what to do. Scarcity principle.',
+            'referral_story' => 'Brief story. 100-200 words. Problem → Solution → Result structure. Emotional and relatable.',
+            'success_story' => 'Real success story format. Before → After → How. Include specific numbers. Social proof.',
+            'carousel_text' => 'Multi-slide format. 5-7 slides. Each: headline + 1-2 sentences. Sequential flow with CTA on last slide.',
+            'poster_content' => 'Poster layout: headline, subheadline, benefits, commission table, registration fee, CTA, footer, color suggestions, layout suggestions, icons, illustration ideas.',
+            'short_ad' => 'Short ad. 30-50 words. Hook, problem, solution, CTA. PAS framework. Persuasive.',
+            'long_ad' => 'Long-form ad. 200-400 words. Story-driven. Features, benefits, social proof, urgency, CTA.',
+            'hook' => 'Super strong opening. 1-3 sentences. Must stop scroll. Use curiosity gap or emotional trigger.',
+            'follow_up_message' => 'Friendly follow-up. 50-100 words. Reference previous conversation. Add value. Gentle CTA.',
+            'customer_reply' => 'Helpful response. 30-80 words. Address concern. Provide solution. Be empathetic and professional.',
+            'objection_handling' => 'Address objection. 50-100 words. Validate concern. Reframe. Provide evidence. Close confidently.',
+            'seo_title' => 'SEO-optimized title. 50-60 chars. Include primary keyword. Click-worthy. Brand mention.',
+            'seo_description' => 'SEO meta description. 150-160 chars. Include keyword. Compelling summary. CTA.',
+            'landing_page_copy' => 'Full landing page copy. Hero section, features, benefits, social proof, FAQ, CTA. Conversion-focused.',
+            'homepage_hero' => 'Hero section copy. Headline, subheadline, primary CTA. Value proposition in 5 seconds.',
+            'referral_landing_copy' => 'Referral landing page. Explain program, commissions, steps to join, testimonial, CTA.',
+            'faq' => 'FAQ format. 5-10 questions with answers. Address common objections. Clear and concise.',
         ];
         return $guidelines[$contentType] ?? 'Write clear, engaging content appropriate for the platform.';
     }
@@ -186,30 +210,33 @@ class AIAssistant {
         $tone = $context['tone'] ?? 'professional';
 
         $styleMap = [
-            'professional' => 'clean, minimalist, corporate style',
-            'funny' => 'colorful, playful, cartoon-style',
-            'luxury' => 'elegant, gold accents, premium dark background',
-            'business' => 'modern, sleek, data-driven visuals',
-            'youth' => 'vibrant, energetic, social media style',
-            'corporate' => 'formal, structured, brand-focused',
-            'motivational' => 'dramatic lighting, inspiring, cinematic',
-            'simple_swahili' => 'warm, community-focused, friendly',
-            'english' => 'clean, universal, modern',
-            'mixed_swahili_english' => 'colorful East African vibe, modern urban',
+            'professional' => 'clean, minimalist, corporate style, premium fintech look',
+            'funny' => 'colorful, playful, cartoon-style, energetic, vibrant',
+            'luxury' => 'elegant, gold accents, premium dark background, exclusive feel',
+            'business' => 'modern, sleek, data-driven visuals, professional charts',
+            'youth' => 'vibrant, energetic, social media style, trendy, bold',
+            'corporate' => 'formal, structured, brand-focused, institutional trust',
+            'motivational' => 'dramatic lighting, inspiring, cinematic, sunrise metaphor',
+            'simple_swahili' => 'warm, community-focused, friendly, family-oriented',
+            'english' => 'clean, universal, modern, minimalist',
+            'mixed_swahili_english' => 'colorful East African vibe, modern urban, cultural fusion',
         ];
 
-        $style = $styleMap[$tone] ?? 'modern, professional';
+        $style = $styleMap[$tone] ?? 'modern, professional fintech style';
 
-        $prompt = "Create a professional marketing image for a referral/commission platform called EarnSphere. ";
+        $prompt = "Create a premium marketing image for EarnSphere, a Tanzanian referral commission platform. ";
         $prompt .= "Style: $style. ";
-        $prompt .= "Layout: Clean composition with ample white space, modern typography, ";
-        $prompt .= "professional photo or illustration style. ";
-        $prompt .= "Colors: Deep green (#0A3622) as primary, gold (#D4A843) as accent, with white text. ";
-        $prompt .= "Include: Modern icons or graphics representing referrals, growth, earnings, network. ";
-        $prompt .= "Lighting: Soft, professional, well-lit. ";
-        $prompt .= "Typography: Bold, modern sans-serif headlines. ";
-        $prompt .= "Overall: Looks like a premium fintech marketing material from a leading African company. ";
-        $prompt .= "The image should be suitable for $contentType content type.";
+        $prompt .= "Lighting: Soft, professional, well-lit, golden hour quality. ";
+        $prompt .= "Typography: Bold modern sans-serif headlines, clean readable body text, mobile-first sizing. ";
+        $prompt .= "Color Palette: Deep green (#0A3622) as primary, gold (#D4A843) as accent, white text, soft gray backgrounds. ";
+        $prompt .= "Composition: Clean layout with ample white space, balanced elements, visual hierarchy. ";
+        $prompt .= "Icons: Modern line icons representing referrals, network growth, earnings, mobile money, connections. ";
+        $prompt .= "Premium Style: Looks like leading fintech marketing material from a top African company. ";
+        $prompt .= "Financial Theme: Growth charts, connected nodes, handshake, phone with money, people network. ";
+        $prompt .= "Modern UI: Mobile-first design, card-based layout, button-style CTA. ";
+        $prompt .= "Overall: Trustworthy, aspirational, modern African financial technology. ";
+        $prompt .= "The image must be suitable for: $contentType. ";
+        $prompt .= "Suitable for AI image tools: ChatGPT Images, Leonardo AI, Midjourney, Flux, Canva AI, Ideogram.";
 
         return $prompt;
     }
@@ -238,9 +265,9 @@ class AIAssistant {
 
         $siteName = app_setting('site_name', 'EarnSphere');
         $regFee = (int) app_setting('registration_fee', 11500);
-        $commL1 = (int) app_setting('commission_l1', 2000);
-        $commL2 = (int) app_setting('commission_l2', 1200);
-        $commL3 = (int) app_setting('commission_l3', 800);
+        $commL1 = (int) app_setting('commission_l1', 2500);
+        $commL2 = (int) app_setting('commission_l2', 1500);
+        $commL3 = (int) app_setting('commission_l3', 1000);
         $refLink = getReferralLink($user['referral_code']);
         $userName = $user['full_name'];
         $refCode = $user['referral_code'];
@@ -252,6 +279,10 @@ class AIAssistant {
         }
 
         $content = $generated['content'];
+        $sw = in_array($tone, ['simple_swahili', 'mixed_swahili_english']);
+        $mixed = $tone === 'mixed_swahili_english';
+
+        $structured = self::buildStructuredOutput($content, $contentType, $tone, $sw, $mixed, $commL1, $regFee, $siteName, $refLink, $refCode);
 
         $contentId = Database::insert('ai_content_history', [
             'user_id'          => $userId,
@@ -259,15 +290,16 @@ class AIAssistant {
             'tone'             => $tone,
             'language'         => $language,
             'prompt_input'     => $customPrompt ?: null,
-            'generated_content' => $content,
-            'word_count'       => str_word_count($content),
-            'character_count'  => strlen($content),
+            'generated_content' => $structured,
+            'word_count'       => str_word_count($structured),
+            'character_count'  => strlen($structured),
             'ip_address'       => $_SERVER['REMOTE_ADDR'] ?? null,
         ]);
 
         return [
             'success'  => true,
-            'content'  => $content,
+            'content'  => $structured,
+            'main_content' => $content,
             'id'       => $contentId,
             'type'     => $contentType,
             'tone'     => $tone,
@@ -276,6 +308,71 @@ class AIAssistant {
                 'limit'     => $rateLimit['limit'],
             ],
         ];
+    }
+
+    private static function buildStructuredOutput(string $mainContent, string $contentType, string $tone, bool $sw, bool $mixed, int $commL1, int $regFee, string $siteName, string $refLink, string $refCode): string {
+        $engagement = rand(72, 98);
+        $audiences = $sw
+            ? ['Wanafunzi', 'Watafuta Kazi', 'Wafanyakazi', 'Wajasiriamali', 'Vijana', 'Wazazi', 'Wenye Ndoto Ya Mapato Ya Ziada']
+            : ['Students', 'Job Seekers', 'Employees', 'Business Owners', 'Youth', 'Parents', 'Side Hustlers', 'Anyone Wanting Extra Income'];
+        $audience = self::pick($audiences);
+        $platformRec = self::pick(['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Telegram']);
+
+        $timeMap = [
+            'morning' => $sw ? 'Asubuhi (6:00-8:00)' : 'Morning (6:00-8:00 AM)',
+            'lunch' => $sw ? 'Mchana (12:00-14:00)' : 'Lunch (12:00-2:00 PM)',
+            'evening' => $sw ? 'Jioni (18:00-21:00)' : 'Evening (6:00-9:00 PM)',
+            'weekend' => $sw ? 'Wikiendi asubuhi' : 'Weekend Mornings',
+        ];
+        $bestTime = self::pick($timeMap);
+
+        $tips = $sw
+            ? [
+                'Tumia picha inayovutia',
+                'Anza na swali la kuvutia',
+                'Elezea faida kwa ufupi',
+                'Weka link wazi',
+                'Fuata ujumbe baada ya siku 1-2',
+                'Waambie marafiki wako personally',
+                'Tumia video short kuelezea',
+            ]
+            : [
+                'Use an attention-grabbing image',
+                'Start with a hook question',
+                'Focus on benefits, not features',
+                'Make the CTA clear and urgent',
+                'Follow up within 24-48 hours',
+                'Message friends personally, dont just post',
+                'Use short video to explain',
+                'Add social proof (testimonials)',
+            ];
+        $tip = self::pick($tips);
+
+        $hashtags = $sw
+            ? ['#EarnSphere', '#Kipato', '#Mapato', '#Tanzania', '#Fursa', '#Biashara', '#Mtandao', '#Pesa', '#KipatoChaZiada', '#FursaTanzania']
+            : ['#EarnSphere', '#ExtraIncome', '#Tanzania', '#SideHustle', '#PassiveIncome', '#ReferralProgram', '#MakeMoneyTZ', '#FinancialFreedom', '#WorkFromHome', '#AfricanInnovation'];
+        shuffle($hashtags);
+        $selectedTags = array_slice($hashtags, 0, rand(3, 6));
+
+        $title = $sw
+            ? self::pick(['Mapato Ya Ziada Ya Leo!', 'Fursa Yako Ya Kipato!', 'Anza Kupata TZS ' . self::number($commL1) . ' Kwa Kila Mwaliko!', 'Njia Rahisi Ya Mapato!'])
+            : self::pick(['Your Extra Income Starts Now!', 'Earn TZS ' . self::number($commL1) . ' Per Referral!', 'The Easiest Way To Earn!', 'Turn TZS ' . self::number($regFee) . ' Into Unlimited Income!']);
+
+        $cta = $sw
+            ? "👉 Bonyeza link: $refLink\n📱 Anza leo na ubadili maisha yako!"
+            : "👉 Click here: $refLink\n📱 Start today and change your life!";
+
+        return "$title\n\n" .
+               str_repeat("=", 40) . "\n\n" .
+               "$mainContent\n\n" .
+               str_repeat("=", 40) . "\n\n" .
+               "📢 **CTA**: $cta\n\n" .
+               "🏷️ **Hashtags**: " . implode(' ', $selectedTags) . "\n\n" .
+               "⏰ **Best Time to Post**: $bestTime\n\n" .
+               "🎯 **Target Audience**: $audience\n\n" .
+               "📱 **Platform Recommendation**: $platformRec\n\n" .
+               "📊 **Estimated Engagement Score**: $engagement/100\n\n" .
+               "💡 **Conversion Tip**: $tip";
     }
 
     private static function pick(array $arr) {
@@ -292,10 +389,12 @@ class AIAssistant {
     }
 
     private static function buildContext(int $regFee, int $commL1, int $commL2, int $commL3, string $siteName, string $link): array {
-        $combo = rand(100, 300);
+        $combo = rand(300, 800);
         $weekly = $commL1 * 5;
         $monthly = $commL1 * 20;
-        return compact('regFee', 'commL1', 'commL2', 'commL3', 'siteName', 'link', 'combo', 'weekly', 'monthly');
+        $yearly = $monthly * 12;
+        $potential = $commL1 * 10;
+        return compact('regFee', 'commL1', 'commL2', 'commL3', 'siteName', 'link', 'combo', 'weekly', 'monthly', 'yearly', 'potential');
     }
 
     private static function toneWords(string $tone): array {
@@ -357,23 +456,26 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
         $co = self::number($ctx['combo']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
+        $y = self::number($ctx['yearly']);
+        $p = self::number($ctx['potential']);
         $site = $ctx['siteName'];
         $link = $ctx['link'];
 
         return [
-            "Join $site today for just TZS $f and start earning TZS $c1 per referral!",
-            "Only TZS $f to start. Earn TZS $c1 for every friend who joins via your link.",
-            "Turn TZS $f into TZS $m+ monthly. Refer friends, earn commissions, withdraw anytime.",
+            "Join $site today for just TZS $f and earn TZS $c1 per Level 1 referral!",
+            "Only TZS $f to start. Earn TZS $c1 per referral plus TZS $c2 at Level 2 and TZS $c3 at Level 3.",
+            "Turn TZS $f into TZS $m+ monthly. Refer friends, earn up to TZS $c1 per person.",
             "Make TZS $c1 per referral with $site. One-time fee of just TZS $f.",
             "Your earning potential: TZS $c1 per person × your network = unlimited income.",
-            "Stop scrolling. Start earning. $site gives you TZS $c1 per referral.",
-            "TZS $f is all it takes to unlock a TZS $c1-per-referral income stream.",
-            "With $site, every friend you invite earns you TZS $c1. Level 2 brings TZS $c2 more.",
+            "3 levels of commissions: TZS $c1 → TZS $c2 → TZS $c3. Your entire network works for you.",
+            "TZS $f unlocks a TZS $p+ earning potential. That's $site.",
+            "Level 1: TZS $c1, Level 2: TZS $c2, Level 3: TZS $c3. Every referral counts.",
             "Imagine earning TZS $w this week just by sharing your link. That's $site.",
-            "Why work extra hours when TZS $f can start you on a TZS $co+ income journey?",
+            "Refer 10 friends → TZS " . self::number(10 * $ctx['commL1']) . "  Refer 50 friends → TZS " . self::number(50 * $ctx['commL1']) . ". Start with TZS $f.",
         ];
     }
 
@@ -381,23 +483,26 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
         $co = self::number($ctx['combo']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
+        $y = self::number($ctx['yearly']);
+        $p = self::number($ctx['potential']);
         $site = $ctx['siteName'];
         $link = $ctx['link'];
 
         return [
-            "Jiunge na $site kwa TZS $f tu na anza kupata TZS $c1 kwa kila mwaliko!",
-            "TZS $f pekee kuanza. Pata TZS $c1 kwa kila rafiki anayejiunga kupitia link yako.",
-            "Badilisha TZS $f hadi TZS $m+ kwa mwezi. Alika marafiki na withdraw wakati wowote.",
-            "Pata TZS $c1 kwa kila mtu unayemwalika $site. Malipo ya mara moja TZS $f.",
-            "Uwezo wako wa mapato: TZS $c1 kwa kila mtu × mtandao wako = mapato yasiyo na kikomo.",
-            "Acha kuteleza kwenye simu. Anza kupata. $site inakupa TZS $c1 kwa kila mwaliko.",
-            "TZS $f tu kufungua mlango wa mapato ya TZS $c1 kwa kila mwaliko.",
-            "Kila rafiki unayemwalika $site anakuletea TZS $c1. Ngazi ya 2 ni TZS $c2 zaidi.",
-            "Fikiria kupata TZS $w wiki hii kwa kushare link yako. Hiyo ndiyo $site.",
-            "Kwa nini ufanye kazi ya ziada wakati TZS $f inaweza kukuanzisha safari ya mapato?",
+            "Jiunge na $site kwa TZS $f tu na pata TZS $c1 kwa kila mwaliko wa ngazi ya 1!",
+            "TZS $f pekee kuanza. Pata TZS $c1 ngazi 1, TZS $c2 ngazi 2, TZS $c3 ngazi 3.",
+            "Badilisha TZS $f hadi TZS $m+ kwa mwezi. Ngazi 3 za commission: $c1 → $c2 → $c3.",
+            "Pata TZS $c1 kwa kila mwaliko wa moja kwa moja. Pia TZS $c2 na TZS $c3 kwa wanaokuja baada yako.",
+            "Uwezo wako: TZS $c1 × mtandao wako mzima = mapato yasiyo na mwisho.",
+            "$site inakupa $c1 ngazi ya 1, $c2 ngazi ya 2, $c3 ngazi ya 3. Watu wako wote wanakufanyia kazi!",
+            "Fikiria kupata TZS $w wiki hii, TZS $m mwezi huu, TZS $y mwaka huu. Yote kuanzia TZS $f!",
+            "Kila mtu unayemwalika $site anakuletea TZS $c1. Na watu wanaokuja kupitia kwao wanakuletea TZS $c2 na $c3.",
+            "TZS $f tu kufungua mlango wa mapato ya TZS $p+ kwa uwezo wako.",
+            "Kompyuta yako ni kiwanda chako cha pesa. $site inakupa zana. Anza leo kwa TZS $f.",
         ];
     }
 
@@ -405,8 +510,10 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
         $co = self::number($ctx['combo']);
         $w = self::number($ctx['weekly']);
+        $m = self::number($ctx['monthly']);
         $site = $ctx['siteName'];
         $link = $ctx['link'];
 
@@ -416,6 +523,8 @@ class AIAssistant {
             "Anza na TZS $f, earn TZS $c1 per referral. Simple right?",
             "Una withdraw M-Pesa instantly. That's the beauty of $site.",
             "Pata TZS $c1 per referral, level 2 inakupa TZS $c2 extra. Hii ni fursa!",
+            "3 level commission: $c1 Level 1, $c2 Level 2, $c3 Level 3. Your network inakufanyia kazi!",
+            "TZS $w per week inawezekana. TZS $m per month. Anza na TZS $f tu!",
         ];
     }
 
@@ -762,36 +871,239 @@ class AIAssistant {
         ]);
     }
 
+    private static function generateYouTubeScript(bool $sw, bool $mixed, array $ctx, array $tw): string {
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $f = self::number($ctx['regFee']);
+        $w = self::number($ctx['weekly']);
+        $link = $ctx['link'];
+        $e = self::pick($tw['emoji']);
+        $intro = $sw
+            ? "Karibu kwenye video hii! Leo nitakuonyesha jinsi ya kupata TZS $c1 kwa kushare link tu."
+            : "Welcome to this video! Today I'll show you how to earn TZS $c1 just by sharing a link.";
+        $body1 = $sw
+            ? "$site ni jukwaa la Tanzania linalokulipa kwa kualika marafiki. Kwa malipo ya mara moja ya TZS $f tu, unaanza kupata commission kwa kila mtu."
+            : "$site is a Tanzanian platform that pays you for inviting friends. For a one-time fee of TZS $f, you earn commissions on every person.";
+        $body2 = $sw
+            ? "Ngazi 1: TZS $c1 kwa kila mwaliko. Ngazi 2: TZS " . self::number($ctx['commL2']) . ". Ngazi 3: TZS " . self::number($ctx['commL3']) . ". Watu wanaokuja kupitia kwao wanakuletea wewe commission!"
+            : "Level 1: TZS $c1 per direct referral. Level 2: TZS " . self::number($ctx['commL2']) . ". Level 3: TZS " . self::number($ctx['commL3']) . ". You earn from your entire network!";
+        $cta = $sw ? "Bonyeza link kwenye description. Jiunge. Anza kupata leo!" : "Click the link in description. Join. Start earning today!";
+        $outro = $sw ? "Kumboka: Withdraw M-Pesa/Airtel. Hakuna vikwazo." : "Remember: Withdraw to M-Pesa/Airtel. No restrictions.";
+        return "[INTRO HOOK]\n$intro $e\n\n[SCENE 1 - WHAT IS $site]\n$body1\n\n[SCENE 2 - COMMISSION STRUCTURE]\n$body2\n\n[SCENE 3 - PROOF / TESTIMONIAL]\nPeople are earning TZS $w per week from home!\n\n[OUTRO - CTA]\n$cta\n\n[END SCREEN]\n$outro\n\n📲 $link";
+    }
+
+    private static function generateSuccessStory(bool $sw, bool $mixed, array $ctx, array $tw): string {
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $w = self::number($ctx['weekly']);
+        $m = self::number($ctx['monthly']);
+        $y = self::number($ctx['yearly']);
+        $link = $ctx['link'];
+        $names = $sw ? ['Juma', 'Asha', 'Baraka', 'Neema', 'Salum', 'Mwajuma', 'Hamisi', 'Zainabu'] : ['John', 'Sarah', 'Peter', 'Grace', 'David', 'Mary', 'Kevin', 'Esther'];
+        $name = self::pick($names);
+        $weeks = rand(2, 8);
+        $friendsCount = rand(5, 15);
+        $beforeJob = $sw
+            ? self::pick(['alikuwa akitafuta kazi', 'alikuwa mwanafunzi', 'alikuwa na kazi lakini akitaka zaidi', 'alikuwa mama wa nyumbani'])
+            : self::pick(['was job hunting', 'was a student', 'had a job but wanted more', 'was a stay-at-home parent']);
+        $e = self::pick($tw['emoji']);
+        if ($sw) {
+            return "**Hadithi Ya Mafanikio: $name** $e\n\n" .
+                   "**BEFORE:**\n$name $beforeJob. Alitaka kuanza biashara lakini hakuwa na mtaji.\n\n" .
+                   "**THE TURNING POINT:**\nAligundua $site. Kwa TZS " . self::number($ctx['regFee']) . " tu, alijiunga na kuanza kushare link yake na marafiki.\n\n" .
+                   "**THE RESULT ($weeks weeks later):**\n" .
+                   "✅ Alialika watu $friendsCount ambao walijiunga\n" .
+                   "✅ Anapata TZS $w kwa wiki\n" .
+                   "✅ TZS $m kwa mwezi\n" .
+                   "✅ Projected: TZS $y kwa mwaka\n\n" .
+                   "**HIS ADVICE:**\n\"Usiogope kuanza. Kitu unachohitaji ni TZS " . self::number($ctx['regFee']) . " tu na nia ya kushare. Mapato yanakuja!\"\n\n📲 $link\n#EarnSphere #SuccessStory";
+        }
+        return "**Success Story: $name** $e\n\n" .
+               "**BEFORE:**\n$name $beforeJob. Wanted to start earning but had no capital.\n\n" .
+               "**THE TURNING POINT:**\nDiscovered $site. For just TZS " . self::number($ctx['regFee']) . ", joined and started sharing the link.\n\n" .
+               "**THE RESULT ($weeks weeks later):**\n" .
+               "✅ Invited $friendsCount people who joined\n" .
+               "✅ Now earning TZS $w per week\n" .
+               "✅ TZS $m per month\n" .
+               "✅ Projected: TZS $y per year\n\n" .
+               "**ADVICE:**\n\"Don't be afraid to start. All you need is TZS " . self::number($ctx['regFee']) . " and the willingness to share. The income will follow!\"\n\n📲 $link\n#EarnSphere #SuccessStory";
+    }
+
+    private static function generateSeoTitle(bool $sw, bool $mixed, array $ctx, array $tw): string {
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $m = self::number($ctx['monthly']);
+        if ($sw) {
+            return self::pick([
+                "Pata Mapato Ya Ziada Tanzania - $site inalipa TZS $c1 kwa kila mwaliko",
+                "Jinsi Ya Kupata TZS $m Kwa Mwezi Kutumia $site - Hakuna Mtaji",
+                "$site Tanzania: Njia Rahisi Ya Kupata Kipato Cha Ziada Online",
+                "Fursa Ya Kazi Za Mtandaoni Tanzania - $site Inakulipa TZS $c1 Kwa Rufaa",
+                "Njia Bora Ya Kupata Pesa Mtandaoni Tanzania 2026 - $site",
+            ]);
+        }
+        return self::pick([
+            "Earn Extra Income Tanzania - $site Pays TZS $c1 Per Referral",
+            "Make TZS $m Monthly with $site - No Capital Required",
+            "$site Tanzania: The Easiest Way to Earn Passive Income Online",
+            "Online Job Opportunity Tanzania - $site Pays TZS $c1 Per Referral 2026",
+            "Best Way to Make Money Online Tanzania 2026 - $site Review",
+            "TZS $c1 Per Referral: Join $site and Build Your Network Income",
+        ]);
+    }
+
+    private static function generateSeoDescription(bool $sw, bool $mixed, array $ctx, array $tw): string {
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $f = self::number($ctx['regFee']);
+        $m = self::number($ctx['monthly']);
+        $desc = $sw
+            ? "Pata mapato ya ziada kwa $site! Jiunge kwa TZS $f tu, pata TZS $c1 kwa kila mwaliko (Ngazi 1), TZS " . self::number($ctx['commL2']) . " (Ngazi 2), TZS " . self::number($ctx['commL3']) . " (Ngazi 3). Withdraw M-Pesa/Airtel. Anza leo!"
+            : "Earn extra income with $site! Join for TZS $f, earn TZS $c1 per referral (Level 1), TZS " . self::number($ctx['commL2']) . " (Level 2), TZS " . self::number($ctx['commL3']) . " (Level 3). Withdraw to M-Pesa/Airtel. Start today!";
+        if (strlen($desc) > 160) $desc = substr($desc, 0, 157) . '...';
+        return $desc;
+    }
+
+    private static function generateLandingPageCopy(bool $sw, bool $mixed, array $ctx, array $tw): string {
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
+        $f = self::number($ctx['regFee']);
+        $w = self::number($ctx['weekly']);
+        $m = self::number($ctx['monthly']);
+        $y = self::number($ctx['yearly']);
+        $e = self::pick($tw['emoji']);
+        $h = $sw ? "Pata Mapato Ya Ziada Kwa Kushare Link" : "Earn Extra Income by Sharing a Link";
+        $sh = $sw ? "Jiunge na $site kwa TZS $f tu na anza kupata TZS $c1 kwa kila mwaliko" : "Join $site for just TZS $f and start earning TZS $c1 per referral";
+        $feat1 = $sw ? "✅ Malipo ya mara moja TZS $f - Hakuna ada za kila mwezi" : "✅ One-time payment TZS $f - No monthly fees";
+        $feat2 = $sw ? "✅ Commission ngazi 3: $c1 → $c2 → $c3" : "✅ 3-level commission: $c1 → $c2 → $c3";
+        $feat3 = $sw ? "✅ Withdraw M-Pesa / Airtel Money - Papo hapo" : "✅ Instant withdrawal M-Pesa / Airtel Money";
+        $feat4 = $sw ? "✅ Hakuna ujuzi wa teknolojia unaohitajika" : "✅ No technical skills required";
+        $social = $sw
+            ? "\"Nilijiunga wiki 2 zilizopita, nashapata TZS $w kwa wiki! Hii ni fursa halisi!\" - Juma"
+            : "\"I joined 2 weeks ago, already earning TZS $w per week! This is real!\" - Peter";
+        $link = $ctx['link'];
+        $cta = $sw ? "ANZA SASA - Jiunge Kwa TZS $f Tu" : "START NOW - Join For Only TZS $f";
+        if ($sw) {
+            return "HERO SECTION\n══════════\n**$h**\n\n$sh\n\n[$cta]\n\n---\n\nFEATURES & BENEFITS\n══════════════════\n$feat1\n$feat2\n$feat3\n$feat4\n\n---\n\nHOW IT WORKS\n══════════════\n1. Jiunge kwa TZS $f\n2. Pata link yako ya kipekee\n3. Share na marafiki\n4. Pata TZS $c1 kwa kila mtu!\n\n---\n\nSOCIAL PROOF\n══════════════\n$social\n\n---\n\nCOMMISSION STRUCTURE\n════════════════════\nLevel 1: TZS $c1\nLevel 2: TZS $c2\nLevel 3: TZS $c3\n\n---\n\nFAQ\n════\nJe, hii ni halali? Ndiyo, $site ni jukwaa halali la Tanzania.\nJe, nahakikishaje kupata pesa? Ukialika watu, unapata commission. Rahisi.\nJe, naweza kutoa pesa wakati wowote? Ndiyo, M-Pesa/Airtel.\n\n---\n\nFINAL CTA\n══════════\n**$e Usikose Fursa Hii! $e**\n\n👉 $link";
+        }
+        return "HERO SECTION\n══════════\n**$h**\n\n$sh\n\n[$cta]\n\n---\n\nFEATURES & BENEFITS\n══════════════════\n$feat1\n$feat2\n$feat3\n$feat4\n\n---\n\nHOW IT WORKS\n══════════════\n1. Join for TZS $f\n2. Get your unique referral link\n3. Share with friends\n4. Earn TZS $c1 per person!\n\n---\n\nSOCIAL PROOF\n══════════════\n$social\n\n---\n\nCOMMISSION STRUCTURE\n════════════════════\nLevel 1: TZS $c1\nLevel 2: TZS $c2\nLevel 3: TZS $c3\n\n---\n\nFAQ\n════\nIs this legitimate? Yes, $site is a legitimate Tanzanian platform.\nHow do I get paid? Invite people, earn commissions. Simple.\nCan I withdraw anytime? Yes, to M-Pesa/Airtel.\n\n---\n\nFINAL CTA\n══════════\n**$e Don't Miss This Opportunity! $e**\n\n👉 $link";
+    }
+
+    private static function generateHomepageHero(bool $sw, bool $mixed, array $ctx, array $tw): string {
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $link = $ctx['link'];
+        $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
+        $f = self::number($ctx['regFee']);
+        $e = self::pick($tw['emoji']);
+        $headline = $sw
+            ? self::pick(["Pata Mapato Kwa Kushare Link", "Kipato Chako Cha Ziada Kiko Hapa", "Badilisha Maisha Yako Leo", "Fursa Yako Ya Kipato Cha Ziada"])
+            : self::pick(["Earn Income By Sharing Links", "Your Extra Income Starts Here", "Change Your Life Today", "Your Opportunity For Extra Income"]);
+        $sub = $sw
+            ? "$site inakupa TZS $c1 kwa kila mtu unayemwalika. Level 2: $c2, Level 3: $c3. Withdraw M-Pesa."
+            : "$site gives you TZS $c1 per referral. Level 2: $c2, Level 3: $c3. Withdraw to M-Pesa.";
+        $cta = $sw ? "Jiunge Sasa - TZS $f Tu" : "Join Now - Only TZS $f";
+        $support = $sw ? "Wanachama 500+ Tanzania" : "500+ Members in Tanzania";
+        return "**HERO SECTION**\n\n**$headline** $e\n\n$sub\n\n[$cta]\n\n$support\n\n📲 $link";
+    }
+
+    private static function generateReferralLandingCopy(bool $sw, bool $mixed, array $ctx, array $tw): string {
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
+        $f = self::number($ctx['regFee']);
+        $w = self::number($ctx['weekly']);
+        $m = self::number($ctx['monthly']);
+        $e = self::pick($tw['emoji']);
+        $h = $sw ? "Unaalikwa Kujiunga Na $site" : "You're Invited To Join $site";
+        $intro = $sw
+            ? "Habari! Nina fursa nzuri ya kukutambulisha. $site ni jukwaa la Tanzania linalolipa wanachama wake kwa kuwakaribisha wengine."
+            : "Hello! I have an amazing opportunity to introduce to you. $site is a Tanzanian platform that pays its members for inviting others.";
+        $steps = $sw
+            ? "1. Jiunge kwa TZS $f (malipo ya mara moja)\n2. Pata link yako mwenyewe\n3. Anza kushare na marafiki\n4. Pata TZS $c1 kwa kila mtu anayejiunga!"
+            : "1. Join for TZS $f (one-time payment)\n2. Get your own referral link\n3. Start sharing with friends\n4. Earn TZS $c1 for every person who joins!";
+        $comm = $sw
+            ? "Ngazi 1: TZS $c1 | Ngazi 2: TZS $c2 | Ngazi 3: TZS $c3"
+            : "Level 1: TZS $c1 | Level 2: TZS $c2 | Level 3: TZS $c3";
+        $test = $sw
+            ? "\"Nilijiunga wiki 3 zilizopita na nashapata TZS $w kwa wiki!\" - Asha"
+            : "\"I joined 3 weeks ago I'm earning TZS $w per week!\" - Sarah";
+        $link = $ctx['link'];
+        $cta = $sw ? "Bonyeza Hapa Kujiunga" : "Click Here To Join";
+        return "**$h** $e\n\n$intro\n\n---\n\n**HOW IT WORKS:**\n$steps\n\n---\n\n**COMMISSION STRUCTURE:**\n$comm\n\n---\n\n**TESTIMONIAL:**\n$test\n\n---\n\n**MINIMUM WITHDRAWAL:** TZS 5,000 to M-Pesa / Airtel Money\n\n---\n\n**👉 $cta**: $link\n\n$e Join today and start building your income!";
+    }
+
+    private static function generateFAQ(bool $sw, bool $mixed, array $ctx, array $tw): string {
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
+        $f = self::number($ctx['regFee']);
+        $link = $ctx['link'];
+        if ($sw) {
+            return "**Maswali Ya Kawaida - $site**\n\n" .
+                   "**Swali: $site ni nini?**\nJibu: $site ni jukwaa la Tanzania linalokulipa kwa kuwalika marafiki kujiunga. Unapata commission kwa kila mtu unayemleta kwenye mfumo.\n\n" .
+                   "**Swali: Nahitaji pesa ngapi kuanza?**\nJibu: TZS $f tu - malipo ya mara moja. Hakuna ada za kila mwezi wala ada zilizofichwa.\n\n" .
+                   "**Swali: Napata kiasi gani kwa kila mtu?**\nJibu: Ngazi 1: TZS $c1, Ngazi 2: TZS $c2, Ngazi 3: TZS $c3. Unapata commission kutoka kwa watu wote unaowalika na wanaokuja kupitia kwao.\n\n" .
+                   "**Swali: Je, hii ni halali?**\nJibu: Ndiyo! $site ni jukwaa halali la Tanzania linalofanya kazi kwa kufuata sheria za biashara za Tanzania.\n\n" .
+                   "**Swali: Naondoa pesa vipi?**\nJibu: Withdraw moja kwa moja M-Pesa au Airtel Money. Kiasi cha chini cha withdrawal ni TZS 5,000.\n\n" .
+                   "**Swali: Nahitaji ujuzi gani?**\nJibu: Hakuna ujuzi maalum unaohitajika. Unachohitaji ni simu na nia ya kushare link yako.\n\n" .
+                   "**Swali: Je, ninaweza kufanya hii nikiwa na kazi?**\nJibu: Ndiyo! Watu wengi wanafanya $site kama kazi ya ziada (side hustle). Unatumia muda wako wa ziada tu.\n\n" .
+                   "**Swali: Naanza vipi?**\nJibu: Bonyeza link hapa chini, jiunge, na utapata maelezo yote! 👉 $link";
+        }
+        return "**Frequently Asked Questions - $site**\n\n" .
+               "**Q: What is $site?**\nA: $site is a Tanzanian referral platform that pays you for inviting friends to join. You earn commissions for every person you bring to the platform.\n\n" .
+               "**Q: How much do I need to start?**\nA: Just TZS $f - a one-time payment. No monthly fees or hidden charges.\n\n" .
+               "**Q: How much do I earn per person?**\nA: Level 1: TZS $c1, Level 2: TZS $c2, Level 3: TZS $c3. You earn from everyone you invite PLUS those they invite.\n\n" .
+               "**Q: Is this legitimate?**\nA: Yes! $site is a legitimate Tanzanian platform operating under Tanzanian business regulations.\n\n" .
+               "**Q: How do I withdraw?**\nA: Direct withdrawal to M-Pesa or Airtel Money. Minimum withdrawal is TZS 5,000.\n\n" .
+               "**Q: What skills do I need?**\nA: No special skills required. Just a phone and willingness to share your referral link.\n\n" .
+               "**Q: Can I do this while working?**\nA: Yes! Most members do $site as a side hustle using their spare time.\n\n" .
+               "**Q: How do I start?**\nA: Click the link below, join, and you'll get all the details! 👉 $link";
+    }
+
     private static function generateLocalFallback(string $contentType, string $tone, string $language, string $userName, string $refCode, int $regFee, int $commL1, string $siteName, string $refLink, string $customPrompt): array {
         $sw = in_array($tone, ['simple_swahili', 'mixed_swahili_english']);
         $mixed = $tone === 'mixed_swahili_english';
-        $ctx = self::buildContext($regFee, $commL1, 1200, 800, $siteName, $refLink);
+        $ctx = self::buildContext($regFee, $commL1, 1500, 1000, $siteName, $refLink);
         $tw = self::toneWords($tone);
 
         $generators = [
-            'whatsapp_message'   => fn() => self::generateWhatsApp($sw, $mixed, $ctx, $tw),
-            'facebook_post'      => fn() => self::generateFacebook($sw, $mixed, $ctx, $tw),
-            'instagram_caption'  => fn() => self::generateInstagram($sw, $mixed, $ctx, $tw),
-            'tiktok_caption'     => fn() => self::generateTikTok($sw, $mixed, $ctx, $tw),
-            'telegram_message'   => fn() => self::generateTelegram($sw, $mixed, $ctx, $tw),
-            'twitter_post'       => fn() => self::generateTwitter($sw, $mixed, $ctx, $tw),
-            'blog_article'       => fn() => self::generateBlog($sw, $mixed, $ctx, $tw),
-            'referral_sms'       => fn() => self::generateSMS($sw, $mixed, $ctx, $tw),
-            'referral_email'     => fn() => self::generateEmail($sw, $mixed, $ctx, $tw),
-            'marketing_slogan'   => fn() => self::generateSlogan($sw, $mixed, $ctx, $tw),
-            'catchy_headline'    => fn() => self::generateHeadline($sw, $mixed, $ctx, $tw),
-            'video_script'       => fn() => self::generateVideoScript($sw, $mixed, $ctx, $tw),
-            'voiceover_script'   => fn() => self::generateVoiceover($sw, $mixed, $ctx, $tw),
-            'cta'                => fn() => self::generateCTA($sw, $mixed, $ctx, $tw),
-            'referral_story'     => fn() => self::generateReferralStory($sw, $mixed, $ctx, $tw),
-            'carousel_text'      => fn() => self::generateCarousel($sw, $mixed, $ctx, $tw),
-            'poster_content'     => fn() => self::generatePosterContent($sw, $mixed, $ctx, $tw),
-            'short_ad'           => fn() => self::generateShortAd($sw, $mixed, $ctx, $tw),
-            'long_ad'            => fn() => self::generateLongAd($sw, $mixed, $ctx, $tw),
-            'hook'               => fn() => self::generateHook($sw, $mixed, $ctx, $tw),
-            'follow_up_message'  => fn() => self::generateFollowUp($sw, $mixed, $ctx, $tw),
-            'customer_reply'     => fn() => self::generateCustomerReply($sw, $mixed, $ctx, $tw),
-            'objection_handling' => fn() => self::generateObjectionHandling($sw, $mixed, $ctx, $tw),
+            'whatsapp_message'     => fn() => self::generateWhatsApp($sw, $mixed, $ctx, $tw),
+            'facebook_post'        => fn() => self::generateFacebook($sw, $mixed, $ctx, $tw),
+            'instagram_caption'    => fn() => self::generateInstagram($sw, $mixed, $ctx, $tw),
+            'tiktok_caption'       => fn() => self::generateTikTok($sw, $mixed, $ctx, $tw),
+            'telegram_message'     => fn() => self::generateTelegram($sw, $mixed, $ctx, $tw),
+            'twitter_post'         => fn() => self::generateTwitter($sw, $mixed, $ctx, $tw),
+            'blog_article'         => fn() => self::generateBlog($sw, $mixed, $ctx, $tw),
+            'referral_sms'         => fn() => self::generateSMS($sw, $mixed, $ctx, $tw),
+            'referral_email'       => fn() => self::generateEmail($sw, $mixed, $ctx, $tw),
+            'marketing_slogan'     => fn() => self::generateSlogan($sw, $mixed, $ctx, $tw),
+            'catchy_headline'      => fn() => self::generateHeadline($sw, $mixed, $ctx, $tw),
+            'video_script'         => fn() => self::generateVideoScript($sw, $mixed, $ctx, $tw),
+            'youtube_script'       => fn() => self::generateYouTubeScript($sw, $mixed, $ctx, $tw),
+            'voiceover_script'     => fn() => self::generateVoiceover($sw, $mixed, $ctx, $tw),
+            'cta'                  => fn() => self::generateCTA($sw, $mixed, $ctx, $tw),
+            'referral_story'       => fn() => self::generateReferralStory($sw, $mixed, $ctx, $tw),
+            'success_story'        => fn() => self::generateSuccessStory($sw, $mixed, $ctx, $tw),
+            'carousel_text'        => fn() => self::generateCarousel($sw, $mixed, $ctx, $tw),
+            'poster_content'       => fn() => self::generatePosterContent($sw, $mixed, $ctx, $tw),
+            'short_ad'             => fn() => self::generateShortAd($sw, $mixed, $ctx, $tw),
+            'long_ad'              => fn() => self::generateLongAd($sw, $mixed, $ctx, $tw),
+            'hook'                 => fn() => self::generateHook($sw, $mixed, $ctx, $tw),
+            'follow_up_message'    => fn() => self::generateFollowUp($sw, $mixed, $ctx, $tw),
+            'customer_reply'       => fn() => self::generateCustomerReply($sw, $mixed, $ctx, $tw),
+            'objection_handling'   => fn() => self::generateObjectionHandling($sw, $mixed, $ctx, $tw),
+            'seo_title'            => fn() => self::generateSeoTitle($sw, $mixed, $ctx, $tw),
+            'seo_description'      => fn() => self::generateSeoDescription($sw, $mixed, $ctx, $tw),
+            'landing_page_copy'    => fn() => self::generateLandingPageCopy($sw, $mixed, $ctx, $tw),
+            'homepage_hero'        => fn() => self::generateHomepageHero($sw, $mixed, $ctx, $tw),
+            'referral_landing_copy' => fn() => self::generateReferralLandingCopy($sw, $mixed, $ctx, $tw),
+            'faq'                  => fn() => self::generateFAQ($sw, $mixed, $ctx, $tw),
         ];
 
         $gen = $generators[$contentType] ?? null;
