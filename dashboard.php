@@ -254,7 +254,7 @@ include __DIR__ . '/includes/public_head.php';
         
         <!-- QR Code -->
         <div class="qr-container">
-            <img src="<?= generateQRCodeUrl($referralLink, 180) ?>" alt="QR Code" width="180" height="180" onerror="this.style.display='none';this.nextElementSibling.textContent='QR code unavailable'">
+            <img src="<?= generateQRCodeUrl($referralLink, 180) ?>" alt="QR Code" width="180" height="180">
             <p>Scan QR code to join</p>
         </div>
     </div>

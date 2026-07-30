@@ -80,8 +80,7 @@ function statusBadge(string $status): string {
  * Generate QR code URL (using external API)
  */
 function generateQRCodeUrl(string $data, int $size = 200): string {
-    $encoded = urlencode($data);
-    return "https://chart.googleapis.com/chart?chs={$size}x{$size}&cht=qr&chl={$encoded}&chco=72578B";
+    return SITE_URL . "/qr.php?data=" . urlencode($data) . "&size=8&margin=2";
 }
 
 /**
