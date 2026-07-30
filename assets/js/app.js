@@ -363,6 +363,56 @@ const App = {
         
         check();
     },
+
+    /**
+     * Show confetti celebration animation
+     */
+    showConfetti(duration = 4000) {
+        let container = document.querySelector('.confetti-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'confetti-container';
+            document.body.appendChild(container);
+        }
+        container.innerHTML = '';
+        container.style.display = 'block';
+        const colors = ['#D4A843', '#0A3622', '#F5D77B', '#10b981', '#72578B', '#f59e0b', '#fff'];
+
+        for (let i = 0; i < 60; i++) {
+            const piece = document.createElement('div');
+            piece.className = 'confetti-piece';
+            piece.style.left = Math.random() * 100 + '%';
+            piece.style.top = '-10px';
+            piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            piece.style.width = (Math.random() * 8 + 4) + 'px';
+            piece.style.height = (Math.random() * 8 + 4) + 'px';
+            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            piece.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+            piece.style.animationDelay = (Math.random() * 1.5) + 's';
+            container.appendChild(piece);
+        }
+
+        setTimeout(() => {
+            container.style.display = 'none';
+            container.innerHTML = '';
+        }, duration);
+    },
+
+    /**
+     * Check daily mission progress via AJAX
+     */
+    async checkMission() {
+        try {
+            const data = await this.fetchData('/api/missions.php', { action: 'status' });
+            if (data.has_mission) {
+                const event = new CustomEvent('missionUpdate', { detail: data });
+                document.dispatchEvent(event);
+            }
+            return data;
+        } catch (e) {
+            return null;
+        }
+    },
 };
 
 // Initialize on DOM ready

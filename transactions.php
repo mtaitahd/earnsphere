@@ -100,6 +100,7 @@ include __DIR__ . '/includes/public_head.php';
                         'withdrawal' => 'money-bill-wave',
                         'admin_adjustment' => 'tools',
                         'registration_bonus' => 'gift',
+                        'daily_mission_bonus' => 'trophy',
                         default => 'exchange-alt'
                     } ?>"></i>
                 </div>

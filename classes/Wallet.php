@@ -46,10 +46,10 @@ class Wallet {
         $balanceBefore = (float) $wallet['balance'];
         $balanceAfter = $balanceBefore + $amount;
         
-        // Only commissions are withdrawable
-        $isCommission = ($type === 'commission');
+        // Commission and daily mission bonuses are withdrawable
+        $isWithdrawable = in_array($type, ['commission', 'daily_mission_bonus']);
         $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
-        $withdrawableAfter = $isCommission ? $withdrawableBefore + $amount : $withdrawableBefore;
+        $withdrawableAfter = $isWithdrawable ? $withdrawableBefore + $amount : $withdrawableBefore;
         
         Database::beginTransaction();
         
@@ -58,7 +58,7 @@ class Wallet {
                 'balance'      => $balanceAfter,
                 'total_earned' => $wallet['total_earned'] + $amount,
             ];
-            if ($isCommission) {
+            if ($isWithdrawable) {
                 $updateData['withdrawable_balance'] = $withdrawableAfter;
             }
             

@@ -1597,6 +1597,167 @@ img {
 }
 
 /* ============================================================
+   DAILY MISSION CARD
+   ============================================================ */
+.mission-card {
+    background: linear-gradient(135deg, #0A3622, #0d4a2e);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(10, 54, 34, 0.3);
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+.mission-card::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -20%;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(212, 168, 67, 0.1);
+}
+.mission-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+.mission-icon {
+    width: 44px;
+    height: 44px;
+    background: rgba(212, 168, 67, 0.2);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #D4A843;
+    flex-shrink: 0;
+}
+.mission-info {
+    flex: 1;
+    min-width: 0;
+}
+.mission-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    margin: 0 0 0.15rem;
+}
+.mission-desc {
+    font-size: 0.75rem;
+    opacity: 0.85;
+    margin: 0;
+}
+.mission-reward {
+    text-align: right;
+    flex-shrink: 0;
+}
+.reward-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+}
+.reward-amount {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #D4A843;
+}
+.mission-progress {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.15);
+}
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
+    opacity: 0.9;
+}
+.progress-track {
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #D4A843, #F5D77B);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+.progress-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    margin-top: 0.4rem;
+    opacity: 0.7;
+}
+.mission-completed {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.completed-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(16, 185, 129, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #10b981;
+    flex-shrink: 0;
+}
+.completed-badge {
+    margin-left: auto;
+    background: #10b981;
+    color: #fff;
+    padding: 0.2rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+/* ============================================================
+   AI ASSISTANT SHARED
+   ============================================================ */
+.ai-btn-gold {
+    border-color: #D4A843 !important;
+    color: #0A3622 !important;
+}
+.ai-btn-gold i {
+    color: #D4A843;
+}
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* ============================================================
    SMALL SCREEN RESPONSIVE (≤360px)
    ============================================================ */
 @media (max-width: 360px) {

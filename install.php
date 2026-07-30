@@ -252,7 +252,51 @@ try {
         echo "<div class='alert alert-danger mt-2'><i class='fas fa-exclamation-circle me-1'></i> Baadhi ya viungo vimekosekana. Angalia hapo juu.</div>";
     }
     
-    // ---- Step 4: Admin password ----
+    // ---- Step 4: Daily Missions Migration ----
+    echo "<h6 class='mt-3'><i class='fas fa-trophy me-1'></i> Hatua 4: Daily Missions</h6>";
+    $missionFile = APP_ROOT . '/database/migration_daily_missions.sql';
+    if (file_exists($missionFile)) {
+        $missionSql = file_get_contents($missionFile);
+        $missionStmts = array_filter(array_map('trim', explode(';', $missionSql)));
+        $misOk = 0; $misFail = 0;
+        foreach ($missionStmts as $stmt) {
+            if (empty($stmt) || strpos($stmt, '--') === 0) continue;
+            try {
+                $pdo->exec($stmt);
+                $misOk++;
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'already exists') === false) {
+                    $misFail++;
+                    echo "<div class='text-warning small'>⚠ " . htmlspecialchars($e->getMessage()) . "</div>";
+                }
+            }
+        }
+        echo "<div class='alert alert-info'><i class='fas fa-info-circle me-1'></i> Missions: {$misOk} ok, {$misFail} errors</div>";
+    }
+
+    // ---- Step 5: AI Assistant Migration ----
+    echo "<h6 class='mt-3'><i class='fas fa-wand-magic-sparkles me-1'></i> Hatua 5: AI Assistant</h6>";
+    $aiFile = APP_ROOT . '/database/migration_ai_assistant.sql';
+    if (file_exists($aiFile)) {
+        $aiSql = file_get_contents($aiFile);
+        $aiStmts = array_filter(array_map('trim', explode(';', $aiSql)));
+        $aiOk = 0; $aiFail = 0;
+        foreach ($aiStmts as $stmt) {
+            if (empty($stmt) || strpos($stmt, '--') === 0) continue;
+            try {
+                $pdo->exec($stmt);
+                $aiOk++;
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'already exists') === false && strpos($e->getMessage(), 'Duplicate') === false) {
+                    $aiFail++;
+                    echo "<div class='text-warning small'>⚠ " . htmlspecialchars($e->getMessage()) . "</div>";
+                }
+            }
+        }
+        echo "<div class='alert alert-info'><i class='fas fa-info-circle me-1'></i> AI Assistant: {$aiOk} ok, {$aiFail} errors</div>";
+    }
+
+    // ---- Step 6: Admin password ----
     echo "<h6 class='mt-3'><i class='fas fa-user-shield me-1'></i> Hatua 4: Admin</h6>";
     $hash = password_hash('Admin@123', PASSWORD_BCRYPT, ['cost' => 12]);
     $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE role = 'admin' AND email = 'admin@earnsphere.com'");
