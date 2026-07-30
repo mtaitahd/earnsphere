@@ -71,6 +71,10 @@ include __DIR__ . '/includes/public_head.php';
             <h4 class="user-name"><?= sanitize($user['full_name']) ?></h4>
         </div>
         <div class="d-flex align-items-center gap-2">
+            <a href="ai-assistant" class="notification-btn" style="text-decoration:none;position:relative;" title="AI Share Assistant">
+                <i class="fas fa-wand-magic-sparkles" style="color:#D4A843;"></i>
+                <span style="position:absolute;top:-4px;right:-6px;width:10px;height:10px;background:#D4A843;border-radius:50%;border:2px solid #72578B;"></span>
+            </a>
             <a href="profile" class="notification-btn" style="text-decoration:none;">
                 <i class="fas fa-bell"></i>
             </a>
