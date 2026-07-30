@@ -30,6 +30,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $userId = (int)($_POST['user_id'] ?? 0);
         $newStatus = $_POST['new_status'] ?? 'active';
         Database::update('users', ['status' => $newStatus], 'id = ?', [$userId]);
+        if ($newStatus === 'active') {
+            $existingPayment = Database::fetchOne("SELECT id FROM payments WHERE user_id = ? AND status = 'completed' LIMIT 1", [$userId]);
+            if (!$existingPayment) {
+                $fee = (int) app_setting('registration_fee', REGISTRATION_FEE);
+                Database::insert('payments', [
+                    'user_id'         => $userId,
+                    'order_id'        => 'ADMIN-ACT-' . time() . '-' . $userId,
+                    'amount'          => $fee,
+                    'currency'        => 'TZS',
+                    'payment_method'  => 'manual_admin',
+                    'phone'           => '',
+                    'status'          => 'completed',
+                    'completed_at'    => date('Y-m-d H:i:s'),
+                    'metadata'        => json_encode(['method' => 'admin_activate']),
+                ]);
+            }
+        }
         setFlash('success', 'User status updated to ' . ucfirst($newStatus));
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
@@ -67,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'mark_as_paid') {
         $userId = (int)($_POST['user_id'] ?? 0);
         $user = Database::fetchOne("SELECT id, full_name, phone, status FROM users WHERE id = ? AND role = 'user'", [$userId]);
-        if ($user && $user['status'] !== 'active') {
+        if ($user) {
             $existingPayment = Database::fetchOne("SELECT id FROM payments WHERE user_id = ? AND status = 'completed' LIMIT 1", [$userId]);
             if (!$existingPayment) {
                 $fee = (int) app_setting('registration_fee', REGISTRATION_FEE);
@@ -84,11 +101,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         'completed_at'    => date('Y-m-d H:i:s'),
                         'metadata'        => json_encode(['marked_by' => $_SESSION['user_id'], 'method' => 'admin']),
                     ]);
-                    Database::update('users', ['status' => 'active'], 'id = ?', [$userId]);
-                    CommissionEngine::processRegistrationCommissions($userId);
-                    Auth::logActivity($userId, 'account_activated', 'Account activated by admin (Mark as Paid)');
+                    if ($user['status'] !== 'active') {
+                        Database::update('users', ['status' => 'active'], 'id = ?', [$userId]);
+                        CommissionEngine::processRegistrationCommissions($userId);
+                        Auth::logActivity($userId, 'account_activated', 'Account activated by admin (Mark as Paid)');
+                    }
                     Database::commit();
-                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as paid — TZS ' . number_format($fee) . ' — account activated + commissions processed');
+                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as paid — TZS ' . number_format($fee));
                 } catch (Exception $e) {
                     Database::rollback();
                     setFlash('error', 'Error: ' . $e->getMessage());
@@ -98,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 setFlash('warning', 'User already has a completed payment record');
             }
         } else {
-            setFlash('error', 'User not found or already active');
+            setFlash('error', 'User not found');
         }
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
@@ -316,9 +335,9 @@ include __DIR__ . '/admin_header.php';
                                         </li>
                                         <?php endif; ?>
                                         <?php endforeach; ?>
-                                        <?php if ($u['status'] === 'pending' && !$u['paid_amount']): ?>
+                                        <?php if (!$u['paid_amount']): ?>
                                         <li>
-                                            <form method="POST" class="d-inline" onsubmit="return confirm('Mark <?= sanitize($u['full_name']) ?> as PAID? Their account will be activated and commissions will be processed.')">
+                                            <form method="POST" class="d-inline" onsubmit="return confirm('Mark <?= sanitize($u['full_name']) ?> as PAID — TZS <?= number_format((int)app_setting('registration_fee', REGISTRATION_FEE)) ?>?')">
                                                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
                                                 <input type="hidden" name="action" value="mark_as_paid">
                                                 <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
