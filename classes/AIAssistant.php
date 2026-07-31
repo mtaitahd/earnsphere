@@ -272,7 +272,7 @@ class AIAssistant {
         $userName = $user['full_name'];
         $refCode = $user['referral_code'];
 
-        $generated = self::generateLocalFallback($contentType, $tone, $language, $userName, $refCode, $regFee, $commL1, $siteName, $refLink, $customPrompt);
+        $generated = self::generateLocalFallback($contentType, $tone, $language, $userName, $refCode, $regFee, $commL1, $commL2, $commL3, $siteName, $refLink, $customPrompt);
 
         if (!$generated['success']) {
             return $generated;
@@ -476,6 +476,14 @@ class AIAssistant {
             "Level 1: TZS $c1, Level 2: TZS $c2, Level 3: TZS $c3. Every referral counts.",
             "Imagine earning TZS $w this week just by sharing your link. That's $site.",
             "Refer 10 friends → TZS " . self::number(10 * $ctx['commL1']) . "  Refer 50 friends → TZS " . self::number(50 * $ctx['commL1']) . ". Start with TZS $f.",
+            "A one-time TZS $f investment that pays TZS $c1 every time you refer someone. That's $site.",
+            "No monthly fees, no hidden charges. Just share your link and earn TZS $c1 per referral.",
+            "You don't need to be a salesperson. Just share your link with people you already know.",
+            "Start with 3 friends and watch your income grow. Every friend = TZS $c1.",
+            "This isn't complicated: join for TZS $f, share your link, earn TZS $c1 per signup.",
+            "Hundreds of Tanzanians are earning TZS $m monthly with $site. Why not you?",
+            "1 referral = TZS $c1. 10 referrals = TZS " . self::number(10 * $ctx['commL1']) . ". The math is simple.",
+            "Your network is your net worth. Build it with $site and earn at every level.",
         ];
     }
 
@@ -503,6 +511,14 @@ class AIAssistant {
             "Kila mtu unayemwalika $site anakuletea TZS $c1. Na watu wanaokuja kupitia kwao wanakuletea TZS $c2 na $c3.",
             "TZS $f tu kufungua mlango wa mapato ya TZS $p+ kwa uwezo wako.",
             "Kompyuta yako ni kiwanda chako cha pesa. $site inakupa zana. Anza leo kwa TZS $f.",
+            "Usisubiri kesho. $site inakupa TZS $c1 kwa kila mwaliko. Anza leo!",
+            "Hii sio kazi ngumu. Inahitaji tu kushare link yako na marafiki wako.",
+            "Kwa TZS $f tu, unajifungulia mtandao mzima wa mapato. Hakuna ada za kila mwezi.",
+            "Unaweza kuanza na marafiki 3 tu. Kila mmoja anakuletea TZS $c1. Anza polepole!",
+            "Kila mwaliko ni TZS $c1. Watu 5 = TZS " . self::number(5 * $ctx['commL1']) . ", watu 10 = TZS " . self::number(10 * $ctx['commL1']) . ". Hesabu mwenyewe!",
+            "Watu wengi Tanzania wanapata TZS $m kwa mwezi na $site. Wewe je, uko tayari?",
+            "$site: Hakuna ada za kila mwezi, hakuna kazi ya kuchosha. TZS $c1 kwa kila mwaliko.",
+            "Pesa zako unazotoa M-Pesa au Airtel wakati wowote. Hii ndiyo uzuri wa $site.",
         ];
     }
 
@@ -525,6 +541,11 @@ class AIAssistant {
             "Pata TZS $c1 per referral, level 2 inakupa TZS $c2 extra. Hii ni fursa!",
             "3 level commission: $c1 Level 1, $c2 Level 2, $c3 Level 3. Your network inakufanyia kazi!",
             "TZS $w per week inawezekana. TZS $m per month. Anza na TZS $f tu!",
+            "TZS $f tu kuanza, then you're in business. TZS $c1 per referral!",
+            "$site ni legit! Withdraw M-Pesa/Airtel. Pata TZS $c1 kwa kila mwaliko.",
+            "Hakuna monthly fees. One-time TZS $f. Kisha anza kushare link yako!",
+            "Sijui kama umeona, but $site inalipa TZS $c1 kwa kila mtu unayemleta!",
+            "Start small, dream big. TZS $f → TZS $m per month. $site inafanya kazi!",
         ];
     }
 
@@ -538,9 +559,31 @@ class AIAssistant {
         $e = self::pick($tw['emoji']);
         $a = self::pick($tw['adj']);
         $link = $ctx['link'];
-        $greet = $sw ? self::pick(['Habari! 👋', 'Mambo! 😊', 'Niaje! ✌️', 'Sema! 👋']) : self::pick(["Hey! 👋", "Hello! 👋", "Hi there! 😊", "What's up! ✌️"]);
-        $close = $sw ? self::pick(["📲 $link", "👇 $link", "👉 $link", "🔗 $link"]) : self::pick(["📲 $link", "👇 $link", "👉 $link", "🔗 $link"]);
-        return "$greet\n$s\n\n$e $a opportunity! Withdraw to M-Pesa/Airtel instantly.\n\n$close";
+        $site = $ctx['siteName'];
+        $f = self::number($ctx['regFee']);
+        $c1 = self::number($ctx['commL1']);
+        $greet = $sw ? self::pick(['Habari! 👋', 'Mambo! 😊', 'Niaje! ✌️', 'Sema! 👋', 'Habari yako! 😊', 'Mambo vipi! 👋']) : self::pick(["Hey! 👋", "Hello! 👋", "Hi there! 😊", "What's up! ✌️", "Hey friend! 👋", "Good day! 😊"]);
+        $close = $sw ? self::pick(["📲 $link", "👇 $link", "👉 $link", "🔗 $link", "Bonyeza hapa: $link"]) : self::pick(["📲 $link", "👇 $link", "👉 $link", "🔗 $link", "Click here: $link"]);
+
+        $variants = $sw ? [
+            "$greet\n$s\n\n$e $a opportunity! Withdraw to M-Pesa/Airtel instantly.\n\n$close",
+            "$greet\nNilikufikiria wewe unapokuja na hii fursa ya $site. Kwa TZS $f tu unapata TZS $c1 kwa kila mtu unayemwalika.\n\n$e Inaweza kukufaa?\n\n$close",
+            "$greet\nUkitaka mapato ya ziada bila kuacha kazi yako, hii ni kwa ajili yako! $site inalipa TZS $c1 kwa kila mwaliko.\n\n$e Nafurahi kukuelekeza!\n\n$close",
+            "$greet\nHabari za leo! Nimeanza kupata mapato kwa kushare link ya $site. Watu wanaokuja kupitia kwangu huniletea TZS $c1. Ungependa kujaribu pia?\n\n$close",
+            "$greet\n$s\n\nMimi mwenyewe nimeshaanza! $e Ukihitaji mwongozo, niko hapa.\n\n$close",
+            "$greet\nHii ndiyo fursa tuliyokuwa tukizungumza! $site: TZS $f moja tu, kisha TZS $c1 kwa kila mtu unayemwalika.\n\n$close",
+            "$greet\nNimeona unafanya kazi kwa bidii - na hii inaweza kukupa mapato ya ziada. $site inalipa kwa kualika marafiki.\n\n$e Uko tayari kuona?\n\n$close",
+        ] : [
+            "$greet\n$s\n\n$e $a opportunity! Withdraw to M-Pesa/Airtel instantly.\n\n$close",
+            "$greet\nI thought of you for this $site opportunity. For just TZS $f you earn TZS $c1 for every person you invite.\n\n$e Could this work for you?\n\n$close",
+            "$greet\nWant extra income without quitting your job? $site pays TZS $c1 per referral.\n\n$e Happy to guide you!\n\n$close",
+            "$greet\nI've started earning by sharing my $site link. Everyone who joins through me earns me TZS $c1. Want to try too?\n\n$close",
+            "$greet\n$s\n\nI've already started myself! $e Need guidance? I'm here.\n\n$close",
+            "$greet\nThis is that opportunity we talked about! $site: TZS $f once, then TZS $c1 per referral.\n\n$close",
+            "$greet\nI see how hard you work - this could give you extra income. $site pays for inviting friends.\n\n$e Ready to see?\n\n$close",
+        ];
+
+        return self::pick($variants);
     }
 
     private static function generateFacebook(bool $sw, bool $mixed, array $ctx, array $tw): string {
@@ -548,21 +591,33 @@ class AIAssistant {
         $s2 = self::pickSentence($sw, $mixed, $ctx);
         $e = self::pick($tw['emoji']);
         $link = $ctx['link'];
+        $site = $ctx['siteName'];
+        $f = self::number($ctx['regFee']);
+        $c1 = self::number($ctx['commL1']);
         $tag1 = $sw ? '#EarnSphere' : '#EarnSphere';
         $tags = $sw
             ? self::pick([['#Kipato', '#Mapato', '#Tanzania', '#Fursa'], ['#Biashara', '#Mtandao', '#KipatoChaZiada'], ['#Pesa', '#FursaTanzania', '#MapatoYaZiada']])
             : self::pick([['#ExtraIncome', '#WorkFromHome', '#Tanzania', '#PassiveIncome'], ['#SideHustle', '#ReferralProgram', '#MakeMoneyTZ'], ['#FinancialFreedom', '#PassiveIncome', '#TanzaniaBusiness']]);
-        $head = $sw ? self::pick(["🚀 \"MAPATO YA ZIADA YANAWEZEKANA!\"", "💰 \"FURSA YAKO YA KIPATO IKO HAPA!\"", "🔥 \"ANZA KUPATA MAPATO LEO!\""]) : self::pick(["🚀 \"EARN EXTRA INCOME FROM HOME!\"", "💰 \"YOUR INCOME OPPORTUNITY IS HERE!\"", "🔥 \"START EARNING TODAY!\""]);
-        $q = $sw ? "Je, uko tayari kubadilisha maisha yako?" : "Are you ready to change your life?";
-        return "$head\n\n$q\n\n$s1\n\n$s2\n\n$e \"Withdraw M-Pesa / Airtel Money\"\n\n📲 $link\n\n" . implode(' ', array_map(fn($t) => "#$t", $tags));
+        $head = $sw ? self::pick(["🚀 \"MAPATO YA ZIADA YANAWEZEKANA!\"", "💰 \"FURSA YAKO YA KIPATO IKO HAPA!\"", "🔥 \"ANZA KUPATA MAPATO LEO!\"", "💵 \"MAPATO YA KWELI KUTOKA NYUMBANI!\""]) : self::pick(["🚀 \"EARN EXTRA INCOME FROM HOME!\"", "💰 \"YOUR INCOME OPPORTUNITY IS HERE!\"", "🔥 \"START EARNING TODAY!\"", "💵 \"REAL INCOME FROM HOME!\""]);
+        $q = $sw ? self::pick(["Je, uko tayari kubadilisha maisha yako?", "Umechoka kusubiri mwisho wa mwezi?", "Unataka mapato ya ziada leo?"]) : self::pick(["Are you ready to change your life?", "Tired of waiting for month-end?", "Want extra income today?"]);
+        $stories = $sw ? [
+            "$head\n\n$q\n\n$s1\n\n$s2\n\n$e \"Withdraw M-Pesa / Airtel Money\"\n\n📲 $link\n\n" . implode(' ', array_map(fn($t) => "#$t", $tags)),
+            "$head\n\n\"Vipi kama nikikuambia kuna njia rahisi ya kupata mapato ya ziada kutoka nyumbani?\"\n\n$s1\n\n$e $site inakupa TZS $c1 kwa kila mtu unayemwalika. Malipo ya mara moja TZS $f tu.\n\n📲 $link\n\n" . implode(' ', array_map(fn($t) => "#$t", $tags)),
+            "$head\n\nHii ni kwa ajili ya wote wanaotafuta kipato cha ziada!\n\n$s1\n\n$s2\n\n$e Withdraw M-Pesa / Airtel Money papo hapo!\n\n📲 $link\n\n" . implode(' ', array_map(fn($t) => "#$t", $tags)),
+        ] : [
+            "$head\n\n$q\n\n$s1\n\n$s2\n\n$e \"Withdraw M-Pesa / Airtel Money\"\n\n📲 $link\n\n" . implode(' ', array_map(fn($t) => "#$t", $tags)),
+            "$head\n\n\"What if I told you there's an easy way to earn extra income from home?\"\n\n$s1\n\n$e $site gives you TZS $c1 per referral. One-time TZS $f.\n\n📲 $link\n\n" . implode(' ', array_map(fn($t) => "#$t", $tags)),
+            "$head\n\nFor everyone looking for extra income!\n\n$s1\n\n$s2\n\n$e Withdraw to M-Pesa / Airtel Money instantly!\n\n📲 $link\n\n" . implode(' ', array_map(fn($t) => "#$t", $tags)),
+        ];
+        return self::pick($stories);
     }
 
     private static function generateInstagram(bool $sw, bool $mixed, array $ctx, array $tw): string {
         $s = self::pickSentence($sw, $mixed, $ctx);
         $e = self::pick($tw['emoji']);
         $hook = $sw
-            ? self::pick(["Unataka mapato ya ziada?", "Kipato cha ziada kiko hapa!", "Njia rahisi ya kupata pesa!"])
-            : self::pick(["Want extra income?", "Your side hustle is here!", "The easiest way to earn!"]);
+            ? self::pick(["Unataka mapato ya ziada?", "Kipato cha ziada kiko hapa!", "Njia rahisi ya kupata pesa!", "Umechoka kungojea mwisho wa mwezi?", "Mapato yako yanaweza kuanza leo!"])
+            : self::pick(["Want extra income?", "Your side hustle is here!", "The easiest way to earn!", "Tired of waiting for month-end?", "Your income can start today!"]);
         $tags = $sw ? '#EarnSphere #Kipato #Tanzania #Mapato #Fursa #Mpesa #Biashara' : '#EarnSphere #ExtraIncome #Tanzania #SideHustle #PassiveIncome #Mpesa #MakeMoney';
         return "$hook\n\n$s\n\n$e Withdraw to M-Pesa/Airtel\n\n📲 Tap link in bio\n\n$tags";
     }
@@ -571,8 +626,8 @@ class AIAssistant {
         $s = self::pickSentence($sw, $mixed, $ctx);
         if (mb_strlen($s) > 100) $s = mb_substr($s, 0, 97) . '...';
         $hook = $sw
-            ? self::pick(["Hii ni fursa yako! 🚀", "Usikose hii! 🔥", "Njoo tuoneshwe! 💰"])
-            : self::pick(["Don't scroll past this! 🚀", "This is your sign! 🔥", "Watch this! 💰"]);
+            ? self::pick(["Hii ni fursa yako! 🚀", "Usikose hii! 🔥", "Njoo tuoneshwe! 💰", "Wacha nikuonyeshe kitu! 👀", "Hii imebadilisha maisha ya watu! ✨"])
+            : self::pick(["Don't scroll past this! 🚀", "This is your sign! 🔥", "Watch this! 💰", "Let me show you something! 👀", "This changed lives! ✨"]);
         return "$hook\n$s";
     }
 
@@ -581,9 +636,23 @@ class AIAssistant {
         $s2 = self::pickSentence($sw, $mixed, $ctx);
         $e = self::pick($tw['emoji']);
         $link = $ctx['link'];
-        $head = $sw ? "🚀 \"Fursa ya Kipato cha Ziada!\"" : "🚀 \"Extra Income Opportunity!\"";
-        $close = $sw ? "@EarnSphere - Fursa Yako ya Mapato!" : "@EarnSphere - Your Income Opportunity!";
-        return "$head\n\n$s1\n\n$s2\n\n$e Withdraw via M-Pesa / Airtel Money\n\n🔗 $link\n\n$close";
+        $site = $ctx['siteName'];
+        $c1 = self::number($ctx['commL1']);
+        $f = self::number($ctx['regFee']);
+
+        $variants = $sw ? [
+            "🚀 \"Fursa ya Kipato cha Ziada!\"\n\n$s1\n\n$s2\n\n$e Withdraw via M-Pesa / Airtel Money\n\n🔗 $link\n\n@EarnSphere - Fursa Yako ya Mapato!",
+            "💬 Fursa ya $site imefika!\n\n$s1\n\n$e Kila mtu unayemwalika anakuletea TZS $c1. Rahisi na halali.\n\n🔗 $link",
+            "📢 Habari kwa wote!\n\n$s1\n\nTZS $f tu kuanza, kisha withdraw M-Pesa/Airtel wakati wowote.\n\n🔗 $link",
+            "🔥 \"Usikose Fursa Hii!\"\n\n$s1\n\n$e Jiunge na $site leo, anza kupata TZS $c1 kwa kila mwaliko.\n\n🔗 $link",
+        ] : [
+            "🚀 \"Extra Income Opportunity!\"\n\n$s1\n\n$s2\n\n$e Withdraw via M-Pesa / Airtel Money\n\n🔗 $link\n\n@EarnSphere - Your Income Opportunity!",
+            "💬 The $site opportunity is here!\n\n$s1\n\n$e Everyone you refer brings you TZS $c1. Simple and legit.\n\n🔗 $link",
+            "📢 Attention everyone!\n\n$s1\n\nJust TZS $f to start, then withdraw to M-Pesa/Airtel anytime.\n\n🔗 $link",
+            "🔥 \"Don't Miss This!\"\n\n$s1\n\n$e Join $site today, start earning TZS $c1 per referral.\n\n🔗 $link",
+        ];
+
+        return self::pick($variants);
     }
 
     private static function generateTwitter(bool $sw, bool $mixed, array $ctx, array $tw): string {
@@ -598,11 +667,24 @@ class AIAssistant {
     }
 
     private static function generateSMS(bool $sw, bool $mixed, array $ctx, array $tw): string {
-        $s = self::pickSentence($sw, $mixed, $ctx);
+        $f = self::number($ctx['regFee']);
+        $c1 = self::number($ctx['commL1']);
+        $site = $ctx['siteName'];
         $link = $ctx['link'];
-        $content = $sw
-            ? "$s 📲 $link"
-            : "$s 📲 $link";
+        $msgs = $sw ? [
+            "$site: Pata TZS $c1 kwa kila mwaliko. Jiunge kwa TZS $f tu. 📲 $link",
+            "Fursa! $site inalipa TZS $c1 kwa kila mtu unayemwalika. Malipo ya mara moja TZS $f. 👉 $link",
+            "Pata mapato ya ziada na $site. TZS $c1 kwa kila mwaliko. Withdraw M-Pesa. $link",
+            "$site ni halali! TZS $f kuanza, TZS $c1 kwa kila mtu. Bonyeza: $link",
+            "Mapato rahisi! Jiunge $site kwa TZS $f, pata TZS $c1 kwa kila mwaliko. $link",
+        ] : [
+            "$site: Earn TZS $c1 per referral. Join for just TZS $f. 📲 $link",
+            "Opportunity! $site pays TZS $c1 per referral. One-time TZS $f. 👉 $link",
+            "Earn extra income with $site. TZS $c1 per referral. Withdraw to M-Pesa. $link",
+            "$site is legit! TZS $f to start, TZS $c1 per person. Tap: $link",
+            "Easy income! Join $site for TZS $f, earn TZS $c1 per referral. $link",
+        ];
+        $content = self::pick($msgs);
         if (mb_strlen($content) > 160) $content = mb_substr($content, 0, 157) . '...';
         return $content;
     }
@@ -840,6 +922,12 @@ class AIAssistant {
                 "Sijasikia kutoka kwako. Je, una maswali yoyote kuhusu $site? Niko tayari kukusaidia!",
                 "Hii ni fursa nzuri sana usiipite. $site inakupa TZS $c1 kwa kila mtu $e",
                 "Nikutumie maelezo zaidi kuhusu $site? Unaweza kupata TZS $c1 leo tu!",
+                "Habari! Sikutaka kukusumbua, lakini niliona fursa hii na nikakufikiria wewe. $site inalipa wanachama wake kwa kualika marafiki. Inaweza kukufaa?",
+                "Hujambo! Umeenda wapi? Hii fursa ya $site bado iko, na mapato yanaendelea. Kama umekuwa na shughuli, usisahau kwamba TZS $c1 inakusubiri kwa kila mwaliko!",
+                "Ndoto za mapato ziko njiani! Lakini kwanza, je umeamua kuhusu $site? Niko hapa kukusaidia kuanza leo. TZS $c1 kwa kila mtu $e",
+                "Sijui kama uliona ujumbe wangu wa kwanza. Nimekufikiria kwa sababu $site inaonekana kama fursa nzuri kwa watu wenye nia ya kupata mapato ya ziada. Bado unaweza kujiunga!",
+                "Rafiki, hii ni kukumbushana tu! $site inaendelea na mapato ni halisi. Ukihitaji mwongozo wa kuanza, niko hapa. TZS $c1 kwa kila mwaliko!",
+                "Nimeona uko busy, lakini usisahau kwamba fursa kama hii haiji kila siku. $site inakupa TZS $c1 kwa kila mtu unayemwalika. Ukitaka nikusaidie, niambie!",
             ]);
         }
         return self::pick([
@@ -847,41 +935,100 @@ class AIAssistant {
             "Haven't heard from you. Any questions about $site? Happy to help!",
             "This is such a great opportunity. $site gives you TZS $c1 per person $e",
             "Should I send you more details about $site? You could earn TZS $c1 today!",
+            "Hey! Didn't want to bother you, but I saw this opportunity and thought of you. $site pays members for inviting friends. Could it work for you?",
+            "Hey, been thinking about you! The $site opportunity is still open, and earnings are real. Don't forget that TZS $c1 awaits per referral!",
+            "Earnings are on the way! But first, have you decided about $site? I'm here to help you start today. TZS $c1 per person $e",
+            "Not sure if you saw my first message. I thought of you because $site looks like a great chance for anyone wanting extra income. You can still join!",
+            "Just a friendly reminder! $site is still running and the income is real. Need a guide to start? I'm here. TZS $c1 per referral!",
+            "I see you're busy, but opportunities like this don't come every day. $site gives you TZS $c1 per person you invite. Want me to help? Just say the word!",
         ]);
     }
 
     private static function generateCustomerReply(bool $sw, bool $mixed, array $ctx, array $tw): string {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
+        $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
+        $f = self::number($ctx['regFee']);
+        $w = self::number($ctx['weekly']);
+        $m = self::number($ctx['monthly']);
+        $link = $ctx['link'];
         if ($sw) {
             return self::pick([
                 "Asante kwa kuwasiliana! Ndiyo, $site ni halali na tayari kuna wanachama wengi wanaopata mapato. Pata TZS $c1 kwa kila mwaliko.",
-                "Karibu! Kujiunga ni rahisi. Malipo ya TZS " . self::number($ctx['regFee']) . " tu na unaanza kupata TZS $c1 kwa kila mtu unayemwalika.",
+                "Karibu! Kujiunga ni rahisi. Malipo ya TZS $f tu na unaanza kupata TZS $c1 kwa kila mtu unayemwalika.",
                 "Ndiyo, pesa unazotoa M-Pesa au Airtel. Hakuna vikwazo. Unaweza kutoa wakati wowote baada ya kupata commission.",
+                "Hii si scam! $site ni jukwaa halali la Tanzania. Wanachama wanaondoa pesa zao kila siku kupitia M-Pesa/Airtel. Unapata TZS $c1 kwa kila mwaliko.",
+                "Kujiunga ni hatua 3 tu: 1) Lipa TZS $f mara moja, 2) Pata link yako, 3) Anza kushare na marafiki. Kila mtu = TZS $c1 kwako!",
+                "Unaweza kupata kiasi gani? Kwa kila mtu unayemwalika unapata TZS $c1. Watu 5 = TZS " . self::number(5 * $ctx['commL1']) . ". Watu 10 = TZS " . self::number(10 * $ctx['commL1']) . ". Pia unapata TZS $c2 na TZS $c3 kwa wanaokuja kupitia kwao.",
+                "Muda? Watu wengi wanaanza kuona mapato ndani ya wiki ya kwanza baada ya kualika marafiki. Ni suala la kushare link yako tu!",
+                "Ndiyo, unaweza kufanya hii nikiwa na kazi! Watu wengi wanafanya $site kama kazi ya ziada. Unatumia muda wako wa ziada tu.",
+                "Hakuna ujuzi maalum unaohitajika. Unachohitaji ni simu, nia ya kushare, na TZS $f kwa ajili ya kujiunga.",
+                "Kuhusu ushahidi - kuna wanachama wengi ambao wameshaondoa pesa zao. $site ina mfumo wa malipo ya moja kwa moja kwenye M-Pesa/Airtel. Unaweza kuanza na marafiki wachache tu.",
+                "Tofauti na biashara nyingine, hakuna malipo ya kila mwezi. TZS $f ni mara moja tu. Ukialika watu 2-3 tu, tayari umepata faida.",
+                "Ndiyo, pia unapata commission kutoka kwa watu wanaokuja kupitia kwa marafiki wako! Ngazi 2: TZS $c2, Ngazi 3: TZS $c3. Mtandao wako wote unakufanyia kazi.",
+                "Usijali, siwezi kukulazimisha. Lakini kama unataka kujifunza zaidi, nitakutumia maelezo kamili kuhusu jinsi $site inavyofanya kazi. 😊",
+                "Kwa swali lako, nikutumie screenshot/maelezo zaidi? Niko hapa kukusaidia kuelewa kabisa kabla ya kuamua.",
             ]);
         }
         return self::pick([
             "Thanks for reaching out! Yes, $site is legitimate with many active members earning. Earn TZS $c1 per referral.",
-            "Welcome! Joining is easy. Just TZS " . self::number($ctx['regFee']) . " and you start earning TZS $c1 for every person you invite.",
+            "Welcome! Joining is easy. Just TZS $f and you start earning TZS $c1 for every person you invite.",
             "Yes, you withdraw to M-Pesa or Airtel. No restrictions. Withdraw anytime after earning commissions.",
+            "This isn't a scam! $site is a legitimate Tanzanian platform. Members withdraw daily to M-Pesa/Airtel. You earn TZS $c1 per referral.",
+            "Joining is just 3 steps: 1) Pay TZS $f once, 2) Get your link, 3) Share with friends. Every person = TZS $c1 for you!",
+            "How much can you earn? TZS $c1 per direct referral. 5 people = TZS " . self::number(5 * $ctx['commL1']) . ". 10 people = TZS " . self::number(10 * $ctx['commL1']) . ". Plus TZS $c2 and TZS $c3 from their referrals.",
+            "Timeline? Most people see their first earnings within the first week of sharing their link.",
+            "Yes, you can do this alongside a job! Most members treat $site as a side hustle using spare time.",
+            "No special skills needed. Just a phone, willingness to share, and TZS $f to join.",
+            "Proof? Many members have already withdrawn. $site pays directly to M-Pesa/Airtel. Start with a few friends.",
+            "Unlike other businesses, there are no monthly fees. TZS $f is one-time. Invite 2-3 people and you've made it back.",
+            "Yes, you also earn from people your referrals bring! Level 2: TZS $c2, Level 3: TZS $c3. Your whole network works for you.",
+            "No pressure. If you'd like, I can send you full details on how $site works. 😊",
+            "For your question, should I send more details or screenshots? I'm here to help you understand fully.",
         ]);
     }
 
     private static function generateObjectionHandling(bool $sw, bool $mixed, array $ctx, array $tw): string {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
+        $c2 = self::number($ctx['commL2']);
+        $c3 = self::number($ctx['commL3']);
         $f = self::number($ctx['regFee']);
+        $w = self::number($ctx['weekly']);
+        $m = self::number($ctx['monthly']);
         if ($sw) {
             return self::pick([
                 "Naelewa wasiwasi wako. Lakini $site ni tofauti - malipo ya mara moja TZS $f tu, hakuna ada za kila mwezi. Na wanachama wanaondoa pesa zao kila siku.",
                 "Watu wengi wana swali hilo. Tofauti na biashara nyingine, $site inalipa TZS $c1 moja kwa moja kwa kila mwaliko. Unaona matokeo papo hapo.",
                 "Hakuna hatari. TZS $f ni malipo ya mara moja tu. Na unaweza kupata TZS $c1 kwa kila mtu - inamaanisha ukialika watu 2 tu, umepata faida yako.",
+                "\"Sina pesa sasa hivi\" - Naelewa! Lakini fikiria hivi: TZS $f ni kama bei ya chakula kimoja. Na kurudi kwake ni TZS $c1 kwa kila mtu unayemwalika. Unaweza kuanza na TZS $f inayopatikana.",
+                "\"Hii ni kama ukora/miraa\" - Hapana! $site ni tofauti. Inalipa wanachama kwa kazi halisi ya kualika. Hakuna ahadi ya kupata bila kufanya chochote - unapata kwa kufanya kazi ya kushare link.",
+                "\"Nimeshachomwa na mifumo mingine\" - Naelewa hisia zako, na ni sawa kuwa makini. Lakini tofauti: $site ina malipo ya mara moja pekee, hakuna mzunguko wa pesa za watu, na unaweza kutoa pesa zako M-Pesa/Airtel.",
+                "\"Sina watu wa kuwaalika\" - Hata marafiki 5 tu wa karibu wanatosha kuanza! Kila mmoja anakuletea TZS $c1. Na pia unapata $c2 na $c3 kutoka kwa watu wanaokuja kupitia kwao.",
+                "\"Nitaona baadaye\" - Nakuelewa. Lakini kumbuka, fursa hii inapatikana sasa. Kadiri unavyoanza mapema, ndivyo mapato yako yanaanza mapema. Kila siku ya kuchelewa ni TZS $c1× marafiki wako.",
+                "\"Hii ni ngumu sana\" - Kinyume chake! Unachohitaji ni kushare link yako. Hakuna ujuzi wa teknolojia. Ukishajiunga, utapata maelezo ya hatua kwa hatua.",
+                "\"Nahisi ni ya kudanganya\" - Ni haki kuuliza! Hapa kuna mambo 3: 1) Hakuna ada za kila mwezi, 2) Unatoa pesa zako M-Pesa/Airtel, 3) Unapata TZS $c1 kwa kila mwaliko halisi. Hakuna mzunguko wa pesa.",
+                "\"Sina muda\" - $site haihitaji muda mwingi! Dakika 5 kwa siku za kushare link yako zinatosha. Mapato yanaendelea hata ukiwa shughulini.",
+                "\"Watu hawatajiunga\" - Usijali! Hata kama ni 1 au 2 tu kati ya kila 10, bado ni faida. Kila mmoja ni TZS $c1, na wale wanaokuja kupitia kwao wanakuletea wewe commission pia.",
+                "Ni swali zuri! Watu wanapata TZS $w kwa wiki na $m kwa mwezi. Wanachama wanashare skrini za malipo yao kila siku. Hii ni fursa ya kweli, sio ahadi tupu.",
+                "Ikiwa utaona pesa yako haijarudi kama ilivyoahidiwa, ni sawa kuuliza tena! Lakini $site ina historia ya malipo ya moja kwa moja M-Pesa/Airtel kwa wanachama wake.",
             ]);
         }
         return self::pick([
             "I understand your concern. But $site is different - one-time payment of TZS $f only, no monthly fees. Members withdraw their money daily.",
             "Many people ask that. Unlike other businesses, $site pays TZS $c1 directly per referral. You see results immediately.",
             "No risk. TZS $f is a one-time payment. And you earn TZS $c1 per person - invite just 2 people and you've made your money back.",
+            "\"I don't have money right now\" - I understand! But think: TZS $f is like the price of one meal. The return is TZS $c1 per referral. You can start small.",
+            "\"This is like a pyramid scheme\" - No! $site is different. It pays members for real referral work. There's no money circle - you earn by sharing your link.",
+            "\"I've been burned by other systems\" - I understand your caution, and it's smart. But $site has only one-time payments, no money circulation, and direct withdrawal to M-Pesa/Airtel.",
+            "\"I don't know people to invite\" - Just 5 close friends are enough to start! Each brings TZS $c1. Plus you earn TZS $c2 and TZS $c3 from their referrals.",
+            "\"I'll see later\" - I get it. But this opportunity is available now. The earlier you start, the sooner your income begins. Every day of delay is TZS $c1 × your friends.",
+            "\"It's too complicated\" - Quite the opposite! All you do is share your link. No tech skills. Step-by-step guidance after joining.",
+            "\"It feels like a scam\" - Fair question! Three reasons it's not: 1) No monthly fees, 2) Direct withdrawal to M-Pesa/Airtel, 3) You earn TZS $c1 per real referral.",
+            "\"I don't have time\" - $site needs very little time! 5 minutes a day to share your link is enough. Earnings continue even while busy.",
+            "\"People won't join\" - Don't worry! Even 1 or 2 out of every 10 is still profit. Each is TZS $c1, and their referrals earn you commissions too.",
+            "Great question! People earn TZS $w weekly and TZS $m monthly. Members share withdrawal screenshots every day. This is real, not empty promises.",
         ]);
     }
 
@@ -1080,10 +1227,10 @@ class AIAssistant {
                "\"Q: How do I start?\"\nA: Click the link below, join, and you'll get all the details! 👉 $link";
     }
 
-    private static function generateLocalFallback(string $contentType, string $tone, string $language, string $userName, string $refCode, int $regFee, int $commL1, string $siteName, string $refLink, string $customPrompt): array {
+    private static function generateLocalFallback(string $contentType, string $tone, string $language, string $userName, string $refCode, int $regFee, int $commL1, int $commL2, int $commL3, string $siteName, string $refLink, string $customPrompt): array {
         $sw = in_array($tone, ['simple_swahili', 'mixed_swahili_english']);
         $mixed = $tone === 'mixed_swahili_english';
-        $ctx = self::buildContext($regFee, $commL1, 1500, 1000, $siteName, $refLink);
+        $ctx = self::buildContext($regFee, $commL1, $commL2, $commL3, $siteName, $refLink);
         $tw = self::toneWords($tone);
 
         $generators = [
