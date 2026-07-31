@@ -178,6 +178,102 @@ include __DIR__ . '/includes/public_head.php';
 .ls-name { font-weight: 700; color: var(--white); flex: 1; }
 .ls-count { font-size: 0.7rem; color: rgba(255,255,255,0.8); flex-shrink: 0; }
 .ls-empty { font-size: 0.78rem; color: rgba(255,255,255,0.85); text-align: center; padding: 0.5rem 0; }
+/* --- Need Help? FAB + Modal --- */
+.help-fab {
+    position: fixed;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    z-index: 9990;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 40px;
+    padding: 0.7rem 1.2rem;
+    font-weight: 800;
+    font-size: 0.85rem;
+    box-shadow: 0 8px 24px rgba(114,87,139,0.4);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.help-fab:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(114,87,139,0.5); }
+.help-fab i { font-size: 1.05rem; }
+.help-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10500;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.help-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+}
+.help-modal-content {
+    position: relative;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: helpSlideUp 0.3s ease;
+}
+@keyframes helpSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+.help-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--gray-100);
+    position: sticky;
+    top: 0;
+    background: #fff;
+}
+.help-modal-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #f0ebf5;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+.help-modal-header h5 {
+    flex: 1;
+    font-weight: 800;
+    font-size: 1rem;
+    margin: 0;
+}
+.help-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--gray-100);
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.help-modal-close:hover { background: var(--gray-200); }
+.help-modal-body { padding: 1rem 1.25rem 1.5rem; }
+.help-modal-sub {
+    font-size: 0.82rem;
+    color: var(--gray-500);
+    margin: 0 0 1rem;
+}
 </style>
 
 <!-- Hero Section -->
@@ -268,6 +364,60 @@ include __DIR__ . '/includes/public_head.php';
     <p style="margin: 0;">Earn money online through referrals &copy; <?= date('Y') ?></p>
 </footer>
 
+<!-- Need Help? Button -->
+<button type="button" class="help-fab" onclick="openHelpModal()" title="Need Help?">
+    <i class="fas fa-life-ring"></i>
+    <span>Need Help?</span>
+</button>
+
+<!-- Help Modal -->
+<div id="helpModal" class="help-modal" style="display:none;">
+    <div class="help-modal-overlay" onclick="closeHelpModal()"></div>
+    <div class="help-modal-content">
+        <div class="help-modal-header">
+            <div class="help-modal-header-icon"><i class="fas fa-life-ring"></i></div>
+            <h5>Need Help?</h5>
+            <button class="help-modal-close" onclick="closeHelpModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="help-modal-body">
+            <p class="help-modal-sub">Tell us your problem and our team will get back to you.</p>
+
+            <div id="helpFormWrap">
+                <form id="helpForm" onsubmit="submitHelp(event)">
+                    <div class="form-floating mb-2">
+                        <input type="text" class="form-control" id="helpName" placeholder="Full Name" required maxlength="150">
+                        <label for="helpName"><i class="fas fa-user me-1"></i> Full Name</label>
+                    </div>
+                    <div class="form-floating mb-2">
+                        <input type="tel" class="form-control" id="helpPhone" placeholder="Phone (e.g. 0712 345 678)">
+                        <label for="helpPhone"><i class="fas fa-phone me-1"></i> Phone (optional)</label>
+                    </div>
+                    <div class="form-floating mb-2">
+                        <input type="text" class="form-control" id="helpSubject" placeholder="Subject" maxlength="200">
+                        <label for="helpSubject"><i class="fas fa-tag me-1"></i> Subject (optional)</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" id="helpMessage" placeholder="Describe your problem..." required style="height:110px;resize:vertical;" minlength="5"></textarea>
+                        <label for="helpMessage"><i class="fas fa-comment-dots me-1"></i> Your Problem</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="helpSubmitBtn" style="font-weight:800;">
+                        <i class="fas fa-paper-plane me-2"></i> Send Message
+                    </button>
+                </form>
+            </div>
+
+            <div id="helpSuccessWrap" style="display:none;text-align:center;padding:1.5rem 0;">
+                <div style="width:64px;height:64px;border-radius:50%;background:#e8f9f0;color:#1CC88A;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 1rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h5 style="font-weight:800;color:var(--gray-800);">Message Sent!</h5>
+                <p style="font-size:0.85rem;color:var(--gray-500);margin:0.5rem 0 1.25rem;" id="helpSuccessMsg">Your message has been sent. We will reply soon!</p>
+                <button class="btn btn-outline-secondary btn-sm" onclick="closeHelpModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     /* Live Proof of Payment */
@@ -342,6 +492,65 @@ document.addEventListener('DOMContentLoaded', function() {
         return d.innerHTML;
     }
 });
+
+/* --- Need Help? Modal --- */
+function openHelpModal() {
+    document.getElementById('helpModal').style.display = 'flex';
+    document.getElementById('helpFormWrap').style.display = '';
+    document.getElementById('helpSuccessWrap').style.display = 'none';
+    if (!document.getElementById('helpName').value) {
+        document.getElementById('helpName').focus();
+    }
+}
+function closeHelpModal() {
+    document.getElementById('helpModal').style.display = 'none';
+}
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeHelpModal();
+});
+
+async function submitHelp(e) {
+    e.preventDefault();
+    const btn = document.getElementById('helpSubmitBtn');
+    const name = document.getElementById('helpName').value.trim();
+    const phone = document.getElementById('helpPhone').value.trim();
+    const subject = document.getElementById('helpSubject').value.trim();
+    const message = document.getElementById('helpMessage').value.trim();
+
+    if (message.length < 5) {
+        alert('Please describe your problem (at least 5 characters).');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+
+    try {
+        const body = new URLSearchParams({ name, phone, subject, message });
+        const resp = await fetch('<?= SITE_URL ?>/api/support.php?action=create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: body.toString()
+        });
+        const data = await resp.json();
+        if (data.success) {
+            document.getElementById('helpForm').reset();
+            document.getElementById('helpFormWrap').style.display = 'none';
+            document.getElementById('helpSuccessMsg').textContent = data.message || 'Your message has been sent. We will reply soon!';
+            document.getElementById('helpSuccessWrap').style.display = 'block';
+        } else {
+            alert(data.message || 'Something went wrong. Please try again.');
+        }
+    } catch (err) {
+        alert('Network error. Please check your connection and try again.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Send Message';
+    }
+}
 </script>
 
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

@@ -17,6 +17,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $adminUser = Database::fetchOne("SELECT full_name, avatar FROM users WHERE id = ?", [$_SESSION['user_id']]);
 
 $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
+$openTickets = Database::count('support_tickets', 'status = ?', ['open']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -135,6 +136,17 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
         <a class="nav-link" href="<?= SITE_URL ?>/admin/contests">
             <i class="fas fa-fw fa-trophy"></i>
             <span>Contests</span>
+        </a>
+    </li>
+
+    <!-- Support -->
+    <li class="nav-item <?= $currentPage === 'support' ? 'active' : '' ?>">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/support">
+            <i class="fas fa-fw fa-life-ring"></i>
+            <span>Support</span>
+            <?php if ($openTickets > 0): ?>
+                <span class="badge badge-danger badge-pill" style="font-size:0.65rem;"><?= $openTickets ?></span>
+            <?php endif; ?>
         </a>
     </li>
 

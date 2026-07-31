@@ -101,6 +101,10 @@ include __DIR__ . '/includes/public_head.php';
                 <i class="fas fa-bell"></i>
                 <span id="annBadge" class="ann-badge"></span>
             </a>
+            <a href="javascript:void(0)" class="notification-btn" style="text-decoration:none;position:relative;" onclick="openSupport()" title="Help / Support" id="supportBell">
+                <i class="fas fa-life-ring"></i>
+                <span id="supportBadge" class="ann-badge"></span>
+            </a>
             <a href="profile" style="text-decoration:none;">
                 <div class="avatar" style="background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">
                     <?= strtoupper(substr($user['full_name'], 0, 1)) ?>
@@ -503,6 +507,21 @@ include __DIR__ . '/includes/public_head.php';
     </div>
 </div>
 
+<!-- Support Modal -->
+<div id="supportModal" class="ann-modal" style="display:none;">
+    <div class="ann-modal-overlay" onclick="closeSupportModal()"></div>
+    <div class="ann-modal-content">
+        <div class="ann-modal-header">
+            <div class="ann-modal-header-icon"><i class="fas fa-life-ring"></i></div>
+            <h5>Help &amp; Support</h5>
+            <button class="ann-modal-close" onclick="closeSupportModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ann-modal-body" id="supportModalBody">
+            <div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+    </div>
+</div>
+
 <style>
 /* Announcement Modal */
 .ann-modal {
@@ -656,6 +675,53 @@ include __DIR__ . '/includes/public_head.php';
     line-height: 1.6;
     white-space: pre-wrap;
 }
+/* Support items */
+.sp-status {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.sp-status.open { background: #fef3c7; color: #b45309; }
+.sp-status.answered { background: #d1fae5; color: #047857; }
+.sp-status.closed { background: #e5e7eb; color: #6b7280; }
+.sp-reply {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--gray-200);
+}
+.sp-reply-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #047857;
+    margin-bottom: 0.4rem;
+}
+.sp-reply-text {
+    font-size: 0.85rem;
+    color: var(--gray-700);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    margin-bottom: 0.6rem;
+}
+.sp-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #10b981;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.sp-clear-btn:hover { background: #059669; }
 .mission-card {
     background: linear-gradient(135deg, #72578B, #5a3f72);
     border-radius: var(--radius-lg);
@@ -1178,6 +1244,112 @@ document.addEventListener('DOMContentLoaded', function() {
         if (res.success && res.data) {
             const unread = res.data.filter(a => !a.viewed).length;
             updateAnnBadge(unread);
+        }
+    })
+    .catch(() => {});
+});
+
+/* --- Support Functions --- */
+let supportData = [];
+
+function openSupport() {
+    const modal = document.getElementById('supportModal');
+    const body = document.getElementById('supportModalBody');
+    modal.style.display = 'flex';
+    body.innerHTML = '<div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    fetch('api/support.php?action=fetch', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            supportData = res.data || [];
+            renderSupportList(body);
+            updateSupportBadge(res.unread || 0);
+        } else {
+            body.innerHTML = '<div class="ann-empty"><i class="fas fa-life-ring"></i><p>Could not load your messages</p></div>';
+        }
+    })
+    .catch(() => {
+        body.innerHTML = '<div class="ann-empty"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i><p>Failed to load</p></div>';
+    });
+}
+
+function renderSupportList(body) {
+    if (supportData.length === 0) {
+        body.innerHTML = '<div class="ann-empty"><i class="fas fa-life-ring"></i><p>No help requests yet.<br>Use the "Need Help?" button on the home page to send us a message.</p></div>';
+        return;
+    }
+    let html = '<div class="sp-hint" style="font-size:0.75rem;color:var(--gray-400);margin-bottom:0.75rem;">Your messages and our replies</div>';
+    supportData.forEach(t => {
+        const statusClass = t.status === 'open' ? 'open' : (t.status === 'answered' ? 'answered' : 'closed');
+        const statusText = t.status === 'open' ? 'Open' : (t.status === 'answered' ? 'Answered' : 'Closed');
+        html += '<div class="ann-item' + (t.unread ? ' unread' : '') + '">' +
+            '<div class="ann-item-title">' +
+                (t.unread ? '<i class="fas fa-circle" style="color:#D4A843;font-size:0.5rem;"></i>' : '') +
+                escapeHtml(t.subject || 'Help Request') +
+                '<span class="sp-status ' + statusClass + '" style="margin-left:auto;">' + statusText + '</span>' +
+            '</div>' +
+            '<div class="ann-item-date">' + t.created_at + '</div>' +
+            '<div class="ann-item-preview">' + escapeHtml(t.message) + '</div>';
+        if (t.has_reply && t.admin_reply) {
+            html += '<div class="sp-reply">' +
+                '<div class="sp-reply-label"><i class="fas fa-reply me-1"></i> Our Reply</div>' +
+                '<div class="sp-reply-text">' + escapeHtml(t.admin_reply) + '</div>';
+            if (t.unread) {
+                html += '<button class="sp-clear-btn" onclick="clearSupportNotification(' + t.id + ')"><i class="fas fa-check"></i> Clear Notification</button>';
+            }
+            html += '</div>';
+        }
+        html += '</div>';
+    });
+    body.innerHTML = html;
+}
+
+function clearSupportNotification(id) {
+    const body = document.getElementById('supportModalBody');
+    fetch('api/support.php?action=mark_read&id=' + id, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            const t = supportData.find(item => item.id === id);
+            if (t) t.unread = false;
+            updateSupportBadge(supportData.filter(x => x.unread).length);
+            renderSupportList(body);
+        }
+    })
+    .catch(() => {});
+}
+
+function closeSupportModal() {
+    document.getElementById('supportModal').style.display = 'none';
+}
+
+function updateSupportBadge(count) {
+    const badge = document.getElementById('supportBadge');
+    if (count > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = count > 99 ? '99+' : count;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+/* Check for unread support replies on load */
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('api/support.php?action=fetch', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            updateSupportBadge(res.unread || 0);
         }
     })
     .catch(() => {});
