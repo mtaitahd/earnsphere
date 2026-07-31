@@ -315,15 +315,15 @@ include __DIR__ . '/admin_header.php';
                     <div class="row mb-3">
                         <div class="col-4">
                             <label class="form-label" style="font-weight:700;">1st Prize</label>
-                            <input type="number" class="form-control" name="prize1" required min="1" step="500" placeholder="100000">
+                            <input type="number" class="form-control" name="prize1" required min="1" placeholder="100000">
                         </div>
                         <div class="col-4">
                             <label class="form-label" style="font-weight:700;">2nd Prize</label>
-                            <input type="number" class="form-control" name="prize2" min="0" step="500" placeholder="50000">
+                            <input type="number" class="form-control" name="prize2" min="0" placeholder="50000">
                         </div>
                         <div class="col-4">
                             <label class="form-label" style="font-weight:700;">3rd Prize</label>
-                            <input type="number" class="form-control" name="prize3" min="0" step="500" placeholder="25000">
+                            <input type="number" class="form-control" name="prize3" min="0" placeholder="25000">
                         </div>
                     </div>
                     <div class="mb-3">
