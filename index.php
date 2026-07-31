@@ -128,6 +128,16 @@ include __DIR__ . '/includes/public_head.php';
 .lp-prize.lp-3 { border-color: rgba(205,127,50,0.5); }
 .lp-medal { display: block; font-size: 1.2rem; margin-bottom: 0.3rem; }
 .lp-prize strong { display: block; font-size: 0.75rem; color: var(--white); }
+.contest-condition {
+    background: rgba(255,255,255,0.1);
+    border: 1px dashed rgba(255,255,255,0.35);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.8rem;
+    font-size: 0.74rem;
+    color: rgba(255,255,255,0.95);
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
 .landing-standings {
     background: rgba(255,255,255,0.12);
     border: 1px solid rgba(255,255,255,0.22);
@@ -224,6 +234,9 @@ include __DIR__ . '/includes/public_head.php';
         <div class="lp-prize lp-2"><span class="lp-medal">🥈</span><strong>TZS 50,000</strong></div>
         <div class="lp-prize lp-3"><span class="lp-medal">🥉</span><strong>TZS 25,000</strong></div>
     </div>
+    <div class="contest-condition" id="contestCondition">
+        <i class="fas fa-gift me-1"></i> Zawadi hizi ni kwa washindi 3 wa juu wanaoleta wateja wengi waliolipa (min. 1) ndani ya kipindi cha mashindano.
+    </div>
     <div class="landing-standings" id="contestStandings">
         <div class="ls-title"><i class="fas fa-fire me-1"></i> Wanaoongoza Wiki Hii</div>
         <div id="standingsList">
@@ -294,6 +307,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<div class="lp-prize lp-1"><span class="lp-medal">🥇</span><strong>TZS ' + Number(p.prize1).toLocaleString() + '</strong></div>' +
                     '<div class="lp-prize lp-2"><span class="lp-medal">🥈</span><strong>TZS ' + Number(p.prize2).toLocaleString() + '</strong></div>' +
                     '<div class="lp-prize lp-3"><span class="lp-medal">🥉</span><strong>TZS ' + Number(p.prize3).toLocaleString() + '</strong></div>';
+            }
+
+            const cond = document.getElementById('contestCondition');
+            if (cond) {
+                const min = Number(res.contest.min_referrals) || 1;
+                const fmt = d => {
+                    const dt = new Date(String(d).slice(0,10) + 'T00:00:00');
+                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    return dt.getDate() + ' ' + months[dt.getMonth()];
+                };
+                cond.innerHTML = '<i class="fas fa-gift me-1"></i> Zawadi hizi ni kwa washindi 3 wa juu wanaoleta wateja ' + min + '+ waliolipa ndani ya kipindi cha ' + fmt(res.contest.start_date) + ' - ' + fmt(res.contest.end_date) + '.';
             }
 
             const slist = document.getElementById('standingsList');
