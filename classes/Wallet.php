@@ -46,12 +46,15 @@ class Wallet {
         $balanceBefore = (float) $wallet['balance'];
         $balanceAfter = $balanceBefore + $amount;
         
-        // Commission and daily mission bonuses are withdrawable
-        $isWithdrawable = in_array($type, ['commission', 'daily_mission_bonus']);
+        // Commission, daily mission and contest bonuses are withdrawable
+        $isWithdrawable = in_array($type, ['commission', 'daily_mission_bonus', 'contest_bonus']);
         $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
         $withdrawableAfter = $isWithdrawable ? $withdrawableBefore + $amount : $withdrawableBefore;
         
-        Database::beginTransaction();
+        $isNested = Database::inTransaction();
+        if (!$isNested) {
+            Database::beginTransaction();
+        }
         
         try {
             $updateData = [
@@ -78,11 +81,15 @@ class Wallet {
                 'status'         => 'completed',
             ]);
             
-            Database::commit();
+            if (!$isNested) {
+                Database::commit();
+            }
             return $transactionId;
             
         } catch (Exception $e) {
-            Database::rollback();
+            if (!$isNested) {
+                Database::rollback();
+            }
             error_log("Wallet credit error: " . $e->getMessage());
             ErrorLogger::logException($e, 'wallet', $userId, 'Wallet::credit');
             throw $e;
@@ -121,7 +128,10 @@ class Wallet {
         $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
         $withdrawableAfter = $isWithdrawal ? max(0, $withdrawableBefore - $amount) : $withdrawableBefore;
         
-        Database::beginTransaction();
+        $isNested = Database::inTransaction();
+        if (!$isNested) {
+            Database::beginTransaction();
+        }
         
         try {
             $updateData = [
@@ -147,11 +157,15 @@ class Wallet {
                 'status'         => $txStatus,
             ]);
             
-            Database::commit();
+            if (!$isNested) {
+                Database::commit();
+            }
             return $transactionId;
             
         } catch (Exception $e) {
-            Database::rollback();
+            if (!$isNested) {
+                Database::rollback();
+            }
             error_log("Wallet debit error: " . $e->getMessage());
             ErrorLogger::logException($e, 'wallet', $userId, 'Wallet::debit');
             throw $e;

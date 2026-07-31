@@ -130,6 +130,14 @@ $pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
         </a>
     </li>
 
+    <!-- Contests -->
+    <li class="nav-item <?= $currentPage === 'contests' ? 'active' : '' ?>">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/contests">
+            <i class="fas fa-fw fa-trophy"></i>
+            <span>Contests</span>
+        </a>
+    </li>
+
     <!-- Profile -->
     <li class="nav-item <?= $currentPage === 'profile' ? 'active' : '' ?>">
         <a class="nav-link" href="<?= SITE_URL ?>/admin/profile">

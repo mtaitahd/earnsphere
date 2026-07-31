@@ -9,6 +9,7 @@ require_once __DIR__ . '/classes/Auth.php';
 require_once __DIR__ . '/classes/CommissionEngine.php';
 require_once __DIR__ . '/classes/Wallet.php';
 require_once __DIR__ . '/classes/DailyMission.php';
+require_once __DIR__ . '/classes/Contest.php';
 require_once __DIR__ . '/includes/helpers.php';
 
 Auth::initSession();
@@ -20,6 +21,27 @@ $user = Auth::getUser();
 $wallet = Wallet::getWallet($_SESSION['user_id']);
 $stats = CommissionEngine::getReferralStats($_SESSION['user_id']);
 $referralLink = getReferralLink($user['referral_code']);
+
+// Weekly Referral Contest data
+$contest = Contest::getFeaturedContest();
+$contestStandings = [];
+$contestUserRank = null;
+$contestWinners = [];
+if ($contest) {
+    $contestStandings = Contest::getStandings($contest['id'], 5);
+    $contestUserRank = Contest::getUserRank($contest['id'], (int) $_SESSION['user_id']);
+    $contestWinners = Contest::getWinners($contest['id']);
+}
+
+// Live proof of payment data
+$liveProof = Database::fetchAll(
+    "SELECT w.id, w.amount, w.processed_at, w.created_at, u.full_name
+     FROM withdrawals w
+     INNER JOIN users u ON u.id = w.user_id
+     WHERE w.status = 'completed'
+     ORDER BY COALESCE(w.processed_at, w.created_at) DESC
+     LIMIT 5"
+);
 
 // Recent transactions
 $recentTransactions = Database::fetchAll(
@@ -215,6 +237,102 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Dashboard Content -->
 <div class="dash-content mb-safe">
+    
+    <!-- Weekly Referral Contest -->
+    <?php if ($contest): ?>
+    <div class="dash-section px-3" style="margin-top:1rem;">
+        <div class="contest-card">
+            <div class="contest-header">
+                <div class="contest-trophy"><i class="fas fa-trophy"></i></div>
+                <div class="contest-info">
+                    <div class="contest-badge">WEEKLY CONTEST</div>
+                    <h6 class="contest-title"><?= sanitize($contest['title']) ?></h6>
+                    <p class="contest-desc"><?= sanitize($contest['description']) ?></p>
+                </div>
+                <div class="contest-ends">
+                    <div class="ends-label">Ends</div>
+                    <div class="ends-date"><?= date('d M', strtotime($contest['end_date'])) ?></div>
+                </div>
+            </div>
+
+            <div class="prize-row">
+                <div class="prize-item gold">
+                    <span class="prize-icon">🥇</span>
+                    <div class="prize-val"><?= formatCurrency($contest['prize1']) ?></div>
+                    <div class="prize-label">1st</div>
+                </div>
+                <div class="prize-item silver">
+                    <span class="prize-icon">🥈</span>
+                    <div class="prize-val"><?= formatCurrency($contest['prize2']) ?></div>
+                    <div class="prize-label">2nd</div>
+                </div>
+                <div class="prize-item bronze">
+                    <span class="prize-icon">🥉</span>
+                    <div class="prize-val"><?= formatCurrency($contest['prize3']) ?></div>
+                    <div class="prize-label">3rd</div>
+                </div>
+            </div>
+
+            <div class="lb-title"><i class="fas fa-fire me-1"></i> Wanaoongoza</div>
+            <div class="lb-list">
+                <?php if (empty($contestStandings)): ?>
+                    <div class="lb-empty">Hakuna wateja wapya bado. Kuwa wa kwanza!</div>
+                <?php else: ?>
+                    <?php foreach ($contestStandings as $s): ?>
+                    <div class="lb-row <?= $s['user_id'] == $_SESSION['user_id'] ? 'me-row' : '' ?>">
+                        <span class="lb-pos"><?= $s['position'] ?></span>
+                        <span class="lb-name"><?= sanitize($s['name']) ?></span>
+                        <span class="lb-count"><?= $s['count'] ?> referrals</span>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <div class="contest-cta">
+                <?php if ($contestUserRank && $contestUserRank['count'] > 0): ?>
+                    <div class="user-rank"><i class="fas fa-medal me-1"></i> Wewe uko <strong>#<?= $contestUserRank['rank'] ?></strong> — <?= $contestUserRank['count'] ?> referral<?= $contestUserRank['count'] > 1 ? 's' : '' ?></div>
+                <?php else: ?>
+                    <div class="user-rank muted"><i class="fas fa-rocket me-1"></i> Taja wateja <?= (int) $contest['min_referrals'] ?>+ waliolipa na ushinde zawadi!</div>
+                <?php endif; ?>
+                <a href="referrals" class="btn btn-light btn-sm w-100" style="background:#fff;color:#72578B;font-weight:800;border-radius:10px;">
+                    <i class="fas fa-share me-1"></i> Share Link na Kushindana
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Live Proof of Payment -->
+    <?php if (app_setting('live_proof_enabled', '1') !== '0'): ?>
+    <div class="dash-section" id="liveProofSection">
+        <div class="section-header">
+            <h6><i class="fas fa-bolt me-1" style="color:var(--secondary);"></i> Live Proof of Payment</h6>
+            <span class="live-dot"><span class="dot"></span> LIVE</span>
+        </div>
+        <div id="liveProofList">
+            <?php if (empty($liveProof)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-coins"></i>
+                    <h5>Hakuna malipo bado</h5>
+                    <p>Watumiaji wanapoanza kutoa pesa, malipo yataonekana hapa live.</p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($liveProof as $lp): ?>
+                <div class="list-item">
+                    <div class="item-icon" style="background:#ecfdf5;color:var(--secondary);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="item-info">
+                        <p class="item-title"><?= sanitize(Contest::maskName($lp['full_name'])) ?> amepokea <?= formatCurrency($lp['amount']) ?></p>
+                        <p class="item-subtitle"><?= timeAgo($lp['processed_at'] ?: $lp['created_at']) ?></p>
+                    </div>
+                    <div class="item-amount credit"><?= formatCurrency($lp['amount']) ?></div>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
     
     <!-- Referral Link & Share -->
     <div class="referral-link-card">
@@ -684,6 +802,179 @@ include __DIR__ . '/includes/public_head.php';
     0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
     100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
 }
+/* --- Weekly Contest Card --- */
+.contest-card {
+    background: linear-gradient(135deg, #72578B, #4a2f63);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(114, 87, 139, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+.contest-card::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -20%;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(212, 168, 67, 0.12);
+}
+.contest-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+.contest-trophy {
+    width: 44px;
+    height: 44px;
+    background: rgba(212, 168, 67, 0.2);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #D4A843;
+    flex-shrink: 0;
+}
+.contest-info {
+    flex: 1;
+    min-width: 0;
+}
+.contest-badge {
+    font-size: 0.6rem;
+    letter-spacing: 1.5px;
+    font-weight: 800;
+    color: #D4A843;
+    margin-bottom: 0.15rem;
+}
+.contest-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    margin: 0 0 0.15rem;
+}
+.contest-desc {
+    font-size: 0.75rem;
+    opacity: 0.85;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.contest-ends {
+    text-align: right;
+    flex-shrink: 0;
+}
+.ends-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+}
+.ends-date {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #D4A843;
+}
+.prize-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+.prize-item {
+    background: rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.4rem;
+    text-align: center;
+}
+.prize-item.gold { border-top: 3px solid #D4A843; }
+.prize-item.silver { border-top: 3px solid #c0c4cc; }
+.prize-item.bronze { border-top: 3px solid #cd7f32; }
+.prize-icon { font-size: 1.1rem; }
+.prize-val { font-size: 0.85rem; font-weight: 800; margin-top: 0.2rem; }
+.prize-label { font-size: 0.65rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+.lb-title {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #D4A843;
+    margin-bottom: 0.5rem;
+}
+.lb-list { display: flex; flex-direction: column; gap: 0.35rem; }
+.lb-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.8rem;
+}
+.lb-row.me-row {
+    background: rgba(212, 168, 67, 0.25);
+    border: 1px solid rgba(212, 168, 67, 0.6);
+}
+.lb-pos {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(212, 168, 67, 0.25);
+    color: #D4A843;
+    font-weight: 800;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.lb-name { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-count { font-size: 0.7rem; opacity: 0.85; flex-shrink: 0; }
+.lb-empty {
+    background: rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 0.6rem;
+    font-size: 0.75rem;
+    opacity: 0.85;
+    text-align: center;
+}
+.contest-cta {
+    margin-top: 0.9rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.user-rank { font-size: 0.8rem; text-align: center; }
+.user-rank.muted { opacity: 0.85; }
+.user-rank strong { color: #D4A843; }
+/* --- Live Proof --- */
+.live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--secondary);
+}
+.live-dot .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: livePulse 1.5s infinite;
+}
+@keyframes livePulse {
+    0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
 </style>
 
 
@@ -765,6 +1056,38 @@ function checkMissionProgress() {
 
 setInterval(checkMissionProgress, 30000);
 <?php endif; ?>
+
+/* --- Live Proof of Payment auto-refresh --- */
+function refreshLiveProof() {
+    fetch('api/live_proof.php?limit=5', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success || !res.data) return;
+        const list = document.getElementById('liveProofList');
+        if (!list) return;
+        if (res.data.length === 0) {
+            list.innerHTML = '<div class="empty-state"><i class="fas fa-coins"></i><h5>Hakuna malipo bado</h5><p>Watumiaji wanapoanza kutoa pesa, malipo yataonekana hapa live.</p></div>';
+            return;
+        }
+        let html = '';
+        res.data.forEach(x => {
+            html += '<div class="list-item">' +
+                '<div class="item-icon" style="background:#ecfdf5;color:var(--secondary);"><i class="fas fa-check-circle"></i></div>' +
+                '<div class="item-info">' +
+                    '<p class="item-title">' + escapeHtml(x.name) + ' amepokea TZS ' + Number(x.amount).toLocaleString() + '</p>' +
+                    '<p class="item-subtitle">' + escapeHtml(x.time) + '</p>' +
+                '</div>' +
+                '<div class="item-amount credit">TZS ' + Number(x.amount).toLocaleString() + '</div>' +
+            '</div>';
+        });
+        list.innerHTML = html;
+    })
+    .catch(() => {});
+}
+
+setInterval(refreshLiveProof, 30000);
 
 /* --- Announcement Functions --- */
 let annData = [];

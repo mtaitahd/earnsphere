@@ -115,6 +115,13 @@ class Database {
     }
     
     /**
+     * Whether a transaction is currently active (nested transaction support)
+     */
+    public static function inTransaction(): bool {
+        return self::getConnection()->inTransaction();
+    }
+    
+    /**
      * Commit transaction
      */
     public static function commit(): bool {
