@@ -292,7 +292,7 @@ include __DIR__ . '/includes/public_head.php';
                 <?php if ($contestUserRank && $contestUserRank['count'] > 0): ?>
                     <div class="user-rank"><i class="fas fa-medal me-1"></i> Wewe uko <strong>#<?= $contestUserRank['rank'] ?></strong> — <?= $contestUserRank['count'] ?> referral<?= $contestUserRank['count'] > 1 ? 's' : '' ?></div>
                 <?php else: ?>
-                    <div class="user-rank muted"><i class="fas fa-rocket me-1"></i> Taja wateja <?= (int) $contest['min_referrals'] ?>+ waliolipa na ushinde zawadi!</div>
+                    <div class="user-rank muted"><i class="fas fa-rocket me-1"></i> Leta wateja <?= (int) $contest['min_referrals'] ?>+ waliolipa na ushinde zawadi!</div>
                 <?php endif; ?>
                 <a href="referrals" class="btn btn-light btn-sm w-100" style="background:#fff;color:#72578B;font-weight:800;border-radius:10px;">
                     <i class="fas fa-share me-1"></i> Share Link na Kushindana

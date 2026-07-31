@@ -217,7 +217,7 @@ include __DIR__ . '/includes/public_head.php';
     <div class="contest-top">
         <div class="contest-icon"><i class="fas fa-trophy"></i></div>
         <h2>Weekly Referral Contest</h2>
-        <p id="contestDesc">Taja wateja wengi waliolipa na ushinde zawadi kubwa kila wiki!</p>
+        <p id="contestDesc">Leta wateja wengi waliolipa na ushinde zawadi kubwa kila wiki!</p>
     </div>
     <div class="landing-prizes" id="contestPrizes">
         <div class="lp-prize lp-1"><span class="lp-medal">🥇</span><strong>TZS 100,000</strong></div>
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(res => {
             if (!res.success || !res.contest) return;
-            document.getElementById('contestDesc').textContent = res.contest.description || 'Taja wateja wengi waliolipa na ushinde zawadi kubwa kila wiki!';
+            document.getElementById('contestDesc').textContent = res.contest.description || 'Leta wateja wengi waliolipa na ushinde zawadi kubwa kila wiki!';
 
             const prizes = document.getElementById('contestPrizes');
             if (prizes && res.contest.prize1) {
