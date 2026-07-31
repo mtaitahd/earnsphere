@@ -29,7 +29,7 @@ include __DIR__ . '/includes/public_head.php';
 /* --- Live Proof Section --- */
 .proof-section {
     padding: 1.5rem 1.25rem;
-    background: #0f1117;
+    background: linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%);
 }
 .proof-header {
     display: flex;
@@ -38,7 +38,7 @@ include __DIR__ . '/includes/public_head.php';
     gap: 0.5rem;
     font-weight: 800;
     font-size: 0.85rem;
-    color: var(--gray-200);
+    color: var(--white);
     letter-spacing: 0.5px;
     margin-bottom: 1rem;
 }
@@ -46,8 +46,8 @@ include __DIR__ . '/includes/public_head.php';
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    background: rgba(16,185,129,0.15);
-    color: #34d399;
+    background: rgba(16,185,129,0.25);
+    color: #6ee7b7;
     border-radius: 20px;
     padding: 0.2rem 0.7rem;
     font-size: 0.65rem;
@@ -56,13 +56,13 @@ include __DIR__ . '/includes/public_head.php';
 }
 .proof-live i { font-size: 0.45rem; animation: proofPulse 1.5s infinite; }
 @keyframes proofPulse {
-    0% { box-shadow: 0 0 0 0 rgba(52,211,153,0.6); }
-    70% { box-shadow: 0 0 0 6px rgba(52,211,153,0); }
-    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+    0% { box-shadow: 0 0 0 0 rgba(110,231,183,0.6); }
+    70% { box-shadow: 0 0 0 6px rgba(110,231,183,0); }
+    100% { box-shadow: 0 0 0 0 rgba(110,231,183,0); }
 }
 .proof-ticker {
-    background: var(--gray-900);
-    border: 1px solid var(--gray-800);
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
     border-radius: var(--radius-lg);
     overflow: hidden;
     max-height: 220px;
@@ -74,42 +74,42 @@ include __DIR__ . '/includes/public_head.php';
     align-items: center;
     gap: 0.6rem;
     padding: 0.6rem 0.5rem;
-    border-bottom: 1px solid var(--gray-800);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
     font-size: 0.8rem;
-    color: var(--gray-300);
+    color: rgba(255,255,255,0.9);
 }
 .proof-item:last-child { border-bottom: none; }
-.proof-item i { color: #34d399; font-size: 0.9rem; }
+.proof-item i { color: #6ee7b7; font-size: 0.9rem; }
 .proof-name { font-weight: 700; color: var(--white); }
-.proof-amount { margin-left: auto; font-weight: 800; color: #34d399; flex-shrink: 0; }
-.proof-time { font-size: 0.68rem; color: var(--gray-500); margin-left: 0.35rem; flex-shrink: 0; }
+.proof-amount { margin-left: auto; font-weight: 800; color: #D4A843; flex-shrink: 0; }
+.proof-time { font-size: 0.68rem; color: rgba(255,255,255,0.75); margin-left: 0.35rem; flex-shrink: 0; }
 .proof-note {
     text-align: center;
     font-size: 0.72rem;
-    color: var(--gray-500);
+    color: rgba(255,255,255,0.9);
     margin-top: 0.75rem;
 }
 /* --- Landing Contest --- */
 .landing-contest {
     padding: 2rem 1.25rem;
-    background: linear-gradient(160deg, #1a1230, #0f1117);
+    background: linear-gradient(160deg, var(--primary-dark) 0%, var(--primary) 100%);
 }
 .contest-top { text-align: center; margin-bottom: 1.25rem; }
 .contest-icon {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: rgba(212,168,67,0.15);
+    background: rgba(212,168,67,0.2);
     color: #D4A843;
     font-size: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 0.75rem;
-    box-shadow: 0 0 25px rgba(212,168,67,0.2);
+    box-shadow: 0 0 25px rgba(212,168,67,0.25);
 }
 .contest-top h2 { font-size: 1.3rem; font-weight: 800; color: var(--white); margin-bottom: 0.35rem; }
-.contest-top p { font-size: 0.82rem; color: var(--gray-400); margin: 0; }
+.contest-top p { font-size: 0.82rem; color: rgba(255,255,255,0.85); margin: 0; }
 .landing-prizes {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -117,20 +117,20 @@ include __DIR__ . '/includes/public_head.php';
     margin-bottom: 1.25rem;
 }
 .lp-prize {
-    background: var(--gray-900);
-    border: 1px solid var(--gray-800);
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
     border-radius: var(--radius-md);
     padding: 0.75rem 0.4rem;
     text-align: center;
 }
-.lp-prize.lp-1 { border-color: rgba(212,168,67,0.5); }
-.lp-prize.lp-2 { border-color: rgba(192,196,204,0.35); }
-.lp-prize.lp-3 { border-color: rgba(205,127,50,0.4); }
+.lp-prize.lp-1 { border-color: rgba(212,168,67,0.6); }
+.lp-prize.lp-2 { border-color: rgba(192,196,204,0.45); }
+.lp-prize.lp-3 { border-color: rgba(205,127,50,0.5); }
 .lp-medal { display: block; font-size: 1.2rem; margin-bottom: 0.3rem; }
 .lp-prize strong { display: block; font-size: 0.75rem; color: var(--white); }
 .landing-standings {
-    background: var(--gray-900);
-    border: 1px solid var(--gray-800);
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
     border-radius: var(--radius-lg);
     padding: 1rem;
     margin-bottom: 1rem;
@@ -148,7 +148,7 @@ include __DIR__ . '/includes/public_head.php';
     align-items: center;
     gap: 0.6rem;
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--gray-800);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
     font-size: 0.8rem;
 }
 .ls-row:last-child { border-bottom: none; }
@@ -156,7 +156,7 @@ include __DIR__ . '/includes/public_head.php';
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: rgba(212,168,67,0.15);
+    background: rgba(212,168,67,0.25);
     color: #D4A843;
     font-weight: 800;
     font-size: 0.7rem;
@@ -165,9 +165,9 @@ include __DIR__ . '/includes/public_head.php';
     justify-content: center;
     flex-shrink: 0;
 }
-.ls-name { font-weight: 700; color: var(--gray-200); flex: 1; }
-.ls-count { font-size: 0.7rem; color: var(--gray-400); flex-shrink: 0; }
-.ls-empty { font-size: 0.78rem; color: var(--gray-500); text-align: center; padding: 0.5rem 0; }
+.ls-name { font-weight: 700; color: var(--white); flex: 1; }
+.ls-count { font-size: 0.7rem; color: rgba(255,255,255,0.8); flex-shrink: 0; }
+.ls-empty { font-size: 0.78rem; color: rgba(255,255,255,0.85); text-align: center; padding: 0.5rem 0; }
 </style>
 
 <!-- Hero Section -->
