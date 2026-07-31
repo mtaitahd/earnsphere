@@ -100,18 +100,21 @@ $page = getCurrentPage();
 $perPage = 20;
 
 $where = "1=1";
+$whereCount = "1=1";
 $params = [];
 if (in_array($statusFilter, ['open', 'answered', 'closed'])) {
-    $where .= " AND status = ?";
+    $where .= " AND t.status = ?";
+    $whereCount .= " AND status = ?";
     $params[] = $statusFilter;
 }
 if ($search !== '') {
     $where .= " AND (t.name LIKE ? OR t.subject LIKE ? OR t.message LIKE ? OR t.phone LIKE ?)";
+    $whereCount .= " AND (name LIKE ? OR subject LIKE ? OR message LIKE ? OR phone LIKE ?)";
     $sp = "%{$search}%";
     array_push($params, $sp, $sp, $sp, $sp);
 }
 
-$total = Database::count('support_tickets', $where, $params);
+$total = Database::count('support_tickets', $whereCount, $params);
 $tickets = Database::fetchAll(
     "SELECT t.*, u.full_name AS account_name
      FROM support_tickets t
