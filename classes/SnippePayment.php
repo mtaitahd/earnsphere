@@ -1011,13 +1011,19 @@ class SnippePayment {
     }
     
     /**
-     * Validate a Tanzania mobile phone number supported by Snippe.
+     * Validate a Tanzania mobile phone number.
      * 
-     * ONLY these prefixes are accepted (must match Snippe's supported networks):
-     *   Vodacom M-Pesa:  071x, 076x
-     *   Airtel Money:    074x, 078x
-     *   Tigo Pesa:       078x
-     *   Halotel:         061x, 075x
+     * Only format is checked locally — the mobile network is NOT determined
+     * here. Snippe validates the number and routes to the correct network.
+     * 
+     * Accepts (any Tanzanian mobile prefix, 06x and 07x):
+     *   0712345678    → 255712345678
+     *   0616123456    → 255616123456
+     *   255712345678  → 255712345678
+     *   255616123456  → 255616123456
+     *   +255712345678 → 255712345678
+     * 
+     * Rejects: empty, non-numeric, wrong length, non-Tanzanian country code.
      * 
      * @return array ['valid' => bool, 'phone' => string, 'error' => string|null]
      */
@@ -1025,12 +1031,12 @@ class SnippePayment {
         $phone = $this->normalizePhone($phone);
         
         // After normalization must be 255XXXXXXXXX (12 digits)
-        // Only accept prefixes supported by Snippe
-        if (!preg_match('/^255(61|71|74|75|76|78)\d{8}$/', $phone)) {
+        // Network is routed by the Snippe API — only validate TZ mobile format.
+        if (!preg_match('/^255[67]\d{8}$/', $phone)) {
             return [
                 'valid' => false,
                 'phone' => $phone,
-                'error' => 'This phone number is not supported. Use M-Pesa (071x, 076x), Airtel (074x, 078x), Tigo (078x), or Halotel (061x, 075x).',
+                'error' => 'Enter a valid Tanzanian mobile number (e.g. 0712 345 678 or 0616 123 456).',
             ];
         }
         
@@ -1045,11 +1051,10 @@ class SnippePayment {
      * Normalize phone number to 255XXXXXXXXX format.
      * 
      * Handles:
-     *   0616123456    → 255616123456  (Halotel 10-digit)
-     *   0712345678    → 255712345678  (Vodacom/Airtel/Tigo)
+     *   0616123456    → 255616123456
+     *   0712345678    → 255712345678
      *   +255712345678 → 255712345678
      *   255712345678  → 255712345678
-     *   616123456     → 255616123456  (9-digit without leading 0)
      */
     public function normalizePhone(string $phone): string {
         $phone = preg_replace('/[\s\-()]/', '', trim($phone));
@@ -1062,11 +1067,6 @@ class SnippePayment {
         // 0XXXXXXXXX (10 digits) → 255XXXXXXXXX
         if (strpos($phone, '0') === 0 && strlen($phone) === 10) {
             return '255' . substr($phone, 1);
-        }
-        
-        // 9-digit number without leading 0 (e.g. 616123456 for Halotel)
-        if (strlen($phone) === 9 && strpos($phone, '0') !== 0) {
-            return '255' . $phone;
         }
         
         // Already 255XXXXXXXXX or raw number

@@ -335,23 +335,23 @@ $referralLink = getReferralLink($refCode);
             <div class="form-floating mb-2">
                 <input type="tel" class="form-control" id="phone" name="phone"
                        placeholder="Payment Phone Number" required
-                       pattern="^(?:\+255|0)(61|71|74|75|76|78)\d{8}$" title="Supported: M-Pesa (071x, 076x), Airtel (074x, 078x), Tigo (078x), Halotel (061x, 075x)"
+                       pattern="^(?:\+?255|0)[67]\d{8}$" title="Enter a valid Tanzanian mobile number (e.g. 0712 345 678 or 0616 123 456)"
                        value="<?= sanitize($phone) ?>">
                 <label for="phone"><i class="fas fa-mobile-screen me-1"></i> Phone Number</label>
             </div>
 
             <div style="background:var(--gray-50);border-radius:var(--radius-sm);padding:0.6rem 0.8rem;margin-bottom:1rem;font-size:0.78rem;color:var(--gray-600);">
                 <div style="font-weight:700;color:var(--gray-700);margin-bottom:0.3rem;">
-                    <i class="fas fa-check-circle me-1" style="color:#1CC88A;"></i> Supported Networks
+                    <i class="fas fa-check-circle me-1" style="color:#1CC88A;"></i> Mobile Money Networks
                 </div>
                 <div style="display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;">
-                    <span><i class="fas fa-signal me-1"></i> Vodacom M-Pesa <small style="color:var(--gray-400);">(071x, 076x)</small></span>
-                    <span><i class="fas fa-signal me-1"></i> Airtel Money <small style="color:var(--gray-400);">(074x, 078x)</small></span>
-                    <span><i class="fas fa-signal me-1"></i> Tigo Pesa <small style="color:var(--gray-400);">(078x)</small></span>
-                    <span><i class="fas fa-signal me-1"></i> Halotel <small style="color:var(--gray-400);">(061x, 075x)</small></span>
+                    <span><i class="fas fa-signal me-1"></i> M-Pesa</span>
+                    <span><i class="fas fa-signal me-1"></i> Airtel Money</span>
+                    <span><i class="fas fa-signal me-1"></i> Mixx by Yas</span>
+                    <span><i class="fas fa-signal me-1"></i> Halotel</span>
                 </div>
                 <div style="margin-top:0.3rem;color:var(--gray-400);">
-                    <i class="fas fa-exclamation-circle me-1"></i> Numbers starting with 062x (WasaTel/TTCL) are not supported
+                    <i class="fas fa-exclamation-circle me-1"></i> Network is detected automatically from your number
                 </div>
             </div>
 
@@ -425,15 +425,15 @@ $referralLink = getReferralLink($refCode);
                 <div class="input-group" style="border-radius:var(--radius-sm);overflow:hidden;">
                     <span class="input-group-text" style="background:var(--gray-100);border:none;font-size:0.9rem;"><i class="fas fa-phone"></i></span>
                     <input type="tel" name="phone" class="form-control" placeholder="e.g. 0712 345 678" required
-                           pattern="^(?:\+255|0)(61|71|74|75|76|78)\d{8}$" title="Supported: M-Pesa (071x, 076x), Airtel (074x, 078x), Tigo (078x), Halotel (061x, 075x)"
+                           pattern="^(?:\+?255|0)[67]\d{8}$" title="Enter a valid Tanzanian mobile number (e.g. 0712 345 678 or 0616 123 456)"
                            style="border:none;font-size:0.9rem;padding:0.6rem 0.8rem;">
                     <button type="submit" class="btn btn-primary" style="border:none;font-size:0.85rem;padding:0.6rem 1rem;">
                         <i class="fas fa-paper-plane me-1"></i> Send
                     </button>
                 </div>
                 <div style="font-size:0.75rem;color:var(--gray-500);margin-top:0.4rem;">
-                    <i class="fas fa-check-circle me-1" style="color:#1CC88A;"></i> M-Pesa (071x, 076x) · Airtel (074x, 078x) · Halotel (061x, 075x)
-                    <br><i class="fas fa-exclamation-circle me-1"></i> 062x (WasaTel/TTCL) not supported
+                    <i class="fas fa-check-circle me-1" style="color:#1CC88A;"></i> M-Pesa · Airtel Money · Mixx by Yas · Halotel
+                    <br><i class="fas fa-exclamation-circle me-1"></i> Network is detected automatically from your number
                 </div>
             </form>
         </div>
