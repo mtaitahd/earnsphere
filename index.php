@@ -380,7 +380,7 @@ include __DIR__ . '/includes/public_head.php';
             <button class="help-modal-close" onclick="closeHelpModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="help-modal-body">
-            <p class="help-modal-sub">Tell us your problem and our team will get back to you.</p>
+            <p class="help-modal-sub">Tell us your problem and our team will get back to you on your dashboard.</p>
 
             <div id="helpFormWrap">
                 <form id="helpForm" onsubmit="submitHelp(event)">
@@ -389,8 +389,8 @@ include __DIR__ . '/includes/public_head.php';
                         <label for="helpName"><i class="fas fa-user me-1"></i> Full Name</label>
                     </div>
                     <div class="form-floating mb-2">
-                        <input type="tel" class="form-control" id="helpPhone" placeholder="Phone (e.g. 0712 345 678)">
-                        <label for="helpPhone"><i class="fas fa-phone me-1"></i> Phone (optional)</label>
+                        <input type="tel" class="form-control" id="helpPhone" placeholder="Phone (e.g. 0712 345 678)" required maxlength="15">
+                        <label for="helpPhone"><i class="fas fa-phone me-1"></i> Phone</label>
                     </div>
                     <div class="form-floating mb-2">
                         <input type="text" class="form-control" id="helpSubject" placeholder="Subject" maxlength="200">

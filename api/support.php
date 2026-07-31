@@ -52,14 +52,23 @@ switch ($action) {
 
         $subject = $subject !== '' ? $subject : 'Help Request';
         $normalizedPhone = preg_replace('/[^0-9]/', '', $phone);
-        if ($normalizedPhone !== '' && str_starts_with($normalizedPhone, '0') && strlen($normalizedPhone) === 10) {
+        if ($normalizedPhone === '') {
+            jsonResponse(['success' => false, 'error' => 'Please enter your phone number so we can link the message to your account'], 422);
+        }
+        if (str_starts_with($normalizedPhone, '0') && strlen($normalizedPhone) === 10) {
             $normalizedPhone = '255' . substr($normalizedPhone, 1);
         }
 
-        // Try to link to an existing account so the user gets the reply notification
+        // Try to link to an existing account so the user gets the reply notification.
+        // Accounts may store the phone as 255XXXXXXXXX or 0XXXXXXXXX, so check both.
         $linkedUserId = $loggedIn ? (int) $_SESSION['user_id'] : null;
-        if (!$linkedUserId && $normalizedPhone !== '') {
-            $existing = Database::fetchOne("SELECT id FROM users WHERE phone = ? LIMIT 1", [$normalizedPhone]);
+        if (!$linkedUserId) {
+            $alternate = str_starts_with($normalizedPhone, '255') ? '0' . substr($normalizedPhone, 3) : null;
+            if ($alternate) {
+                $existing = Database::fetchOne("SELECT id FROM users WHERE phone = ? OR phone = ? LIMIT 1", [$normalizedPhone, $alternate]);
+            } else {
+                $existing = Database::fetchOne("SELECT id FROM users WHERE phone = ? LIMIT 1", [$normalizedPhone]);
+            }
             if ($existing) {
                 $linkedUserId = (int) $existing['id'];
             }
