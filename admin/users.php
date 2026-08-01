@@ -119,33 +119,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $userId = (int)($_POST['user_id'] ?? 0);
         $user = Database::fetchOne("SELECT id, full_name FROM users WHERE id = ? AND role = 'user'", [$userId]);
         if ($user) {
-            $payment = Database::fetchOne(
-                "SELECT id, amount, metadata FROM payments WHERE user_id = ? AND status = 'completed' ORDER BY id DESC LIMIT 1",
+            $payments = Database::fetchAll(
+                "SELECT id, amount, metadata FROM payments WHERE user_id = ? AND status = 'completed' ORDER BY id DESC",
                 [$userId]
             );
-            if ($payment) {
-                $amount = (float) $payment['amount'];
-                $meta = json_decode($payment['metadata'] ?? '', true) ?: [];
-                $meta['refunded']     = true;
-                $meta['refunded_by']  = (int) $_SESSION['user_id'];
-                $meta['refunded_at']  = date('Y-m-d H:i:s');
+            if ($payments) {
+                $totalRefunded = 0;
                 Database::beginTransaction();
                 try {
-                    Database::update('payments', [
-                        'status'   => 'refunded',
-                        'metadata' => json_encode($meta),
-                    ], 'id = ?', [$payment['id']]);
-                    Wallet::reverseCredit(
-                        $userId,
-                        $amount,
-                        'admin_adjustment',
-                        'Registration fee removed — marked as unpaid by admin',
-                        $payment['id'],
-                        'payment'
+                    foreach ($payments as $payment) {
+                        $meta = json_decode($payment['metadata'] ?? '', true) ?: [];
+                        $meta['refunded']     = true;
+                        $meta['refunded_by']  = (int) $_SESSION['user_id'];
+                        $meta['refunded_at']  = date('Y-m-d H:i:s');
+                        Database::update('payments', [
+                            'status'   => 'refunded',
+                            'metadata' => json_encode($meta),
+                        ], 'id = ?', [$payment['id']]);
+                        $totalRefunded += (float) $payment['amount'];
+                    }
+                    // Only remove money from the wallet if it was actually credited
+                    // (admin "Mark as Paid" credits a registration_bonus; Snippe payments do not)
+                    $credited = Database::fetchOne(
+                        "SELECT id, amount FROM wallet_transactions
+                         WHERE user_id = ? AND type = 'registration_bonus' AND status = 'completed'
+                         ORDER BY id DESC LIMIT 1",
+                        [$userId]
                     );
-                    Auth::logActivity($userId, 'payment_reversed', 'Marked as unpaid by admin — TZS ' . number_format($amount) . ' removed from wallet');
+                    if ($credited) {
+                        Wallet::reverseCredit(
+                            $userId,
+                            (float) $credited['amount'],
+                            'admin_adjustment',
+                            'Registration fee removed — marked as unpaid by admin',
+                            $payments[0]['id'],
+                            'payment'
+                        );
+                    }
+                    Auth::logActivity($userId, 'payment_reversed', 'Marked as unpaid by admin — TZS ' . number_format($totalRefunded) . ' removed from wallet');
                     Database::commit();
-                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as unpaid — TZS ' . number_format($amount) . ' removed from their account');
+                    $removedMsg = $credited ? ' removed from their account' : ' (no wallet credit to remove)';
+                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as unpaid — TZS ' . number_format($totalRefunded) . $removedMsg);
                 } catch (Exception $e) {
                     Database::rollback();
                     setFlash('error', 'Error: ' . $e->getMessage());
