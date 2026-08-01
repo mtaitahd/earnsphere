@@ -28,25 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     if ($action === 'update_status') {
         $userId = (int)($_POST['user_id'] ?? 0);
-        $newStatus = $_POST['new_status'] ?? 'active';
+        $newStatus = in_array($_POST['new_status'] ?? '', ['active', 'pending', 'suspended'], true) ? $_POST['new_status'] : 'active';
         Database::update('users', ['status' => $newStatus], 'id = ?', [$userId]);
-        if ($newStatus === 'active') {
-            $existingPayment = Database::fetchOne("SELECT id FROM payments WHERE user_id = ? AND status = 'completed' LIMIT 1", [$userId]);
-            if (!$existingPayment) {
-                $fee = (int) app_setting('registration_fee', REGISTRATION_FEE);
-                Database::insert('payments', [
-                    'user_id'         => $userId,
-                    'order_id'        => 'ADMIN-ACT-' . time() . '-' . $userId,
-                    'amount'          => $fee,
-                    'currency'        => 'TZS',
-                    'payment_method'  => 'manual_admin',
-                    'phone'           => '',
-                    'status'          => 'completed',
-                    'completed_at'    => date('Y-m-d H:i:s'),
-                    'metadata'        => json_encode(['method' => 'admin_activate']),
-                ]);
-            }
-        }
+        Auth::logActivity($userId, 'status_updated', 'Account status set to ' . ucfirst($newStatus) . ' by admin');
         setFlash('success', 'User status updated to ' . ucfirst($newStatus));
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
@@ -90,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $fee = (int) app_setting('registration_fee', REGISTRATION_FEE);
                 Database::beginTransaction();
                 try {
-                    Database::insert('payments', [
+                    $paymentId = Database::insert('payments', [
                         'user_id'         => $userId,
                         'order_id'        => 'ADMIN-' . time() . '-' . $userId,
                         'amount'          => $fee,
@@ -101,13 +85,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         'completed_at'    => date('Y-m-d H:i:s'),
                         'metadata'        => json_encode(['marked_by' => $_SESSION['user_id'], 'method' => 'admin']),
                     ]);
+                    Wallet::credit(
+                        $userId,
+                        $fee,
+                        'registration_bonus',
+                        'Registration fee credited — marked as paid by admin',
+                        $paymentId,
+                        'payment'
+                    );
                     if ($user['status'] !== 'active') {
                         Database::update('users', ['status' => 'active'], 'id = ?', [$userId]);
                         CommissionEngine::processRegistrationCommissions($userId);
                         Auth::logActivity($userId, 'account_activated', 'Account activated by admin (Mark as Paid)');
                     }
                     Database::commit();
-                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as paid — TZS ' . number_format($fee));
+                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as paid — TZS ' . number_format($fee) . ' added to their account');
                 } catch (Exception $e) {
                     Database::rollback();
                     setFlash('error', 'Error: ' . $e->getMessage());
@@ -115,6 +107,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
             } else {
                 setFlash('warning', 'User already has a completed payment record');
+            }
+        } else {
+            setFlash('error', 'User not found');
+        }
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
+    if ($action === 'mark_as_unpaid') {
+        $userId = (int)($_POST['user_id'] ?? 0);
+        $user = Database::fetchOne("SELECT id, full_name FROM users WHERE id = ? AND role = 'user'", [$userId]);
+        if ($user) {
+            $payment = Database::fetchOne(
+                "SELECT id, amount, metadata FROM payments WHERE user_id = ? AND status = 'completed' ORDER BY id DESC LIMIT 1",
+                [$userId]
+            );
+            if ($payment) {
+                $amount = (float) $payment['amount'];
+                $meta = json_decode($payment['metadata'] ?? '', true) ?: [];
+                $meta['refunded']     = true;
+                $meta['refunded_by']  = (int) $_SESSION['user_id'];
+                $meta['refunded_at']  = date('Y-m-d H:i:s');
+                Database::beginTransaction();
+                try {
+                    Database::update('payments', [
+                        'status'   => 'refunded',
+                        'metadata' => json_encode($meta),
+                    ], 'id = ?', [$payment['id']]);
+                    Wallet::reverseCredit(
+                        $userId,
+                        $amount,
+                        'admin_adjustment',
+                        'Registration fee removed — marked as unpaid by admin',
+                        $payment['id'],
+                        'payment'
+                    );
+                    Auth::logActivity($userId, 'payment_reversed', 'Marked as unpaid by admin — TZS ' . number_format($amount) . ' removed from wallet');
+                    Database::commit();
+                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as unpaid — TZS ' . number_format($amount) . ' removed from their account');
+                } catch (Exception $e) {
+                    Database::rollback();
+                    setFlash('error', 'Error: ' . $e->getMessage());
+                    ErrorLogger::logException($e, 'system', $userId, 'admin/users.php');
+                }
+            } else {
+                setFlash('warning', 'No completed payment to reverse for this user');
             }
         } else {
             setFlash('error', 'User not found');
@@ -335,7 +373,18 @@ include __DIR__ . '/admin_header.php';
                                         </li>
                                         <?php endif; ?>
                                         <?php endforeach; ?>
-                                        <?php if (!$u['paid_amount']): ?>
+                                        <?php if ($u['paid_amount']): ?>
+                                        <li>
+                                            <form method="POST" class="d-inline" onsubmit="return confirm('Mark <?= sanitize($u['full_name']) ?> as UNPAID? TZS <?= number_format((float)$u['paid_amount']) ?> will be removed from their account wallet.')">
+                                                <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+                                                <input type="hidden" name="action" value="mark_as_unpaid">
+                                                <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fas fa-undo me-1"></i> Mark as Unpaid
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <?php else: ?>
                                         <li>
                                             <form method="POST" class="d-inline" onsubmit="return confirm('Mark <?= sanitize($u['full_name']) ?> as PAID — TZS <?= number_format((int)app_setting('registration_fee', REGISTRATION_FEE)) ?>?')">
                                                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">

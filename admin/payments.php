@@ -91,6 +91,7 @@ include __DIR__ . '/admin_header.php';
             <a href="?status=pending" class="btn <?= $status === 'pending' ? 'btn-warning' : 'btn-outline-warning' ?> btn-sm">Pending</a>
             <a href="?status=completed" class="btn <?= $status === 'completed' ? 'btn-success' : 'btn-outline-success' ?> btn-sm">Completed</a>
             <a href="?status=failed" class="btn <?= $status === 'failed' ? 'btn-danger' : 'btn-outline-danger' ?> btn-sm">Failed</a>
+            <a href="?status=refunded" class="btn <?= $status === 'refunded' ? 'btn-secondary' : 'btn-outline-secondary' ?> btn-sm">Refunded / Unpaid</a>
         </div>
     </div>
 </div>

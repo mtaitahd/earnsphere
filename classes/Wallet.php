@@ -97,6 +97,74 @@ class Wallet {
     }
     
     /**
+     * Reverse a previous credit (e.g. admin marking a user as unpaid).
+     * Removes money from balance and total_earned WITHOUT touching
+     * withdrawable_balance or total_withdrawn.
+     * Used for reversing non-withdrawable credits like registration bonuses.
+     */
+    public static function reverseCredit(
+        int $userId,
+        float $amount,
+        string $type,
+        string $description = '',
+        ?int $referenceId = null,
+        ?string $referenceType = null
+    ): int {
+        $wallet = self::getWallet($userId);
+        $balanceBefore = (float) $wallet['balance'];
+
+        if ($balanceBefore < $amount) {
+            ErrorLogger::log('wallet', 'Wallet credit reversal failed: insufficient balance', [
+                'amount'          => $amount,
+                'balance_before'  => $balanceBefore,
+                'transaction_type'=> $type,
+            ], $userId, 'warning', 'Wallet::reverseCredit');
+            throw new Exception("Insufficient balance to reverse credit");
+        }
+
+        $balanceAfter = $balanceBefore - $amount;
+        $totalEarnedAfter = max(0, (float) $wallet['total_earned'] - $amount);
+
+        $isNested = Database::inTransaction();
+        if (!$isNested) {
+            Database::beginTransaction();
+        }
+
+        try {
+            Database::update('wallets', [
+                'balance'      => $balanceAfter,
+                'total_earned' => $totalEarnedAfter,
+            ], 'id = ?', [$wallet['id']]);
+
+            $transactionId = Database::insert('wallet_transactions', [
+                'wallet_id'      => $wallet['id'],
+                'user_id'        => $userId,
+                'type'           => $type,
+                'amount'         => -$amount,
+                'balance_before' => $balanceBefore,
+                'balance_after'  => $balanceAfter,
+                'description'    => $description,
+                'reference_id'   => $referenceId,
+                'reference_type' => $referenceType,
+                'status'         => 'completed',
+            ]);
+
+            if (!$isNested) {
+                Database::commit();
+            }
+            return $transactionId;
+
+        } catch (Exception $e) {
+            if (!$isNested) {
+                Database::rollback();
+            }
+            error_log("Wallet credit reversal error: " . $e->getMessage());
+            ErrorLogger::logException($e, 'wallet', $userId, 'Wallet::reverseCredit');
+            throw $e;
+        }
+    }
+
+    /**
      * Debit user wallet (subtract money)
      * For withdrawals, also deducts from withdrawable_balance
      */

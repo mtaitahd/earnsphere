@@ -134,7 +134,7 @@ include __DIR__ . '/includes/public_head.php';
     </div>
     <?php endif; ?>
 
-    <?php if ($registrationPayment && $user['status'] === 'active'): ?>
+    <?php if ($registrationPayment && $user['status'] === 'active' && $registrationPayment['status'] === 'completed'): ?>
     <div style="background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;padding:1rem;margin-top:0.5rem;color:white;">
         <div class="d-flex align-items-center justify-content-between">
             <div>
