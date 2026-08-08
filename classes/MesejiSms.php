@@ -289,14 +289,36 @@ class MesejiSms {
     // ================================================================
 
     /**
+     * Built-in messages used when a template is missing, inactive, or empty
+     * in the database — so automatic SMS always works with sane text.
+     */
+    private const FALLBACK_MESSAGES = [
+        'welcome'            => 'Karibu {name}! Umejisajili kwenye {site}. Kamilisha malipo ya TZS {fee} ili uanze kupata commissions kupitia code yako: {code}',
+        'payment_success'    => 'Hongera {name}! Malipo yako ya TZS {amount} yamekamilika na akaunti yako imewashwa kikamilifu. Sasa unaweza kuingia na kuanza kupata commissions. Code yako ya referral: {code}',
+        'payment_reminder'   => 'Kumbukumbu {name}: bado haujamaliza kulipa TZS {fee} ya usajili. Maliza leo ili uanze kupata commissions!',
+        'withdrawal_success' => 'Hongera {name}! Utoaji wako wa TZS {amount} umekamilika kwenye namba {phone}.',
+        'withdrawal_failed'  => 'Samahani {name}, utoaji wako wa TZS {amount} umeshindikana. Tafadhali wasiliana na support.',
+    ];
+
+    /**
      * Load an active template message by key.
+     * Falls back to a built-in message if the DB template is missing,
+     * inactive, empty, or the sms_templates table doesn't exist yet.
      */
     public function renderTemplate(string $templateKey): ?string {
-        $tpl = Database::fetchOne(
-            "SELECT message FROM sms_templates WHERE template_key = ? AND is_active = 1 LIMIT 1",
-            [$templateKey]
-        );
-        return $tpl ? $tpl['message'] : null;
+        try {
+            $tpl = Database::fetchOne(
+                "SELECT message FROM sms_templates WHERE template_key = ? AND is_active = 1 LIMIT 1",
+                [$templateKey]
+            );
+            if ($tpl && trim((string) $tpl['message']) !== '') {
+                return $tpl['message'];
+            }
+        } catch (Throwable $e) {
+            // Table missing / DB error — fall through to built-in message.
+        }
+
+        return self::FALLBACK_MESSAGES[$templateKey] ?? null;
     }
 
     /**
@@ -316,19 +338,34 @@ class MesejiSms {
     }
 
     /**
-     * Replace {placeholder} tokens in a message with values.
+     * Replace {placeholder} tokens in a message with actual values.
+     *
+     * - Case-insensitive: {Name}, {NAME} and {name} all resolve from `name`.
+     * - Ignores inner whitespace: { name } resolves too.
+     * - Normalizes accidental doubled braces: {{name}} -> {name} -> value.
+     * - Any token that cannot be resolved is REMOVED, so customers never
+     *   receive a literal {placeholder} in their SMS.
      */
     public function parseTemplate(string $template, array $vars = []): string {
         $vars = array_merge($this->defaultVars(), $vars);
 
-        $search  = [];
-        $replace = [];
-        foreach ($vars as $key => $value) {
-            $search[]  = '{' . $key . '}';
-            $replace[] = (string) $value;
-        }
+        // Normalize accidental doubled braces: {{name}} -> {name}
+        $template = str_replace(['{{', '}}'], ['{', '}'], $template);
 
-        return str_replace($search, $replace, $template);
+        $rendered = preg_replace_callback(
+            '/\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}/',
+            function ($m) use ($vars) {
+                $key = strtolower(trim($m[1]));
+                if (array_key_exists($key, $vars)) {
+                    return (string) $vars[$key];
+                }
+                // Unknown token — drop it so it never reaches the customer.
+                return '';
+            },
+            $template
+        );
+
+        return $rendered === null ? $template : $rendered;
     }
 
     /**

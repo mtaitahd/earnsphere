@@ -114,6 +114,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     setFlash('error', 'SMS not sent: ' . $firstErr);
                 }
             } else {
+                // Resolve generic placeholders ({site}, {fee}, ...) and drop any
+                // personal tokens that can't be resolved per recipient, so a raw
+                // {placeholder} is never sent to a customer.
+                $message = $sms->parseTemplate($message);
+
                 $phones = $manualPhones;
                 if (!empty($targetUserIds)) {
                     $in     = implode(',', array_fill(0, count($targetUserIds), '?'));
