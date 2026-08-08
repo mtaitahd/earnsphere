@@ -293,11 +293,11 @@ class MesejiSms {
      * in the database — so automatic SMS always works with sane text.
      */
     private const FALLBACK_MESSAGES = [
-        'welcome'            => 'Karibu {name}! Umejisajili kwenye {site}. Kamilisha malipo ya TZS {fee} ili uanze kupata commissions kupitia code yako: {code}',
-        'payment_success'    => 'Hongera {name}! Malipo yako ya TZS {amount} yamekamilika na akaunti yako imewashwa kikamilifu. Sasa unaweza kuingia na kuanza kupata commissions. Code yako ya referral: {code}',
-        'payment_reminder'   => 'Kumbukumbu {name}: bado haujamaliza kulipa TZS {fee} ya usajili. Maliza leo ili uanze kupata commissions!',
-        'withdrawal_success' => 'Hongera {name}! Utoaji wako wa TZS {amount} umekamilika kwenye namba {phone}.',
-        'withdrawal_failed'  => 'Samahani {name}, utoaji wako wa TZS {amount} umeshindikana. Tafadhali wasiliana na support.',
+        'welcome'            => 'Dear {name}, Karibu kwenye {site}! Kamilisha malipo ya TZS {fee} ili uanze kupata commissions kupitia code yako: {code}',
+        'payment_success'    => 'Dear {name}, malipo yako ya TZS {amount} yamekamilika na akaunti yako imewashwa kikamilifu. Sasa unaweza kuingia na kuanza kupata commissions. Code yako ya referral: {code}',
+        'payment_reminder'   => 'Dear {name}, bado haujamaliza kulipa TZS {fee} ya usajili. Maliza leo ili uanze kupata commissions!',
+        'withdrawal_success' => 'Dear {name}, utoaji wako wa TZS {amount} umekamilika kwenye namba {phone}.',
+        'withdrawal_failed'  => 'Dear {name}, samahani utoaji wako wa TZS {amount} umeshindikana. Tafadhali wasiliana na support.',
     ];
 
     /**
@@ -372,9 +372,11 @@ class MesejiSms {
      * Default variables available to every template.
      */
     private function defaultVars(): array {
+        $fee = number_format((float) app_setting('registration_fee', REGISTRATION_FEE));
         return [
-            'site' => SITE_NAME,
-            'fee'  => number_format((float) app_setting('registration_fee', REGISTRATION_FEE)),
+            'site'   => SITE_NAME,
+            'fee'    => $fee,
+            'amount' => $fee,
         ];
     }
 

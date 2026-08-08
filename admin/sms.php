@@ -100,40 +100,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             $type = $templateKey !== '' ? $templateKey : ($audience === 'selected' ? 'custom' : 'broadcast');
 
-            // If the message contains user-specific placeholders, send personalized
-            // (one call per user). Otherwise batch all phones into a single request.
-            $hasPersonal = preg_match('/\{(name|code|amount|fee|phone|email)\}/', $message);
+            // Detect ANY placeholder token in the message ({name}, {Name}, { name }, ...).
+            preg_match_all('/\{\s*[a-zA-Z][a-zA-Z0-9_]*\s*\}/', $message, $tokenMatches);
+            $hasTokens = count($tokenMatches[0]) > 0;
 
-            if (!empty($targetUserIds) && $hasPersonal) {
-                $res = $sms->sendToUsers($targetUserIds, $message, $type, $templateKey !== '' ? $templateKey : null, $adminId);
-                $sent = $res['sent'];
-                if ($sent > 0) {
-                    setFlash('success', 'SMS sent to ' . $sent . ' user(s)' . ($res['failed'] ? ', ' . $res['failed'] . ' failed' : '.'));
-                } else {
-                    $firstErr = $res['results'][0]['error'] ?? 'Unknown error';
-                    setFlash('error', 'SMS not sent: ' . $firstErr);
+            $totalSent   = 0;
+            $totalFailed = 0;
+            $firstError  = null;
+
+            $applyResult = function (array $res) use (&$totalSent, &$totalFailed, &$firstError) {
+                $totalSent   += $res['sent'] ?? 0;
+                $totalFailed += $res['failed'] ?? 0;
+                if ($firstError === null && isset($res['results'][0]['error'])) {
+                    $firstError = $res['results'][0]['error'];
                 }
-            } else {
-                // Resolve generic placeholders ({site}, {fee}, ...) and drop any
-                // personal tokens that can't be resolved per recipient, so a raw
-                // {placeholder} is never sent to a customer.
-                $message = $sms->parseTemplate($message);
+            };
 
-                $phones = $manualPhones;
-                if (!empty($targetUserIds)) {
+            // 1) Registered users — always personalize when the message has any
+            //    placeholder, so {name} is replaced with each user's real name.
+            if (!empty($targetUserIds)) {
+                if ($hasTokens) {
+                    $applyResult($sms->sendToUsers($targetUserIds, $message, $type, $templateKey !== '' ? $templateKey : null, $adminId));
+                } else {
                     $in     = implode(',', array_fill(0, count($targetUserIds), '?'));
                     $rows   = Database::fetchAll("SELECT phone FROM users WHERE id IN ({$in})", $targetUserIds);
+                    $phones = [];
                     foreach ($rows as $r) {
-                        $phones[] = $sms->normalizePhone($r['phone']);
+                        $p = $sms->normalizePhone($r['phone']);
+                        if ($p !== '') $phones[] = $p;
                     }
+                    $applyResult($sms->sendBulk($phones, $message, $type, $templateKey !== '' ? $templateKey : null, $adminId));
                 }
-                $res = $sms->sendBulk($phones, $message, $type, $templateKey !== '' ? $templateKey : null, $adminId);
-                if ($res['sent'] > 0) {
-                    setFlash('success', 'SMS sent to ' . $res['sent'] . ' recipient(s)' . ($res['failed'] ? ', ' . $res['failed'] . ' failed' : '.'));
-                } else {
-                    $firstErr = $res['results'][0]['error'] ?? 'No valid recipients';
-                    setFlash('error', 'SMS not sent: ' . $firstErr);
-                }
+            }
+
+            // 2) Manual phones — resolve generic placeholders ({site}, {fee}, {amount})
+            //    and drop personal tokens, so a raw {placeholder} never goes out.
+            if (!empty($manualPhones)) {
+                $applyResult($sms->sendBulk($manualPhones, $sms->parseTemplate($message), $type, $templateKey !== '' ? $templateKey : null, $adminId));
+            }
+
+            if ($totalSent > 0) {
+                setFlash('success', 'SMS sent to ' . $totalSent . ' recipient(s)' . ($totalFailed ? ', ' . $totalFailed . ' failed' : '.'));
+            } elseif ($firstError !== null) {
+                setFlash('error', 'SMS not sent: ' . $firstError);
+            } else {
+                setFlash('error', 'No valid recipients selected.');
             }
             break;
 

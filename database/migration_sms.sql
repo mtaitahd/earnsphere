@@ -64,11 +64,11 @@ CREATE TABLE IF NOT EXISTS `sms_logs` (
 -- DEFAULT TEMPLATES
 -- ============================================================
 INSERT INTO `sms_templates` (`name`, `template_key`, `message`, `variables`, `is_system`, `is_active`) VALUES
-('Welcome Message', 'welcome', 'Karibu {name}! Umejisajili kwenye {site}. Kamilisha malipo ya TZS {fee} ili uanze kupata commissions kupitia code yako: {code}', 'name,phone,code,fee,site', 1, 1),
-('Payment Success', 'payment_success', 'Hongera {name}! Malipo yako ya TZS {amount} yamekamilika na akaunti yako imewashwa kikamilifu. Sasa unaweza kuingia na kuanza kupata commissions. Code yako ya referral: {code}', 'name,amount,code,site', 1, 1),
-('Payment Reminder', 'payment_reminder', 'Kumbukumbu {name}: bado haujamaliza kulipa TZS {fee} ya usajili. Maliza leo ili uanze kupata commissions!', 'name,fee,site', 1, 1),
-('Withdrawal Success', 'withdrawal_success', 'Hongera {name}! Utoaji wako wa TZS {amount} umekamilika kwenye namba {phone}.', 'name,amount,phone', 1, 1),
-('Withdrawal Failed', 'withdrawal_failed', 'Samahani {name}, utoaji wako wa TZS {amount} umeshindikana. Tafadhali wasiliana na support.', 'name,amount,phone', 1, 1);
+('Welcome Message', 'welcome', 'Dear {name}, Karibu kwenye {site}! Kamilisha malipo ya TZS {fee} ili uanze kupata commissions kupitia code yako: {code}', 'name,phone,code,fee,site', 1, 1),
+('Payment Success', 'payment_success', 'Dear {name}, malipo yako ya TZS {amount} yamekamilika na akaunti yako imewashwa kikamilifu. Sasa unaweza kuingia na kuanza kupata commissions. Code yako ya referral: {code}', 'name,amount,code,site', 1, 1),
+('Payment Reminder', 'payment_reminder', 'Dear {name}, bado haujamaliza kulipa TZS {fee} ya usajili. Maliza leo ili uanze kupata commissions!', 'name,fee,site', 1, 1),
+('Withdrawal Success', 'withdrawal_success', 'Dear {name}, utoaji wako wa TZS {amount} umekamilika kwenye namba {phone}.', 'name,amount,phone', 1, 1),
+('Withdrawal Failed', 'withdrawal_failed', 'Dear {name}, samahani utoaji wako wa TZS {amount} umeshindikana. Tafadhali wasiliana na support.', 'name,amount,phone', 1, 1);
 
 -- ============================================================
 -- DEFAULT SMS SETTINGS
