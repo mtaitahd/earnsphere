@@ -163,6 +163,14 @@ class Auth {
             $msg = "New Registration\n\nName: {$fullName}\nPhone: {$phone}\nEmail: " . ($email ?: 'N/A') . "\nReferral Code: {$userReferralCode}";
             @notifyAdmin("New User Registration - {$fullName}", $msg);
             
+            // Send welcome SMS (never block registration on SMS failure)
+            try {
+                require_once __DIR__ . '/MesejiSms.php';
+                MesejiSms::notifyWelcome($userId);
+            } catch (Throwable $e) {
+                error_log("Welcome SMS error: " . $e->getMessage());
+            }
+            
             return [
                 'success' => true,
                 'user_id' => $userId,

@@ -139,6 +139,14 @@ $openTickets = Database::count('support_tickets', 'status = ?', ['open']);
         </a>
     </li>
 
+    <!-- SMS -->
+    <li class="nav-item <?= $currentPage === 'sms' ? 'active' : '' ?>">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/sms">
+            <i class="fas fa-fw fa-sms"></i>
+            <span>SMS Broadcast</span>
+        </a>
+    </li>
+
     <!-- Support -->
     <li class="nav-item <?= $currentPage === 'support' ? 'active' : '' ?>">
         <a class="nav-link" href="<?= SITE_URL ?>/admin/support">

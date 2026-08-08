@@ -623,7 +623,7 @@ class SnippePayment {
         Database::update('payments', $updateData, 'id = ?', [$paymentRecord['id']]);
         
         if ($mappedStatus === 'completed' && $paymentRecord['status'] !== 'completed') {
-            $this->activateUserAccount($paymentRecord['user_id']);
+            $this->activateUserAccount($paymentRecord['user_id'], (float) $paymentRecord['amount']);
         }
 
         if ($mappedStatus === 'failed') {
@@ -734,7 +734,7 @@ class SnippePayment {
     /**
      * Activate user account + trigger commission engine after payment.
      */
-    private function activateUserAccount(int $userId): void {
+    private function activateUserAccount(int $userId, float $amount = 0): void {
         Database::beginTransaction();
         try {
             $user = Database::fetchOne("SELECT status FROM users WHERE id = ?", [$userId]);
@@ -748,6 +748,14 @@ class SnippePayment {
             Auth::logActivity($userId, 'account_activated', 'Account activated after Snippe payment');
             
             Database::commit();
+
+            // Notify user by SMS that their payment succeeded (outside the DB transaction)
+            try {
+                require_once __DIR__ . '/MesejiSms.php';
+                MesejiSms::notifyPaymentSuccess($userId, $amount);
+            } catch (Throwable $e) {
+                error_log("Payment SMS error: " . $e->getMessage());
+            }
         } catch (Exception $e) {
             Database::rollback();
             error_log("EarnSphere: Activation error for user {$userId}: " . $e->getMessage());

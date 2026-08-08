@@ -76,6 +76,7 @@ $categories = [
     'commission' => ['commission_l1', 'commission_l2', 'commission_l3', 'company_earning', 'commission_total'],
     'snippe'   => ['snippe_api_key', 'snippe_webhook_secret', 'snippe_api_url', 'snippe_api_version'],
     'payout'   => ['payout_channel', 'payout_webhook_url'],
+    'sms'      => ['meseji_api_key', 'meseji_api_url', 'meseji_sender_id', 'meseji_enabled', 'sms_welcome_enabled', 'sms_payment_enabled'],
     'system'   => ['maintenance_mode'],
 ];
 
@@ -229,6 +230,57 @@ include __DIR__ . '/admin_header.php';
                         <strong>HTTPS required!</strong> Snippe does not allow HTTP webhooks. On localhost, webhooks will not work. Deploy with HTTPS URL in production.
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SMS Settings (Meseji) -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6><i class="fas fa-sms me-1"></i> SMS (Meseji Gateway)</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">API Key</label>
+                    <input type="text" class="form-control" name="settings[meseji_api_key]" value="<?= sanitize($settingsMap['meseji_api_key']['setting_value'] ?? '') ?>" placeholder="zs_xxxxxxxxxxxxxxxxxxxx">
+                    <small class="text-muted">From Meseji dashboard &rarr; Developer Settings (starts with zs_)</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">Sender ID</label>
+                    <input type="text" class="form-control" name="settings[meseji_sender_id]" value="<?= sanitize($settingsMap['meseji_sender_id']['setting_value'] ?? 'MESEJI') ?>" maxlength="11">
+                    <small class="text-muted">1-11 characters, must be approved (default: MESEJI)</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">API URL</label>
+                    <input type="text" class="form-control" name="settings[meseji_api_url]" value="<?= sanitize($settingsMap['meseji_api_url']['setting_value'] ?? 'https://meseji.co.tz/api/v1') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">Enable SMS</label>
+                    <select class="form-select" name="settings[meseji_enabled]">
+                        <option value="0" <?= ($settingsMap['meseji_enabled']['setting_value'] ?? '0') === '0' ? 'selected' : '' ?>>Disabled</option>
+                        <option value="1" <?= ($settingsMap['meseji_enabled']['setting_value'] ?? '0') === '1' ? 'selected' : '' ?>>Enabled</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">Welcome SMS on registration</label>
+                    <select class="form-select" name="settings[sms_welcome_enabled]">
+                        <option value="1" <?= ($settingsMap['sms_welcome_enabled']['setting_value'] ?? '1') !== '0' ? 'selected' : '' ?>>On</option>
+                        <option value="0" <?= ($settingsMap['sms_welcome_enabled']['setting_value'] ?? '1') === '0' ? 'selected' : '' ?>>Off</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">SMS on payment success</label>
+                    <select class="form-select" name="settings[sms_payment_enabled]">
+                        <option value="1" <?= ($settingsMap['sms_payment_enabled']['setting_value'] ?? '1') !== '0' ? 'selected' : '' ?>>On</option>
+                        <option value="0" <?= ($settingsMap['sms_payment_enabled']['setting_value'] ?? '1') === '0' ? 'selected' : '' ?>>Off</option>
+                    </select>
+                </div>
+            </div>
+            <div class="alert alert-info mt-3 mb-0" style="font-size:0.8rem;">
+                <i class="fas fa-info-circle me-1"></i>
+                Manage broadcasts, templates, and test SMS from the
+                <a href="<?= SITE_URL ?>/admin/sms" style="font-weight:700;">SMS Broadcast</a> page.
             </div>
         </div>
     </div>

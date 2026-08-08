@@ -83,7 +83,7 @@ foreach ($pendingPayments as $payment) {
             
             if ($newStatus === 'completed') {
                 $user = Database::fetchOne("SELECT status FROM users WHERE id = ?", [$payment['user_id']]);
-                if ($user && $user['status'] !== 'active') {
+                    if ($user && $user['status'] !== 'active') {
                     Database::beginTransaction();
                     try {
                         Database::update('users', ['status' => 'active'], 'id = ?', [$payment['user_id']]);
@@ -91,6 +91,13 @@ foreach ($pendingPayments as $payment) {
                         Auth::logActivity($payment['user_id'], 'account_activated', 'Account activated via cron');
                         Database::commit();
                         $activated++;
+
+                        try {
+                            require_once dirname(__DIR__) . '/classes/MesejiSms.php';
+                            MesejiSms::notifyPaymentSuccess((int) $payment['user_id'], (float) $payment['amount']);
+                        } catch (Throwable $e) {
+                            error_log("Cron payment SMS error: " . $e->getMessage());
+                        }
                     } catch (Exception $e) {
                         Database::rollback();
                         error_log("EarnSphere: Cron activation error: " . $e->getMessage());

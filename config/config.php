@@ -131,6 +131,13 @@ define('FROM_EMAIL', getenv('FROM_EMAIL') ?: 'info@mtaitatech.online');
 define('FROM_NAME', getenv('FROM_NAME') ?: 'EarnSphere');
 
 // ============================================================
+// SMS Configuration (Meseji API)
+// ============================================================
+define('MESEJI_API_KEY', getenv('MESEJI_API_KEY') ?: '');
+define('MESEJI_SENDER_ID', getenv('MESEJI_SENDER_ID') ?: 'MESEJI');
+define('MESEJI_API_URL', getenv('MESEJI_API_URL') ?: 'https://meseji.co.tz/api/v1');
+
+// ============================================================
 // OTP Configuration
 // ============================================================
 define('OTP_LENGTH', 6);

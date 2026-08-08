@@ -100,6 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     }
                     Database::commit();
                     setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as paid — TZS ' . number_format($fee) . ' added to their account');
+
+                    // Notify the user by SMS that their payment was completed
+                    try {
+                        require_once dirname(__DIR__) . '/classes/MesejiSms.php';
+                        MesejiSms::notifyPaymentSuccess($userId, (float) $fee);
+                    } catch (Throwable $e) {
+                        error_log("Admin mark-as-paid SMS error: " . $e->getMessage());
+                    }
                 } catch (Exception $e) {
                     Database::rollback();
                     setFlash('error', 'Error: ' . $e->getMessage());
