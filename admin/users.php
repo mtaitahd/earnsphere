@@ -264,8 +264,9 @@ if ($status) {
 }
 
 if ($year !== '') {
-    $where .= " AND YEAR(created_at) = ?";
-    $params[] = $year;
+    $where .= " AND created_at >= ? AND created_at < ?";
+    $params[] = $year . '-01-01 00:00:00';
+    $params[] = ((int)$year + 1) . '-01-01 00:00:00';
 }
 
 $total = Database::count('users', $where, $params);
