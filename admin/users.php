@@ -58,8 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $userId = (int)($_POST['user_id'] ?? 0);
         $user = Database::fetchOne("SELECT id, full_name FROM users WHERE id = ? AND role = 'user'", [$userId]);
         if ($user) {
-            deleteUserAndData($userId);
-            setFlash('success', 'User "' . sanitize($user['full_name']) . '" deleted permanently');
+            if (deleteUsersAndData([$userId]) > 0) {
+                setFlash('success', 'User "' . sanitize($user['full_name']) . '" deleted permanently');
+            } else {
+                setFlash('error', 'User could not be deleted. Check the error logs for details.');
+            }
         }
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
@@ -183,8 +186,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_selected') {
-        $deleted = 0;
-
         if (!empty($_POST['select_all_mode'])) {
             // Delete ALL users matching the current filter, not just this page
             [$w, $p] = buildUserFilterWhere(
@@ -193,23 +194,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 preg_match('/^\d{4}$/', trim($_POST['filter_year'] ?? '')) ? trim($_POST['filter_year']) : ''
             );
             $ids = array_column(Database::fetchAll("SELECT id FROM users WHERE {$w}", $p), 'id');
-            foreach ($ids as $id) {
-                deleteUserAndData((int) $id);
-                $deleted++;
-            }
         } else {
             $ids = $_POST['user_ids'] ?? [];
-            foreach ($ids as $rawId) {
-                $uid = (int)$rawId;
-                if ($uid > 0) {
-                    deleteUserAndData($uid);
-                    $deleted++;
-                }
-            }
         }
+
+        $deleted = deleteUsersAndData($ids);
 
         if ($deleted > 0) {
             setFlash('success', $deleted . ' user(s) deleted permanently');
+        } else {
+            setFlash('error', 'No users were deleted. Check the error logs for details.');
         }
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
@@ -245,38 +239,68 @@ function buildUserFilterWhere(string $search, string $status, string $year): arr
 }
 
 /**
- * Delete a user and all related data
+ * Delete many users and all their related data in ONE transaction.
+ * Uses batched IN() deletes so it stays fast even for hundreds of users.
+ * Deletes the user row last so any remaining FK ON DELETE CASCADE cleans up.
+ *
+ * @param array $ids
+ * @return int number of users actually deleted
  */
-function deleteUserAndData(int $userId): void {
-    Database::beginTransaction();
+function deleteUsersAndData(array $ids): int {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+    $ids = array_values(array_filter($ids, fn($id) => $id > 0));
+    if (empty($ids)) {
+        return 0;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $params = $ids;
+
+    $deleted = 0;
     try {
-        // Get wallet IDs for this user (to delete wallet_transactions)
-        $wallets = Database::fetchAll("SELECT id FROM wallets WHERE user_id = ?", [$userId]);
-        foreach ($wallets as $w) {
-            Database::delete('wallet_transactions', 'wallet_id = ?', [$w['id']]);
-        }
+        Database::beginTransaction();
 
-        // Delete payouts linked to this user's withdrawals
-        $withdrawals = Database::fetchAll("SELECT id FROM withdrawals WHERE user_id = ?", [$userId]);
-        foreach ($withdrawals as $wd) {
-            Database::delete('payouts', 'withdrawal_id = ?', [$wd['id']]);
-        }
-
-        // Delete in order (foreign key safe)
-        Database::delete('commissions', 'earner_id = ? OR source_user_id = ?', [$userId, $userId]);
-        Database::delete('payments', 'user_id = ?', [$userId]);
-        Database::delete('withdrawals', 'user_id = ?', [$userId]);
-        Database::delete('wallets', 'user_id = ?', [$userId]);
-        Database::delete('referrals', 'referrer_id = ? OR referred_id = ?', [$userId, $userId]);
-        Database::delete('user_otps', 'user_id = ?', [$userId]);
-        Database::delete('activity_logs', 'user_id = ?', [$userId]);
-        Database::delete('users', 'id = ?', [$userId]);
+        // Wallet transactions for these users' wallets (subquery targets a different table)
+        safeUserDelete('wallet_transactions', "wallet_id IN (SELECT id FROM wallets WHERE user_id IN ({$placeholders}))", $params);
+        // Payouts for these users' withdrawals
+        safeUserDelete('payouts', "withdrawal_id IN (SELECT id FROM withdrawals WHERE user_id IN ({$placeholders}))", $params);
+        // Direct references
+        safeUserDelete('commissions', "earner_id IN ({$placeholders}) OR source_user_id IN ({$placeholders})", array_merge($params, $params));
+        safeUserDelete('payments', "user_id IN ({$placeholders})", $params);
+        safeUserDelete('withdrawals', "user_id IN ({$placeholders})", $params);
+        safeUserDelete('wallets', "user_id IN ({$placeholders})", $params);
+        safeUserDelete('referrals', "referrer_id IN ({$placeholders}) OR referred_id IN ({$placeholders})", array_merge($params, $params));
+        safeUserDelete('user_otps', "user_id IN ({$placeholders})", $params);
+        safeUserDelete('activity_logs', "user_id IN ({$placeholders})", $params);
+        safeUserDelete('sessions', "user_id IN ({$placeholders})", $params);
+        safeUserDelete('error_logs', "user_id IN ({$placeholders})", $params);
+        safeUserDelete('sms_logs', "user_id IN ({$placeholders})", $params);
+        // Users last — remaining FK ON DELETE CASCADE tables get cleaned here
+        safeUserDelete('users', "id IN ({$placeholders})", $params);
 
         Database::commit();
-    } catch (Exception $e) {
+        $deleted = count($ids);
+    } catch (Throwable $e) {
         Database::rollback();
-        error_log("Delete user error: " . $e->getMessage());
-        ErrorLogger::logException($e, 'system', $userId, 'admin/users.php');
+        error_log("Batch delete users error: " . $e->getMessage());
+        ErrorLogger::logException($e, 'system', null, 'admin/users.php');
+    }
+
+    return $deleted;
+}
+
+/**
+ * DELETE from a table, ignoring the case where the table doesn't exist on an
+ * older deployment so one missing table can't block the whole batch.
+ */
+function safeUserDelete(string $table, string $where, array $params): void {
+    try {
+        Database::delete($table, $where, $params);
+    } catch (PDOException $e) {
+        if ($e->getCode() === '42S02' || stripos($e->getMessage(), "doesn't exist") !== false || stripos($e->getMessage(), 'unknown table') !== false) {
+            return; // optional table missing — skip
+        }
+        throw $e;
     }
 }
 
