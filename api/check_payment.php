@@ -80,6 +80,13 @@ if ($payment['status'] === 'pending' && !empty($payment['snippe_reference'])) {
                             CommissionEngine::processRegistrationCommissions($payment['user_id']);
                             Auth::logActivity($payment['user_id'], 'account_activated', 'Account activated via payment polling');
                             Database::commit();
+
+                            // Notify user that payment succeeded and account is activated (never blocks polling)
+                            try {
+                                notifyAccountActivated((int) $payment['user_id'], (float) $payment['amount']);
+                            } catch (Throwable $e) {
+                                error_log("Polling payment notification error: " . $e->getMessage());
+                            }
                         } catch (Exception $e) {
                             Database::rollback();
                             error_log("EarnSphere: Polling activation error: " . $e->getMessage());

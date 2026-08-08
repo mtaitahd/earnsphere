@@ -265,3 +265,49 @@ function notifyAdmin(string $subject, string $message): void {
     
     $mailer->send(ADMIN_NOTIFY_EMAIL, $subject, $html);
 }
+
+/**
+ * Notify a user that their account has been activated after a successful payment.
+ * Sends SMS (via Meseji) + email to the user.
+ *
+ * @param int   $userId  The activated user
+ * @param float $amount  Amount paid (defaults to registration fee)
+ */
+function notifyAccountActivated(int $userId, float $amount = 0): void {
+    // SMS notification (Meseji gateway)
+    try {
+        require_once __DIR__ . '/../classes/MesejiSms.php';
+        MesejiSms::notifyPaymentSuccess($userId, $amount);
+    } catch (Throwable $e) {
+        error_log("Account activation SMS error: " . $e->getMessage());
+    }
+
+    // Email notification
+    try {
+        $user = Database::fetchOne("SELECT id, full_name, email FROM users WHERE id = ?", [$userId]);
+        if (!$user || empty($user['email'])) {
+            return;
+        }
+
+        require_once __DIR__ . '/../classes/Mailer.php';
+
+        $amount = $amount > 0 ? $amount : (float) app_setting('registration_fee', REGISTRATION_FEE);
+        $mailer = new Mailer();
+        $subject = 'Akaunti Imewashwa - ' . SITE_NAME;
+
+        $html  = '<div style="font-family:sans-serif;max-width:600px;margin:auto;padding:20px;">';
+        $html .= '<div style="background:#10b981;color:white;padding:15px;border-radius:12px 12px 0 0;text-align:center;">';
+        $html .= '<h2 style="margin:0;">' . SITE_NAME . '</h2></div>';
+        $html .= '<div style="background:#f9fafb;padding:20px;border:1px solid #e5e7eb;border-radius:0 0 12px 12px;">';
+        $html .= '<p>Hongera <strong>' . htmlspecialchars($user['full_name'], ENT_QUOTES) . '</strong>!</p>';
+        $html .= '<p>Malipo yako ya <strong>TZS ' . number_format($amount) . '</strong> yamekamilika na akaunti yako imewashwa kikamilifu.</p>';
+        $html .= '<p>Sasa unaweza kuingia kwenye akaunti yako, kuwaalika marafiki na kuanza kupata commissions.</p>';
+        $html .= '<hr style="border:none;border-top:1px solid #e5e7eb;">';
+        $html .= '<p style="color:#6b7280;font-size:0.8rem;">Ujumbe huu ni wa kiotomatiki kutoka ' . SITE_NAME . '.</p>';
+        $html .= '</div></div>';
+
+        $mailer->send($user['email'], $subject, $html);
+    } catch (Throwable $e) {
+        error_log("Account activation email error: " . $e->getMessage());
+    }
+}

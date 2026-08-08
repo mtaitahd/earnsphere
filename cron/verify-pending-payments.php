@@ -93,10 +93,9 @@ foreach ($pendingPayments as $payment) {
                         $activated++;
 
                         try {
-                            require_once dirname(__DIR__) . '/classes/MesejiSms.php';
-                            MesejiSms::notifyPaymentSuccess((int) $payment['user_id'], (float) $payment['amount']);
+                            notifyAccountActivated((int) $payment['user_id'], (float) $payment['amount']);
                         } catch (Throwable $e) {
-                            error_log("Cron payment SMS error: " . $e->getMessage());
+                            error_log("Cron payment notification error: " . $e->getMessage());
                         }
                     } catch (Exception $e) {
                         Database::rollback();

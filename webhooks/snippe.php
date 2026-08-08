@@ -227,12 +227,11 @@ try {
             
             Database::commit();
             
-            // Notify user by SMS that payment was successful (never blocks webhook)
+            // Notify user that payment succeeded and account is activated (never blocks webhook)
             try {
-                require_once dirname(__DIR__) . '/classes/MesejiSms.php';
-                MesejiSms::notifyPaymentSuccess((int) $payment['user_id'], (float) $payment['amount']);
+                notifyAccountActivated((int) $payment['user_id'], (float) $payment['amount']);
             } catch (Throwable $e) {
-                webhookLog("PAYMENT SMS ERROR: " . $e->getMessage());
+                webhookLog("PAYMENT NOTIFY ERROR: " . $e->getMessage());
             }
         } catch (Exception $e) {
             Database::rollback();

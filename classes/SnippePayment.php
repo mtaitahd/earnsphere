@@ -749,12 +749,14 @@ class SnippePayment {
             
             Database::commit();
 
-            // Notify user by SMS that their payment succeeded (outside the DB transaction)
+            // Notify user that payment succeeded and account is activated (outside the DB transaction)
             try {
-                require_once __DIR__ . '/MesejiSms.php';
-                MesejiSms::notifyPaymentSuccess($userId, $amount);
+                if (!function_exists('notifyAccountActivated')) {
+                    require_once __DIR__ . '/../includes/helpers.php';
+                }
+                notifyAccountActivated($userId, $amount);
             } catch (Throwable $e) {
-                error_log("Payment SMS error: " . $e->getMessage());
+                error_log("Account activation notification error: " . $e->getMessage());
             }
         } catch (Exception $e) {
             Database::rollback();
