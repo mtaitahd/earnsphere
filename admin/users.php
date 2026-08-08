@@ -183,9 +183,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_selected') {
-        $ids = $_POST['user_ids'] ?? [];
-        if (!empty($ids)) {
-            $deleted = 0;
+        $deleted = 0;
+
+        if (!empty($_POST['select_all_mode'])) {
+            // Delete ALL users matching the current filter, not just this page
+            [$w, $p] = buildUserFilterWhere(
+                trim($_POST['filter_search'] ?? ''),
+                trim($_POST['filter_status'] ?? ''),
+                preg_match('/^\d{4}$/', trim($_POST['filter_year'] ?? '')) ? trim($_POST['filter_year']) : ''
+            );
+            $ids = array_column(Database::fetchAll("SELECT id FROM users WHERE {$w}", $p), 'id');
+            foreach ($ids as $id) {
+                deleteUserAndData((int) $id);
+                $deleted++;
+            }
+        } else {
+            $ids = $_POST['user_ids'] ?? [];
             foreach ($ids as $rawId) {
                 $uid = (int)$rawId;
                 if ($uid > 0) {
@@ -193,11 +206,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $deleted++;
                 }
             }
+        }
+
+        if ($deleted > 0) {
             setFlash('success', $deleted . ' user(s) deleted permanently');
         }
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
     }
+}
+
+/**
+ * Build the WHERE clause + params used by both the user list query and the
+ * bulk "delete all matching" action, so they always filter identically.
+ */
+function buildUserFilterWhere(string $search, string $status, string $year): array {
+    $where  = "role = 'user'";
+    $params = [];
+
+    if ($search !== '') {
+        $where .= " AND (full_name LIKE ? OR phone LIKE ? OR email LIKE ? OR referral_code LIKE ?)";
+        $sp = "%{$search}%";
+        $params = array_merge($params, [$sp, $sp, $sp, $sp]);
+    }
+
+    if ($status !== '') {
+        $where .= " AND status = ?";
+        $params[] = $status;
+    }
+
+    if ($year !== '') {
+        $where .= " AND created_at >= ? AND created_at < ?";
+        $params[] = $year . '-01-01 00:00:00';
+        $params[] = ((int) $year + 1) . '-01-01 00:00:00';
+    }
+
+    return [$where, $params];
 }
 
 /**
@@ -249,25 +293,7 @@ $availableYears = Database::fetchAll(
 );
 
 // Build query
-$where = "role = 'user'";
-$params = [];
-
-if ($search) {
-    $where .= " AND (full_name LIKE ? OR phone LIKE ? OR email LIKE ? OR referral_code LIKE ?)";
-    $searchParam = "%{$search}%";
-    $params = array_merge($params, [$searchParam, $searchParam, $searchParam, $searchParam]);
-}
-
-if ($status) {
-    $where .= " AND status = ?";
-    $params[] = $status;
-}
-
-if ($year !== '') {
-    $where .= " AND created_at >= ? AND created_at < ?";
-    $params[] = $year . '-01-01 00:00:00';
-    $params[] = ((int)$year + 1) . '-01-01 00:00:00';
-}
+[$where, $params] = buildUserFilterWhere($search, $status, $year);
 
 $total = Database::count('users', $where, $params);
 
@@ -332,15 +358,22 @@ include __DIR__ . '/admin_header.php';
 <form method="POST" id="bulkDeleteForm">
     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
     <input type="hidden" name="action" value="delete_selected">
+    <input type="hidden" name="select_all_mode" id="selectAllMode" value="0">
+    <input type="hidden" name="filter_search" value="<?= sanitize($search) ?>">
+    <input type="hidden" name="filter_status" value="<?= sanitize($status) ?>">
+    <input type="hidden" name="filter_year" value="<?= sanitize($year) ?>">
 
     <?php if (!empty($users)): ?>
     <div class="card mb-3" style="display:none;" id="bulkActions">
-        <div class="card-body py-2 d-flex align-items-center">
+        <div class="card-body py-2 d-flex align-items-center flex-wrap" style="gap:0.5rem;">
             <input type="checkbox" id="selectAll" class="form-check-input me-2">
-            <label for="selectAll" class="me-3" style="font-size:0.85rem;font-weight:700;">
+            <label for="selectAll" class="me-2" style="font-size:0.85rem;font-weight:700;">
                 Select All (<span id="selectedCount">0</span> selected)
             </label>
-            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete selected users permanently? All their data will be removed.');">
+            <span class="text-muted me-2" style="font-size:0.8rem;">
+                <i class="fas fa-info-circle me-1"></i>Selects all <?= number_format($total) ?> matching user(s), not just this page
+            </span>
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirmDelete();">
                 <i class="fas fa-trash me-1"></i> Delete Selected
             </button>
         </div>
@@ -515,26 +548,42 @@ const selectAllHeader = document.getElementById('selectAllHeader');
 const checkboxes = document.querySelectorAll('.item-checkbox');
 const bulkActions = document.getElementById('bulkActions');
 const selectedCount = document.getElementById('selectedCount');
+const selectAllMode = document.getElementById('selectAllMode');
+const totalMatching = <?= (int) $total ?>;
 
 function updateBulkUI() {
     const checked = document.querySelectorAll('.item-checkbox:checked').length;
-    selectedCount.textContent = checked;
-    bulkActions.style.display = checked > 0 ? 'block' : 'none';
+    const modeOn = selectAllMode.value === '1';
+    selectedCount.textContent = modeOn ? totalMatching.toLocaleString() : checked;
+    bulkActions.style.display = (checked > 0 || modeOn) ? 'block' : 'none';
 }
 
-selectAll?.addEventListener('change', () => {
-    checkboxes.forEach(cb => cb.checked = selectAll.checked);
-    selectAllHeader.checked = selectAll.checked;
-    updateBulkUI();
-});
+function confirmDelete() {
+    const countText = selectAllMode.value === '1'
+        ? totalMatching.toLocaleString() + ' matching user(s)'
+        : document.querySelectorAll('.item-checkbox:checked').length + ' user(s)';
+    return confirm('Delete ' + countText + ' permanently? All their data will be removed.');
+}
 
-selectAllHeader?.addEventListener('change', () => {
-    checkboxes.forEach(cb => cb.checked = selectAllHeader.checked);
-    selectAll.checked = selectAllHeader.checked;
+function setSelectAll(on) {
+    selectAllMode.value = on ? '1' : '0';
+    checkboxes.forEach(cb => cb.checked = on);
+    if (selectAll) selectAll.checked = on;
+    if (selectAllHeader) selectAllHeader.checked = on;
     updateBulkUI();
-});
+}
 
-checkboxes.forEach(cb => cb.addEventListener('change', updateBulkUI));
+selectAll?.addEventListener('change', () => setSelectAll(selectAll.checked));
+selectAllHeader?.addEventListener('change', () => setSelectAll(selectAllHeader.checked));
+
+checkboxes.forEach(cb => cb.addEventListener('change', () => {
+    if (!cb.checked) {
+        selectAllMode.value = '0';
+        if (selectAll) selectAll.checked = false;
+        if (selectAllHeader) selectAllHeader.checked = false;
+    }
+    updateBulkUI();
+}));
 
 // Email modal populate
 document.getElementById('emailModal')?.addEventListener('show.bs.modal', function(event) {
