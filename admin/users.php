@@ -186,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_selected') {
+        @set_time_limit(0);
         if (!empty($_POST['select_all_mode'])) {
             // Delete ALL users matching the current filter, not just this page
             [$w, $p] = buildUserFilterWhere(
@@ -272,7 +273,7 @@ function deleteUsersAndData(array $ids): int {
         safeUserDelete('referrals', "referrer_id IN ({$placeholders}) OR referred_id IN ({$placeholders})", array_merge($params, $params));
         safeUserDelete('user_otps', "user_id IN ({$placeholders})", $params);
         safeUserDelete('activity_logs', "user_id IN ({$placeholders})", $params);
-        safeUserDelete('sessions', "user_id IN ({$placeholders})", $params);
+        safeUserDelete('user_sessions', "user_id IN ({$placeholders})", $params);
         safeUserDelete('error_logs', "user_id IN ({$placeholders})", $params);
         safeUserDelete('sms_logs', "user_id IN ({$placeholders})", $params);
         // Users last — remaining FK ON DELETE CASCADE tables get cleaned here
@@ -402,6 +403,7 @@ include __DIR__ . '/admin_header.php';
             </button>
         </div>
     </div>
+    </form>
     <?php endif; ?>
 
     <!-- Users Table -->
@@ -427,7 +429,7 @@ include __DIR__ . '/admin_header.php';
                     <tbody>
                         <?php foreach ($users as $i => $u): ?>
                         <tr>
-                            <td><input type="checkbox" name="user_ids[]" value="<?= $u['id'] ?>" class="form-check-input item-checkbox"></td>
+                            <td><input type="checkbox" name="user_ids[]" value="<?= $u['id'] ?>" class="form-check-input item-checkbox" form="bulkDeleteForm"></td>
                             <td><?= $offset + $i + 1 ?></td>
                             <td>
                                 <strong><?= sanitize($u['full_name']) ?></strong>
@@ -534,7 +536,6 @@ include __DIR__ . '/admin_header.php';
             </div>
         </div>
     </div>
-</form>
 
 <!-- Pagination -->
 <div class="mt-3">
