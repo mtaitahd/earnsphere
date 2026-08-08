@@ -313,12 +313,12 @@ include __DIR__ . '/admin_header.php';
                 </select>
             </div>
             <div class="col-md-3">
-                <select class="form-select" name="year">
-                    <option value="">All Years</option>
+                <input type="text" class="form-control" name="year" list="yearOptions" inputmode="numeric" maxlength="4" placeholder="All Years" value="<?= $year !== '' ? sanitize($year) : '' ?>">
+                <datalist id="yearOptions">
                     <?php foreach ($availableYears as $yr): ?>
-                        <option value="<?= (int)$yr['yr'] ?>" <?= $year !== '' && (string)$yr['yr'] === $year ? 'selected' : '' ?>><?= (int)$yr['yr'] ?></option>
+                        <option value="<?= (int)$yr['yr'] ?>"></option>
                     <?php endforeach; ?>
-                </select>
+                </datalist>
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i> Search</button>
