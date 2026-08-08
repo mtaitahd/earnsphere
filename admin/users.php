@@ -238,9 +238,15 @@ function deleteUserAndData(int $userId): void {
 
 $search = trim($_GET['search'] ?? '');
 $status = $_GET['status'] ?? '';
+$year   = preg_match('/^\d{4}$/', trim($_GET['year'] ?? '')) ? trim($_GET['year']) : '';
 $page = getCurrentPage();
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
+
+// Available registration years for the filter dropdown
+$availableYears = Database::fetchAll(
+    "SELECT DISTINCT YEAR(created_at) AS yr FROM users WHERE role = 'user' AND created_at IS NOT NULL ORDER BY yr DESC"
+);
 
 // Build query
 $where = "role = 'user'";
@@ -255,6 +261,11 @@ if ($search) {
 if ($status) {
     $where .= " AND status = ?";
     $params[] = $status;
+}
+
+if ($year !== '') {
+    $where .= " AND YEAR(created_at) = ?";
+    $params[] = $year;
 }
 
 $total = Database::count('users', $where, $params);
@@ -290,15 +301,23 @@ include __DIR__ . '/admin_header.php';
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" class="row g-3">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <input type="text" class="form-control" name="search" placeholder="Search name, phone, email, or code..." value="<?= sanitize($search) ?>">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <select class="form-select" name="status">
                     <option value="">All Status</option>
                     <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option>
                     <option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>Pending</option>
                     <option value="suspended" <?= $status === 'suspended' ? 'selected' : '' ?>>Suspended</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="year">
+                    <option value="">All Years</option>
+                    <?php foreach ($availableYears as $yr): ?>
+                        <option value="<?= (int)$yr['yr'] ?>" <?= $year !== '' && (string)$yr['yr'] === $year ? 'selected' : '' ?>><?= (int)$yr['yr'] ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
@@ -461,7 +480,7 @@ include __DIR__ . '/admin_header.php';
 
 <!-- Pagination -->
 <div class="mt-3">
-    <?= paginate($total, $page, $perPage, SITE_URL . '/admin/users?' . http_build_query(['search' => $search, 'status' => $status, 'page' => ''])) ?>
+    <?= paginate($total, $page, $perPage, SITE_URL . '/admin/users?' . http_build_query(['search' => $search, 'status' => $status, 'year' => $year, 'page' => ''])) ?>
 </div>
 
 <!-- Email Edit Modal -->
