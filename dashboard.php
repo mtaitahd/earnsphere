@@ -135,15 +135,15 @@ include __DIR__ . '/includes/public_head.php';
     <?php endif; ?>
 
     <?php if ($registrationPayment && $user['status'] === 'active' && $registrationPayment['status'] === 'completed'): ?>
-    <div style="background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;padding:1rem;margin-top:0.5rem;color:white;">
+    <div style="background:linear-gradient(135deg,rgba(16,185,129,0.18),rgba(5,150,105,0.10));border:1px solid rgba(16,185,129,0.35);border-radius:12px;padding:1rem;margin-top:0.5rem;color:#065f46;">
         <div class="d-flex align-items-center justify-content-between">
             <div>
                 <div style="font-size:0.8rem;opacity:0.85;"><i class="fas fa-check-circle me-1"></i> Registration Paid</div>
                 <div style="font-size:1.3rem;font-weight:800;"><?= formatCurrency($registrationPayment['amount']) ?></div>
             </div>
             <div style="text-align:right;">
-                <div style="font-size:0.75rem;opacity:0.8;">Paid on</div>
-                <div style="font-size:0.85rem;font-weight:600;"><?= date('d M Y', strtotime($registrationPayment['completed_at'])) ?></div>
+                <div style="font-size:0.75rem;opacity:0.75;">Paid on</div>
+                <div style="font-size:0.85rem;font-weight:600;color:#047857;"><?= date('d M Y', strtotime($registrationPayment['completed_at'])) ?></div>
             </div>
         </div>
     </div>
