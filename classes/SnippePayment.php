@@ -992,8 +992,8 @@ class SnippePayment {
         $signature = $normalized['x-webhook-signature'] ?? '';
         
         if (empty($this->config['webhook_secret'])) {
-            error_log("EarnSphere: Webhook HMAC skipped - no secret configured");
-            return true;
+            error_log("EarnSphere: Webhook rejected - no secret configured");
+            return false;
         }
         
         if (empty($timestamp) || empty($signature)) {

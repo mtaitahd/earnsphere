@@ -5,6 +5,11 @@
 
 # --- Force HTTPS ---
 RewriteEngine On
+
+# Private application directories and repository metadata are never public.
+RewriteRule ^(?:config|classes|includes|logs|database|cron|tests|\.git)(?:/|$) - [F,L,NC]
+# Uploaded media may be served, but uploaded scripts must never execute.
+RewriteRule ^uploads/.*\.(?:php[0-9]*|phtml|phar)(?:[./]|$) - [F,L,NC]
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
@@ -43,11 +48,6 @@ ServerSignature Off
 # --- Prevent directory listing ---
 Options -Indexes
 
-# --- Protect sensitive directories ---
-<DirectoryMatch "^/.*/(config|classes|includes|logs|uploads|database|cron)/">
-    Require all denied
-</DirectoryMatch>
-
 # --- Protect specific files (web access only, PHP can still read) ---
 <FilesMatch "\.(git|htaccess|htpasswd|ini|log|sh|bak)$">
     Require all denied
@@ -57,44 +57,6 @@ Options -Indexes
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>
-
-# --- Protect config directory ---
-<Directory "config">
-    Require all denied
-</Directory>
-
-# --- Protect logs directory ---
-<Directory "logs">
-    Require all denied
-</Directory>
-
-# --- Protect database directory ---
-<Directory "database">
-    Require all denied
-</Directory>
-
-# --- Protect classes directory ---
-<Directory "classes">
-    Require all denied
-</Directory>
-
-# --- Protect includes directory ---
-<Directory "includes">
-    Require all denied
-</Directory>
-
-# --- Protect uploads from script execution ---
-<Directory "uploads">
-    <FilesMatch "\.php$">
-        Require all denied
-    </FilesMatch>
-</Directory>
-
-# --- Prevent script execution in uploads ---
-<Directory "uploads">
-    RemoveHandler .php .phtml .php3 .php4 .php5 .php7
-    AddType text/plain .php .phtml .php3 .php4 .php5 .php7
-</Directory>
 
 # --- Block common attack vectors ---
 RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]

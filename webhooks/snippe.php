@@ -4,7 +4,7 @@
  * 
  * Receives payment confirmations from Snippe API.
  * Security: HMAC-SHA256 signature verification
- * Pattern: respond 200 immediately, process async (like mtaita-tech)
+ * Acknowledge verified events after processing.
  * 
  * API Reference: https://docs.snippe.sh
  */
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $rawBody = file_get_contents('php://input');
 $body = json_decode($rawBody, true);
 
-if (!$body) {
+if (!is_array($body) || !$body) {
     webhookLog('REJECT: Invalid JSON body');
     ErrorLogger::log('webhook', 'Webhook rejected: invalid JSON body', [
         'body_length' => strlen($rawBody),
@@ -67,45 +67,25 @@ webhookLog("INCOMING | event={$webhookEvent} | ts={$webhookTimestamp} | sig=" . 
 // ================================================================
 // VERIFY SIGNATURE
 // ================================================================
-$secret = SNIPPE_WEBHOOK_SECRET;
-$signatureValid = false;
-
-if (!empty($secret) && !empty($webhookSignature)) {
-    $snippe = new SnippePayment();
-    $signatureValid = $snippe->verifyWebhookSignature($headersLower, $rawBody);
-    
-    if (!$signatureValid) {
-        webhookLog('REJECT: HMAC verification failed (secret_len=' . strlen($secret) . ')');
-    }
-} else {
-    webhookLog('WARN: No webhook secret configured — skipping HMAC');
-    $signatureValid = true;
+$snippe = new SnippePayment();
+if (!$snippe->verifyWebhookSignature($headersLower, $rawBody)) {
+    http_response_code(401);
+    exit('Invalid webhook signature');
 }
 
-// ================================================================
-// RESPOND 200 IMMEDIATELY — prevent Snippe retries
-// ================================================================
-http_response_code(200);
+// Payout events must reach the payout handler, never collection lookup logic.
+if (str_starts_with(strtolower($webhookEvent), 'payout') || str_starts_with(strtolower($webhookEvent), 'disbursement.')) {
+    $result = $snippe->processWebhook($headersLower, $body, $rawBody);
+    http_response_code($result['success'] ? 200 : 503);
+    exit($result['success'] ? 'OK' : 'Processing failed');
+}
+
+// Acknowledge only after processing, so failures can be retried by the provider.
 header('Content-Type: text/plain');
-echo 'OK';
-
-if (function_exists('fastcgi_finish_request')) {
-    fastcgi_finish_request();
-} elseif (function_exists('ob_flush')) {
-    ob_flush();
-    flush();
-}
-
-if (!$signatureValid) {
-    ErrorLogger::log('webhook', 'Webhook rejected: invalid signature', [
-        'event' => $webhookEvent,
-        'timestamp' => $webhookTimestamp,
-    ], null, 'warning', 'webhooks/snippe.php');
-    exit;
-}
+http_response_code(503);
 
 // ================================================================
-// PROCESS EVENT (async, after 200 sent)
+// PROCESS VERIFIED COLLECTION EVENT
 // ================================================================
 $eventId   = $body['id'] ?? '';
 $eventType = $body['type'] ?? $body['event'] ?? '';
@@ -188,7 +168,8 @@ try {
     // Skip if already processed
     if ($payment['webhook_received'] == 1 && $payment['status'] === $newStatus) {
         webhookLog("SKIP: Already processed (status={$newStatus})");
-        exit;
+        http_response_code(200);
+        exit('OK');
     }
 
     // Update payment status
@@ -235,8 +216,14 @@ try {
             }
         } catch (Exception $e) {
             Database::rollback();
+            Database::update('payments', [
+                'status' => $payment['status'],
+                'webhook_received' => 0,
+                'completed_at' => $payment['completed_at'],
+            ], 'id = ?', [$payment['id']]);
             webhookLog("ACTIVATION ERROR: " . $e->getMessage());
             ErrorLogger::logException($e, 'payment', (int) $payment['user_id'], 'webhooks/snippe.php');
+            exit('Processing failed');
         }
     } elseif ($newStatus === 'failed') {
         webhookLog("PAYMENT FAILED id={$payment['id']} reason={$failureReason}");
@@ -249,6 +236,8 @@ try {
         ], (int) $payment['user_id'], 'error', 'webhooks/snippe.php');
     }
 
+    http_response_code(200);
+    echo 'OK';
 } catch (Exception $e) {
     webhookLog("EXCEPTION: " . $e->getMessage() . ' | ' . $e->getTraceAsString());
     ErrorLogger::logException($e, 'webhook', null, 'webhooks/snippe.php');

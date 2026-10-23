@@ -126,7 +126,7 @@ define('SMTP_HOST', getenv('SMTP_HOST') ?: 'brandy.hostns.io');
 define('SMTP_PORT', (int)(getenv('SMTP_PORT') ?: 465));
 define('SMTP_ENCRYPTION', getenv('SMTP_ENCRYPTION') ?: 'ssl');
 define('SMTP_USER', getenv('SMTP_USER') ?: 'info@mtaitatech.online');
-define('SMTP_PASS', getenv('SMTP_PASS') ?: 'M20032003$');
+define('SMTP_PASS', getenv('SMTP_PASS') ?: '');
 define('FROM_EMAIL', getenv('FROM_EMAIL') ?: 'info@mtaitatech.online');
 define('FROM_NAME', getenv('FROM_NAME') ?: 'EarnSphere');
 

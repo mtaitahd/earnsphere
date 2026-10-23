@@ -494,73 +494,11 @@ class Wallet {
     }
     
     /**
-     * Auto-expire pending withdrawals older than 1 hour.
-     * Called automatically when user visits dashboard/wallet/withdrawal page.
+     * Kept for existing page callers. Time alone cannot establish payout failure.
+     * Pending transfers retain their hold until provider verification or a signed webhook.
      */
     public static function autoExpirePending(int $userId): int {
-        $stuck = Database::fetchAll(
-            "SELECT w.id, w.user_id, w.amount, w.created_at
-             FROM withdrawals w
-             WHERE w.user_id = ? AND w.status IN ('pending', 'processing')
-             AND w.created_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)
-             ORDER BY w.created_at ASC
-             LIMIT 10",
-            [$userId]
-        );
-
-        $expired = 0;
-        foreach ($stuck as $wd) {
-            try {
-                Database::beginTransaction();
-
-                $payout = Database::fetchOne(
-                    "SELECT id FROM payouts WHERE withdrawal_id = ? AND status IN ('pending', 'processing')",
-                    [$wd['id']]
-                );
-
-                if ($payout) {
-                    Database::update('payouts', [
-                        'status'        => 'failed',
-                        'error_message' => 'Auto-expired: pending for over 1 hour',
-                    ], 'id = ?', [$payout['id']]);
-                }
-
-                Database::update('withdrawals', [
-                    'status'     => 'failed',
-                    'admin_note' => 'Auto-expired: pending for over 1 hour',
-                ], 'id = ?', [$wd['id']]);
-
-                $wallet = Database::fetchOne("SELECT * FROM wallets WHERE user_id = ?", [$userId]);
-                if ($wallet) {
-                    Database::update('wallets', [
-                        'withdrawable_balance' => (float)($wallet['withdrawable_balance'] ?? 0) + $wd['amount'],
-                        'pending_amount'       => max(0, (float)$wallet['pending_amount'] - $wd['amount']),
-                    ], 'id = ?', [$wallet['id']]);
-                }
-
-                Database::update('wallet_transactions', [
-                    'status' => 'failed',
-                ], 'user_id = ? AND reference_id = ? AND reference_type = ? AND status = ?', [
-                    $userId, $wd['id'], 'withdrawal', 'pending'
-                ]);
-
-                Database::commit();
-                $expired++;
-
-                ErrorLogger::log('withdrawal', "Auto-expired pending withdrawal #{$wd['id']}", [
-                    'withdrawal_id' => $wd['id'],
-                    'amount'        => $wd['amount'],
-                    'created_at'    => $wd['created_at'],
-                ], $userId, 'warning', 'Wallet::autoExpirePending');
-
-            } catch (Exception $e) {
-                Database::rollback();
-                error_log("Auto-expire withdrawal error #{$wd['id']}: " . $e->getMessage());
-                ErrorLogger::logException($e, 'withdrawal', $userId, 'Wallet::autoExpirePending');
-            }
-        }
-
-        return $expired;
+        return 0;
     }
 
     /**
