@@ -39,4 +39,5 @@ Database::query("CREATE TABLE IF NOT EXISTS abliner_notifications (
 foreach (['abliner_api_key' => 'Abliner API key', 'abliner_webhook_secret' => 'Abliner webhook signing secret'] as $key => $label) {
     Database::query("INSERT IGNORE INTO settings (setting_key, setting_value, setting_type, description) VALUES (?, '', 'text', ?)", [$key, $label]);
 }
+require __DIR__ . '/migrate_withdrawal_charge.php';
 echo "Abliner migration complete. Existing transactions retain their original gateway.\n";

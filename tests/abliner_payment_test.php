@@ -26,7 +26,7 @@ $schema = [
     'users' => 'id INTEGER PRIMARY KEY, status TEXT, role TEXT DEFAULT "user", referred_by INTEGER',
     'wallets' => 'id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, balance REAL DEFAULT 0, withdrawable_balance REAL DEFAULT 0, pending_amount REAL DEFAULT 0, total_earned REAL DEFAULT 0, total_withdrawn REAL DEFAULT 0',
     'payments' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, order_id TEXT UNIQUE, purpose TEXT DEFAULT "registration", amount REAL, currency TEXT, phone TEXT, payment_method TEXT, status TEXT, gateway TEXT DEFAULT "snippe", gateway_id TEXT, gateway_reference TEXT, transaction_ref TEXT, idempotency_key TEXT, metadata TEXT, completed_at TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP',
-    'withdrawals' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, phone TEXT, payment_method TEXT, status TEXT, gateway TEXT, recipient_name TEXT, recipient_network TEXT, processed_at TEXT',
+    'withdrawals' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, withdrawal_charge REAL DEFAULT 0, phone TEXT, payment_method TEXT, status TEXT, gateway TEXT, recipient_name TEXT, recipient_network TEXT, processed_at TEXT',
     'payouts' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, withdrawal_id INTEGER, amount REAL, total REAL, fees REAL DEFAULT 0, channel TEXT, provider TEXT, recipient_phone TEXT, recipient_name TEXT, status TEXT, gateway TEXT, gateway_id TEXT, reference TEXT, external_reference TEXT, idempotency_key TEXT, metadata TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP',
     'wallet_transactions' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, wallet_id INTEGER, user_id INTEGER, type TEXT, amount REAL, balance_before REAL, balance_after REAL, description TEXT, status TEXT, reference_id INTEGER, reference_type TEXT',
     'commissions' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, earner_id INTEGER, source_user_id INTEGER, level INTEGER, amount REAL, status TEXT, wallet_transaction_id INTEGER',
@@ -36,7 +36,7 @@ $schema = [
 ];
 foreach ($schema as $table => $columns) $db->exec("CREATE TABLE $table ($columns)");
 $db->exec("INSERT INTO users(id,status,role,referred_by) VALUES (1,'pending','user',2),(2,'active','user',NULL),(3,'active','admin',NULL),(4,'pending','user',NULL),(5,'pending','user',NULL),(6,'pending','user',NULL)");
-$db->exec("INSERT INTO settings(setting_key, setting_value) VALUES ('registration_fee','12000'),('commission_l1','2500'),('commission_l2','1500'),('commission_l3','9000')");
+$db->exec("INSERT INTO settings(setting_key, setting_value) VALUES ('registration_fee','12000'),('commission_l1','2500'),('commission_l2','1500'),('commission_l3','9000'),('withdrawal_charge','500')");
 $db->exec('INSERT INTO wallets(id,user_id,balance,withdrawable_balance) VALUES (2,2,50000,50000)');
 
 class MockAbliner extends AblinerClient {
@@ -138,6 +138,11 @@ $client->mode = 'html';
 $html = $service->initiatePayment(6, '0712345678');
 expect($html['success'] && $html['status'] === 'pending', 'Non-JSON response released uncertain payment');
 
+$freeQuote = WithdrawalCharge::quote(5000, 0);
+expect($freeQuote['net_amount'] === 5000.0, 'Zero charge did not preserve the full payout');
+rejects(fn() => WithdrawalCharge::quote(500, 500), 'Charge consumed entire withdrawal');
+rejects(fn() => WithdrawalCharge::validate('-1'), 'Negative withdrawal charge accepted');
+rejects(fn() => $service->requestWithdrawal(2, 5000, '0712345678', 'TEST RECIPIENT', 0), 'Changed charge was accepted without confirmation');
 // Name lookup failure and a name change must stop withdrawal before any hold or transfer.
 $client->mode = 'pending'; $client->lookupMissing = true;
 $before = Database::count('withdrawals');
@@ -147,6 +152,8 @@ $client->lookupMissing = false;
 rejects(fn() => $service->requestWithdrawal(2, 5000, '0712345678', 'DIFFERENT NAME'), 'Changed recipient accepted');
 $wd = $service->requestWithdrawal(2, 5000, '0712345678', 'TEST RECIPIENT');
 $payout = Database::fetchOne('SELECT * FROM payouts WHERE withdrawal_id = ?', [$wd['withdrawal_id']]);
+expect((float) $payout['amount'] === 4500.0, 'Provider payout did not deduct the fixed charge');
+expect($wd['withdrawal_charge'] === 500 && $wd['net_amount'] === 4500.0, 'User receipt did not disclose gross, charge and net');
 $heldWallet = Database::fetchOne('SELECT * FROM wallets WHERE user_id = 2');
 expect((float) $heldWallet['pending_amount'] === 5000.0, 'Withdrawal hold missing');
 $before = $client->postCount();

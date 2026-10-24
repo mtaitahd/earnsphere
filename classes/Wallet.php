@@ -277,10 +277,10 @@ class Wallet {
             $verified = $_SESSION['verified_recipient'] ?? [];
             $normalized = AblinerClient::normalizePhone($phone);
             if (($verified['phone'] ?? '') !== $normalized || ($verified['expires'] ?? 0) < time()
-                || ($_POST['confirm_recipient'] ?? '') !== '1') {
+                || ($_POST['confirm_recipient'] ?? '') !== '1' || ($_POST['confirm_withdrawal_terms'] ?? '') !== '1') {
                 return ['success' => false, 'errors' => ['Verify and confirm the recipient name before withdrawing.']];
             }
-            return (new AblinerPayment())->requestWithdrawal($userId, $amount, $normalized, $verified['name']);
+            return (new AblinerPayment())->requestWithdrawal($userId, $amount, $normalized, $verified['name'], WithdrawalCharge::validate($_POST['withdrawal_charge_quote'] ?? ''));
         } catch (InvalidArgumentException | RuntimeException $e) {
             return ['success' => false, 'errors' => [$e->getMessage()]];
         } catch (Throwable $e) {

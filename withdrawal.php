@@ -6,6 +6,7 @@
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/classes/Auth.php';
 require_once __DIR__ . '/classes/Wallet.php';
+require_once __DIR__ . '/classes/WithdrawalCharge.php';
 require_once __DIR__ . '/includes/helpers.php';
 
 Auth::initSession();
@@ -22,6 +23,7 @@ $pendingWithdrawals = Database::fetchAll(
     [$_SESSION['user_id']]
 );
 
+$withdrawalCharge = WithdrawalCharge::configured();
 $success = '';
 $error = '';
 $payoutResult = null;
@@ -116,6 +118,8 @@ include __DIR__ . '/includes/public_head.php';
                     <span style="color:var(--gray-500);font-size:0.85rem;">Amount</span>
                     <span style="font-weight:700;color:var(--gray-800);"><?= formatCurrency($payoutResult['amount']) ?></span>
                 </div>
+                <div class="d-flex justify-content-between py-2"><span>Withdrawal charge</span><strong><?= formatCurrency($payoutResult['withdrawal_charge'] ?? 0) ?></strong></div>
+                <div class="d-flex justify-content-between py-2"><span>Amount to phone</span><strong><?= formatCurrency($payoutResult['net_amount'] ?? $payoutResult['amount']) ?></strong></div>
                 <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--gray-100);">
                     <span style="color:var(--gray-500);font-size:0.85rem;">Phone</span>
                     <span style="font-weight:700;color:var(--gray-800);"><?= formatPhone($payoutResult['phone']) ?></span>
@@ -165,6 +169,7 @@ include __DIR__ . '/includes/public_head.php';
         
         <form method="POST" action="">
             <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+            <input type="hidden" name="withdrawal_charge_quote" value="<?= $withdrawalCharge ?>">
             
             <div class="form-floating mb-3">
                 <input type="number" class="form-control" id="amount" name="amount" 
@@ -191,7 +196,9 @@ include __DIR__ . '/includes/public_head.php';
                 <small class="text-muted ms-1">Money will be sent to this number</small>
             </div>
             
-            <p class="text-muted small">Confirm the registered name and network below before withdrawing. Transfer fees are paid from the company Abliner wallet.</p><p id="payout-fees" class="text-muted small" aria-live="polite"></p>
+            <p class="text-muted small">Confirm the registered name and network before withdrawing.</p>
+            <p id="withdrawal-quote" class="alert alert-info small" data-charge="<?= $withdrawalCharge ?>" aria-live="polite">Withdrawal charge: <?= formatCurrency($withdrawalCharge) ?>, deducted from the requested amount.</p>
+            <label class="d-block mb-3"><input type="checkbox" id="confirm-withdrawal-terms" name="confirm_withdrawal_terms" value="1" required> I agree to the withdrawal charge and the amount I will receive.</label>
             <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn" <?= ($wallet['withdrawable_balance'] ?? 0) < app_setting('min_withdrawal', MIN_WITHDRAWAL) ? 'disabled' : '' ?>>
                 <i class="fas fa-paper-plane me-1"></i> Submit Request
             </button>
@@ -224,6 +231,7 @@ include __DIR__ . '/includes/public_head.php';
                 </div>
                 <div class="item-info">
                     <p class="item-title"><?= formatCurrency($wd['amount']) ?></p>
+                    <small>Charge: <?= formatCurrency($wd['withdrawal_charge'] ?? 0) ?> · To phone: <?= formatCurrency((float) $wd['amount'] - (float) ($wd['withdrawal_charge'] ?? 0)) ?></small>
                     <p class="item-subtitle">
                         <?= formatPhone($wd['phone']) ?> &middot; <?= timeAgo($wd['created_at']) ?>
                     </p>
@@ -259,6 +267,7 @@ document.querySelector('form').addEventListener('submit', function() {
 function setAmount(amount) {
     if (amount > maxBalance) amount = maxBalance;
     amountInput.value = amount;
+    amountInput.dispatchEvent(new Event('input', { bubbles: true }));
     document.querySelectorAll('.quick-amount-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     toggleSubmit();
@@ -266,6 +275,7 @@ function setAmount(amount) {
 
 function setMax() {
     amountInput.value = maxBalance;
+    amountInput.dispatchEvent(new Event('input', { bubbles: true }));
     document.querySelectorAll('.quick-amount-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     toggleSubmit();
@@ -297,23 +307,5 @@ function setMax() {
 </nav>
 
 <script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/recipient-lookup.js"></script>
-<script>
-(() => {
-    const amount = document.getElementById('amount');
-    const output = document.getElementById('payout-fees');
-    if (!amount || !output) return;
-    let timer, version = 0;
-    async function preview() {
-        const current = ++version;
-        const value = amount.value;
-        try {
-            const result = await (await fetch(<?= json_encode(SITE_URL . '/api/payout_preview.php?amount=') ?> + encodeURIComponent(value))).json();
-            if (current !== version || amount.value !== value) return;
-            output.textContent = result.success ? 'Estimated company transfer fee: TZS ' + Number(result.data.fee_tzs).toLocaleString() + '. You receive TZS ' + Number(value).toLocaleString() + '.' : 'Fee estimate is unavailable.';
-        } catch (error) { if (current === version) output.textContent = 'Fee estimate is unavailable.'; }
-    }
-    amount.addEventListener('input', () => { clearTimeout(timer); version++; timer = setTimeout(preview, 700); });
-    preview();
-})();
-</script>
+<script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/withdrawal-charge.js"></script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

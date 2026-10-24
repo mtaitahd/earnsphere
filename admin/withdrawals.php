@@ -190,6 +190,7 @@ include __DIR__ . '/admin_header.php';
                     </div>
                     <div class="mt-2">
                         <div style="font-size:1.25rem;font-weight:800;color:#72578B;"><?= formatCurrency($wd['amount']) ?></div>
+                        <small class="d-block">User charge: <?= formatCurrency($wd['withdrawal_charge'] ?? 0) ?> · To phone: <?= formatCurrency((float) $wd['amount'] - (float) ($wd['withdrawal_charge'] ?? 0)) ?></small>
                         <small style="color:#9ca3af;"><?= date('d M Y H:i', strtotime($wd['created_at'])) ?></small>
                         <?php if ($wd['admin_note']): ?>
                             <div class="mt-1"><small class="text-muted"><i class="fas fa-comment me-1"></i> <?= sanitize($wd['admin_note']) ?></small></div>

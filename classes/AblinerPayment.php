@@ -4,6 +4,7 @@ require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/Wallet.php';
 require_once __DIR__ . '/CommissionEngine.php';
 require_once __DIR__ . '/CommissionPlan.php';
+require_once __DIR__ . '/WithdrawalCharge.php';
 
 class AblinerPayment {
     private AblinerClient $client;
@@ -59,10 +60,12 @@ class AblinerPayment {
             'reference' => $p['gateway_reference'] ?? null, 'status' => $p['status'], 'message' => $message];
     }
 
-    public function requestWithdrawal(int $userId, float $amount, string $phone, string $expectedName = ''): array {
+    public function requestWithdrawal(int $userId, float $amount, string $phone, string $expectedName = '', ?int $expectedCharge = null): array {
         if (!$this->client->ready()) throw new RuntimeException('Abliner withdrawals are not configured yet.');
         if (!is_finite($amount) || floor($amount) !== $amount || $amount < (float) app_setting('min_withdrawal', MIN_WITHDRAWAL)
             || $amount > (float) app_setting('max_withdrawal', MAX_WITHDRAWAL)) throw new InvalidArgumentException('Enter a whole TZS amount within the withdrawal limits.');
+        $quote = WithdrawalCharge::quote($amount);
+        if ($expectedCharge !== null && $expectedCharge !== $quote['withdrawal_charge']) throw new RuntimeException('The withdrawal charge has changed. Reload the page and confirm the new amount.');
         $phone = AblinerClient::normalizePhone($phone);
         // Independently verify the recipient; never trust a browser-supplied name or network.
         $lookup = $this->client->lookup($phone);
@@ -80,18 +83,18 @@ class AblinerPayment {
             if (!$wallet || $amount > (float) $wallet['withdrawable_balance']) throw new RuntimeException('Insufficient available commission earnings.');
             $withdrawal = Database::insert('withdrawals', ['user_id' => $userId, 'amount' => $amount, 'phone' => $phone,
                 'payment_method' => 'mobile_money', 'status' => 'pending', 'gateway' => 'abliner',
-                'recipient_name' => $lookup['data']['name'], 'recipient_network' => $lookup['data']['network']]);
+                'withdrawal_charge' => $quote['withdrawal_charge'], 'recipient_name' => $lookup['data']['name'], 'recipient_network' => $lookup['data']['network']]);
             Database::update('wallets', ['withdrawable_balance' => (float) $wallet['withdrawable_balance'] - $amount,
                 'pending_amount' => (float) $wallet['pending_amount'] + $amount], 'id = ?', [$wallet['id']]);
             Database::insert('wallet_transactions', ['wallet_id' => $wallet['id'], 'user_id' => $userId, 'type' => 'withdrawal',
                 'amount' => -$amount, 'balance_before' => $wallet['balance'], 'balance_after' => $wallet['balance'],
-                'description' => 'Abliner mobile money withdrawal', 'status' => 'pending',
+                'description' => 'Mobile money withdrawal; charge TZS ' . $quote['withdrawal_charge'] . '; recipient receives TZS ' . $quote['net_amount'], 'status' => 'pending',
                 'reference_id' => $withdrawal, 'reference_type' => 'withdrawal']);
             Database::commit();
         } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }
         $result = $this->sendPayout($withdrawal, $userId, $amount, $phone, $lookup['data']['name']);
         return ['success' => true, 'withdrawal_id' => $withdrawal, 'payout_status' => $result['status'] ?? 'pending',
-            'amount' => $amount, 'phone' => $phone, 'recipient_name' => $lookup['data']['name'], 'network' => $lookup['data']['network'],
+            'amount' => $amount, 'withdrawal_charge' => $quote['withdrawal_charge'], 'net_amount' => $quote['net_amount'], 'phone' => $phone, 'recipient_name' => $lookup['data']['name'], 'network' => $lookup['data']['network'],
             'fees' => $result['fees'] ?? 0, 'reference' => $result['reference'] ?? null,
             'message' => $result['error'] ?? ($result['status'] === 'completed' ? 'Money has been sent to your mobile money account.' : 'Withdrawal is awaiting confirmation. Do not submit it again.')];
     }
@@ -109,15 +112,17 @@ class AblinerPayment {
                     'fees' => $existing['fees'], 'message' => 'Existing payout retained. Verify it; no second transfer was sent.'];
             }
             if (!in_array($wd['status'], ['pending', 'approved'], true) || empty($wd['recipient_name'])) throw new RuntimeException('Withdrawal cannot be dispatched.');
+            $netAmount = (float) $wd['amount'] - (float) ($wd['withdrawal_charge'] ?? 0);
+            if ($netAmount <= 0) throw new RuntimeException('Invalid withdrawal charge.');
             $key = 'ES-WD-' . $withdrawalId . '-' . bin2hex(random_bytes(8));
             $id = Database::insert('payouts', ['user_id' => $userId, 'withdrawal_id' => $withdrawalId,
-                'amount' => $wd['amount'], 'total' => $wd['amount'], 'channel' => 'mobile', 'provider' => $wd['recipient_network'],
+                'amount' => $netAmount, 'total' => $netAmount, 'channel' => 'mobile', 'provider' => $wd['recipient_network'],
                 'recipient_phone' => $wd['phone'], 'recipient_name' => $wd['recipient_name'], 'status' => 'pending',
                 'gateway' => 'abliner', 'idempotency_key' => $key]);
             Database::update('withdrawals', ['status' => 'processing'], 'id = ?', [$withdrawalId]);
             Database::commit();
         } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }
-        $result = $this->client->withdraw(['amount' => (int) $wd['amount'], 'method' => 'mobile', 'currency' => 'TZS',
+        $result = $this->client->withdraw(['amount' => (int) $netAmount, 'method' => 'mobile', 'currency' => 'TZS',
             'recipient' => $wd['phone'], 'reference' => $key, 'callback_url' => $this->client->callbackUrl()], $key);
         $this->handleSubmission('payouts', $id, $result);
         $payout = Database::fetchOne('SELECT * FROM payouts WHERE id = ?', [$id]);
@@ -262,7 +267,9 @@ class AblinerPayment {
         $wd = Database::fetchOne('SELECT * FROM withdrawals WHERE id = ? FOR UPDATE', [$payout['withdrawal_id']]);
         if (!$wd || $wd['gateway'] !== 'abliner' || !in_array($wd['status'], ['pending', 'approved', 'processing'], true)) throw new RuntimeException('Withdrawal hold is no longer available.');
         $wallet = Database::fetchOne('SELECT * FROM wallets WHERE user_id = ? FOR UPDATE', [$payout['user_id']]);
-        $amount = (float) $payout['amount'];
+        $amount = (float) $wd['amount']; // The held wallet debit includes the user's fixed charge.
+        $net = $amount - (float) ($wd['withdrawal_charge'] ?? 0);
+        if (abs($net - (float) $payout['amount']) > 0.001) throw new RuntimeException('Payout and withdrawal charge do not match.');
         if (!$wallet || (float) $wallet['pending_amount'] < $amount) throw new RuntimeException('Wallet hold mismatch.');
         $balanceAfter = (float) $wallet['balance'] - ($status === 'completed' ? $amount : 0);
         $values = ['pending_amount' => (float) $wallet['pending_amount'] - $amount];

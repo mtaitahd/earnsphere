@@ -8,6 +8,7 @@ require_once dirname(__DIR__) . '/config/database.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 require_once dirname(__DIR__) . '/classes/CommissionPlan.php';
+require_once dirname(__DIR__) . '/classes/WithdrawalCharge.php';
 
 Auth::initSession();
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
@@ -31,6 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Derive totals on the server; posted total/company/L3 values cannot override the two-level plan.
     try {
         $settings = array_replace($settings, CommissionPlan::fromInput($settings));
+        if (isset($settings['withdrawal_charge'])) {
+            $settings['withdrawal_charge'] = WithdrawalCharge::validate($settings['withdrawal_charge']);
+            $minimum = (float) ($settings['min_withdrawal'] ?? app_setting('min_withdrawal', MIN_WITHDRAWAL));
+            if ($settings['withdrawal_charge'] >= $minimum) throw new InvalidArgumentException('Withdrawal charge must be less than the minimum withdrawal amount.');
+        }
     } catch (InvalidArgumentException $e) {
         $error = $e->getMessage();
     }
@@ -74,15 +80,17 @@ foreach ($allSettings as $s) {
     $settingsMap[$s['setting_key']] = $s;
 }
 
-foreach (['registration_fee' => 'Registration fee (TZS)', 'commission_l1' => 'Level 1 commission (TZS)', 'commission_l2' => 'Level 2 commission (TZS)', 'commission_total' => 'Total referral commissions (automatic)', 'company_earning' => 'Company share (automatic)'] as $key => $label) {
+foreach (['registration_fee' => 'Registration fee (TZS)', 'commission_l1' => 'Level 1 commission (TZS)', 'commission_l2' => 'Level 2 commission (TZS)', 'commission_total' => 'Total referral commissions (Level 1 + Level 2)', 'company_earning' => 'Company share (automatic)'] as $key => $label) {
     $defaults = ['registration_fee' => REGISTRATION_FEE, 'commission_l1' => COMMISSION_L1, 'commission_l2' => COMMISSION_L2, 'commission_total' => 0, 'company_earning' => 0];
     $settingsMap[$key] = ['setting_value' => $settingsMap[$key]['setting_value'] ?? (string) $defaults[$key], 'description' => $label];
 }
 
+$settingsMap['withdrawal_charge'] = ['setting_value' => $settingsMap['withdrawal_charge']['setting_value'] ?? '0', 'description' => 'Fixed withdrawal charge (TZS; 0 = free)'];
+
 // Group by category
 $categories = [
     'general'  => ['site_name', 'site_tagline', 'currency', 'admin_email', 'support_phone', 'terms_url', 'privacy_url'],
-    'payment'  => ['registration_fee', 'min_withdrawal', 'max_withdrawal'],
+    'payment'  => ['registration_fee', 'min_withdrawal', 'max_withdrawal', 'withdrawal_charge'],
     'commission' => ['commission_l1', 'commission_l2', 'company_earning', 'commission_total'],
     'abliner' => ['abliner_api_key', 'abliner_webhook_secret'],
     'payout'   => ['payout_channel', 'payout_webhook_url'],
@@ -150,6 +158,7 @@ include __DIR__ . '/admin_header.php';
         </div>
     </div>
 
+    <p class="text-muted">The fixed withdrawal charge is deducted from the requested amount. For example, a TZS 5,000 withdrawal with a TZS 500 charge sends TZS 4,500 to the user.</p>
     <!-- Commission Settings -->
     <p class="text-muted">Set the registration fee and two commission amounts. Total commissions and the remaining company share update automatically. Existing payments keep their original amounts.</p>
     <div class="card mb-4">

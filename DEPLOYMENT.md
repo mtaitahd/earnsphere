@@ -72,9 +72,8 @@ do not credit user commission wallets, activate accounts or award commissions;
 registration revenue reports exclude them.
 
 Users see the registered recipient name and network and must confirm them before
-withdrawal. The server checks the name again before reserving funds. Users receive
-the requested withdrawal amount; company transfer fees come from the Abliner
-provider wallet. Fee previews are estimates. Admin reports store actual fee and
+withdrawal. The server checks the name again before reserving funds. Users receive the requested amount minus the saved user withdrawal charge.
+Provider transfer fees are separately paid from the company Abliner wallet. Fee previews are estimates. Admin reports store actual fee and
 total fields when the provider returns them.
 
 ## Checks
@@ -113,3 +112,22 @@ New payment requests retain a snapshot of their fee and commission amounts.
 Historical records and balances are retained. Existing pending requests without
 a snapshot use the current two-level plan, but stop for manual reconciliation if
 those commissions exceed the amount paid.
+
+## Fixed user withdrawal charge
+
+After pulling this update, run `php database/migrate_withdrawal_charge.php` before
+accepting withdrawals. This adds a per-withdrawal saved charge and a new admin
+setting, defaulting to zero. Existing withdrawals remain free of the new charge.
+The main Abliner migration also includes this migration for new deployments.
+
+In Admin → Settings → Payment Settings, set **Fixed withdrawal charge (TZS)**.
+Zero means free. The charge must be a whole TZS amount below the minimum withdrawal.
+For a TZS 5,000 request with a TZS 500 charge, the wallet hold/debit is TZS 5,000
+and the provider sends TZS 4,500. Provider fees remain separate company expenses.
+Users see the gross amount, charge and net amount and must explicitly confirm.
+A changed admin charge requires the user to reload and confirm before submitting.
+
+The charge is frozen on each withdrawal; future setting changes do not affect
+pending requests. Successful transfers deduct the gross amount exactly once.
+Failed transfers restore the entire gross hold, including the user charge.
+Admin and user history both show the saved charge and net amount.
