@@ -48,7 +48,7 @@ include __DIR__ . '/includes/public_head.php';
     gap: 0.35rem;
     background: rgba(16,185,129,0.25);
     color: #6ee7b7;
-    border-radius: 20px;
+    border-radius: 0;
     padding: 0.2rem 0.7rem;
     font-size: 0.65rem;
     font-weight: 800;
@@ -63,7 +63,7 @@ include __DIR__ . '/includes/public_head.php';
 .proof-ticker {
     background: rgba(255,255,255,0.12);
     border: 1px solid rgba(255,255,255,0.25);
-    border-radius: var(--radius-lg);
+    border-radius: 0;
     overflow: hidden;
     max-height: 220px;
     overflow-y: auto;
@@ -98,7 +98,7 @@ include __DIR__ . '/includes/public_head.php';
 .contest-icon {
     width: 56px;
     height: 56px;
-    border-radius: 50%;
+    border-radius: 0;
     background: rgba(212,168,67,0.2);
     color: #D4A843;
     font-size: 1.5rem;
@@ -119,7 +119,7 @@ include __DIR__ . '/includes/public_head.php';
 .lp-prize {
     background: rgba(255,255,255,0.12);
     border: 1px solid rgba(255,255,255,0.22);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     padding: 0.75rem 0.4rem;
     text-align: center;
 }
@@ -131,7 +131,7 @@ include __DIR__ . '/includes/public_head.php';
 .contest-condition {
     background: rgba(255,255,255,0.1);
     border: 1px dashed rgba(255,255,255,0.35);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     padding: 0.6rem 0.8rem;
     font-size: 0.74rem;
     color: rgba(255,255,255,0.95);
@@ -141,7 +141,7 @@ include __DIR__ . '/includes/public_head.php';
 .landing-standings {
     background: rgba(255,255,255,0.12);
     border: 1px solid rgba(255,255,255,0.22);
-    border-radius: var(--radius-lg);
+    border-radius: 0;
     padding: 1rem;
     margin-bottom: 1rem;
 }
@@ -165,7 +165,7 @@ include __DIR__ . '/includes/public_head.php';
 .ls-pos {
     width: 22px;
     height: 22px;
-    border-radius: 50%;
+    border-radius: 0;
     background: rgba(212,168,67,0.25);
     color: #D4A843;
     font-weight: 800;
@@ -190,7 +190,7 @@ include __DIR__ . '/includes/public_head.php';
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: var(--white);
     border: none;
-    border-radius: 40px;
+    border-radius: 0;
     padding: 0.7rem 1.2rem;
     font-weight: 800;
     font-size: 0.85rem;
@@ -216,7 +216,7 @@ include __DIR__ . '/includes/public_head.php';
 .help-modal-content {
     position: relative;
     background: #fff;
-    border-radius: 20px 20px 0 0;
+    border-radius: 0;
     width: 100%;
     max-width: 500px;
     max-height: 85vh;
@@ -240,7 +240,7 @@ include __DIR__ . '/includes/public_head.php';
 .help-modal-header-icon {
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: 0;
     background: #f0ebf5;
     color: var(--primary);
     display: flex;
@@ -257,7 +257,7 @@ include __DIR__ . '/includes/public_head.php';
 .help-modal-close {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: 0;
     border: none;
     background: var(--gray-100);
     color: var(--gray-500);
@@ -273,6 +273,13 @@ include __DIR__ . '/includes/public_head.php';
     font-size: 0.82rem;
     color: var(--gray-500);
     margin: 0 0 1rem;
+}
+/* Square landing page controls and cards. */
+.landing-hero .brand-icon,
+.btn,
+.form-floating .form-control,
+.form-floating .form-select {
+    border-radius: 0;
 }
 </style>
 
@@ -407,7 +414,7 @@ include __DIR__ . '/includes/public_head.php';
             </div>
 
             <div id="helpSuccessWrap" style="display:none;text-align:center;padding:1.5rem 0;">
-                <div style="width:64px;height:64px;border-radius:50%;background:#e8f9f0;color:#1CC88A;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 1rem;">
+                <div style="width:64px;height:64px;border-radius: 0;background:#e8f9f0;color:#1CC88A;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 1rem;">
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <h5 style="font-weight:800;color:var(--gray-800);">Message Sent!</h5>
