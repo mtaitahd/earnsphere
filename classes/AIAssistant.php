@@ -265,9 +265,9 @@ class AIAssistant {
 
         $siteName = app_setting('site_name', 'EarnSphere');
         $regFee = (int) app_setting('registration_fee', 11500);
-        $commL1 = (int) app_setting('commission_l1', 2500);
-        $commL2 = (int) app_setting('commission_l2', 1500);
-        $commL3 = (int) app_setting('commission_l3', 1000);
+        $commL1 = (int) app_setting('commission_l1', COMMISSION_L1);
+        $commL2 = (int) app_setting('commission_l2', COMMISSION_L2);
+        $commL3 = 0; // Compatibility parameter; new promotions describe two commission levels only.
         $refLink = getReferralLink($user['referral_code']);
         $userName = $user['full_name'];
         $refCode = $user['referral_code'];
@@ -456,7 +456,6 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $co = self::number($ctx['combo']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
@@ -467,13 +466,13 @@ class AIAssistant {
 
         return [
             "Join $site today for just TZS $f and earn TZS $c1 per Level 1 referral!",
-            "Only TZS $f to start. Earn TZS $c1 per referral plus TZS $c2 at Level 2 and TZS $c3 at Level 3.",
+            "Only TZS $f to start. Earn TZS $c1 per referral plus TZS $c2 at Level 2.",
             "Turn TZS $f into TZS $m+ monthly. Refer friends, earn up to TZS $c1 per person.",
             "Make TZS $c1 per referral with $site. One-time fee of just TZS $f.",
             "Your earning potential: TZS $c1 per person × your network = unlimited income.",
-            "3 levels of commissions: TZS $c1 → TZS $c2 → TZS $c3. Your entire network works for you.",
+            "2 levels of commissions: TZS $c1 → TZS $c2. Your entire network works for you.",
             "TZS $f unlocks a TZS $p+ earning potential. That's $site.",
-            "Level 1: TZS $c1, Level 2: TZS $c2, Level 3: TZS $c3. Every referral counts.",
+            "Level 1: TZS $c1, Level 2: TZS $c2. Every referral counts.",
             "Imagine earning TZS $w this week just by sharing your link. That's $site.",
             "Refer 10 friends → TZS " . self::number(10 * $ctx['commL1']) . "  Refer 50 friends → TZS " . self::number(50 * $ctx['commL1']) . ". Start with TZS $f.",
             "A one-time TZS $f investment that pays TZS $c1 every time you refer someone. That's $site.",
@@ -491,7 +490,6 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $co = self::number($ctx['combo']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
@@ -502,13 +500,13 @@ class AIAssistant {
 
         return [
             "Jiunge na $site kwa TZS $f tu na pata TZS $c1 kwa kila mwaliko wa ngazi ya 1!",
-            "TZS $f pekee kuanza. Pata TZS $c1 ngazi 1, TZS $c2 ngazi 2, TZS $c3 ngazi 3.",
-            "Badilisha TZS $f hadi TZS $m+ kwa mwezi. Ngazi 3 za commission: $c1 → $c2 → $c3.",
-            "Pata TZS $c1 kwa kila mwaliko wa moja kwa moja. Pia TZS $c2 na TZS $c3 kwa wanaokuja baada yako.",
+            "TZS $f pekee kuanza. Pata TZS $c1 ngazi 1, TZS $c2 ngazi 2.",
+            "Badilisha TZS $f hadi TZS $m+ kwa mwezi. Ngazi 2 za commission: $c1 → $c2.",
+            "Pata TZS $c1 kwa kila mwaliko wa moja kwa moja. Pia TZS $c2 kwa wanaokuja baada yako.",
             "Uwezo wako: TZS $c1 × mtandao wako mzima = mapato yasiyo na mwisho.",
-            "$site inakupa $c1 ngazi ya 1, $c2 ngazi ya 2, $c3 ngazi ya 3. Watu wako wote wanakufanyia kazi!",
+            "$site inakupa $c1 ngazi ya 1, $c2 ngazi ya 2. Watu wako wote wanakufanyia kazi!",
             "Fikiria kupata TZS $w wiki hii, TZS $m mwezi huu, TZS $y mwaka huu. Yote kuanzia TZS $f!",
-            "Kila mtu unayemwalika $site anakuletea TZS $c1. Na watu wanaokuja kupitia kwao wanakuletea TZS $c2 na $c3.",
+            "Kila mtu unayemwalika $site anakuletea TZS $c1. Na watu wanaokuja kupitia kwao wanakuletea TZS $c2.",
             "TZS $f tu kufungua mlango wa mapato ya TZS $p+ kwa uwezo wako.",
             "Kompyuta yako ni kiwanda chako cha pesa. $site inakupa zana. Anza leo kwa TZS $f.",
             "Usisubiri kesho. $site inakupa TZS $c1 kwa kila mwaliko. Anza leo!",
@@ -526,7 +524,6 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $co = self::number($ctx['combo']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
@@ -539,7 +536,7 @@ class AIAssistant {
             "Anza na TZS $f, earn TZS $c1 per referral. Simple right?",
             "Una withdraw M-Pesa instantly. That's the beauty of $site.",
             "Pata TZS $c1 per referral, level 2 inakupa TZS $c2 extra. Hii ni fursa!",
-            "3 level commission: $c1 Level 1, $c2 Level 2, $c3 Level 3. Your network inakufanyia kazi!",
+            "2 level commission: $c1 Level 1, $c2 Level 2. Your network inakufanyia kazi!",
             "TZS $w per week inawezekana. TZS $m per month. Anza na TZS $f tu!",
             "TZS $f tu kuanza, then you're in business. TZS $c1 per referral!",
             "$site ni legit! Withdraw M-Pesa/Airtel. Pata TZS $c1 kwa kila mwaliko.",
@@ -948,7 +945,6 @@ class AIAssistant {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $f = self::number($ctx['regFee']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
@@ -960,13 +956,13 @@ class AIAssistant {
                 "Ndiyo, pesa unazotoa M-Pesa au Airtel. Hakuna vikwazo. Unaweza kutoa wakati wowote baada ya kupata commission.",
                 "Hii si scam! $site ni jukwaa halali la Tanzania. Wanachama wanaondoa pesa zao kila siku kupitia M-Pesa/Airtel. Unapata TZS $c1 kwa kila mwaliko.",
                 "Kujiunga ni hatua 3 tu: 1) Lipa TZS $f mara moja, 2) Pata link yako, 3) Anza kushare na marafiki. Kila mtu = TZS $c1 kwako!",
-                "Unaweza kupata kiasi gani? Kwa kila mtu unayemwalika unapata TZS $c1. Watu 5 = TZS " . self::number(5 * $ctx['commL1']) . ". Watu 10 = TZS " . self::number(10 * $ctx['commL1']) . ". Pia unapata TZS $c2 na TZS $c3 kwa wanaokuja kupitia kwao.",
+                "Unaweza kupata kiasi gani? Kwa kila mtu unayemwalika unapata TZS $c1. Watu 5 = TZS " . self::number(5 * $ctx['commL1']) . ". Watu 10 = TZS " . self::number(10 * $ctx['commL1']) . ". Pia unapata TZS $c2 kwa wanaokuja kupitia kwao.",
                 "Muda? Watu wengi wanaanza kuona mapato ndani ya wiki ya kwanza baada ya kualika marafiki. Ni suala la kushare link yako tu!",
                 "Ndiyo, unaweza kufanya hii nikiwa na kazi! Watu wengi wanafanya $site kama kazi ya ziada. Unatumia muda wako wa ziada tu.",
                 "Hakuna ujuzi maalum unaohitajika. Unachohitaji ni simu, nia ya kushare, na TZS $f kwa ajili ya kujiunga.",
                 "Kuhusu ushahidi - kuna wanachama wengi ambao wameshaondoa pesa zao. $site ina mfumo wa malipo ya moja kwa moja kwenye M-Pesa/Airtel. Unaweza kuanza na marafiki wachache tu.",
                 "Tofauti na biashara nyingine, hakuna malipo ya kila mwezi. TZS $f ni mara moja tu. Ukialika watu 2-3 tu, tayari umepata faida.",
-                "Ndiyo, pia unapata commission kutoka kwa watu wanaokuja kupitia kwa marafiki wako! Ngazi 2: TZS $c2, Ngazi 3: TZS $c3. Mtandao wako wote unakufanyia kazi.",
+                "Ndiyo, pia unapata commission kutoka kwa watu wanaokuja kupitia kwa marafiki wako! Ngazi 2: TZS $c2. Mtandao wako wote unakufanyia kazi.",
                 "Usijali, siwezi kukulazimisha. Lakini kama unataka kujifunza zaidi, nitakutumia maelezo kamili kuhusu jinsi $site inavyofanya kazi. 😊",
                 "Kwa swali lako, nikutumie screenshot/maelezo zaidi? Niko hapa kukusaidia kuelewa kabisa kabla ya kuamua.",
             ]);
@@ -977,13 +973,13 @@ class AIAssistant {
             "Yes, you withdraw to M-Pesa or Airtel. No restrictions. Withdraw anytime after earning commissions.",
             "This isn't a scam! $site is a legitimate Tanzanian platform. Members withdraw daily to M-Pesa/Airtel. You earn TZS $c1 per referral.",
             "Joining is just 3 steps: 1) Pay TZS $f once, 2) Get your link, 3) Share with friends. Every person = TZS $c1 for you!",
-            "How much can you earn? TZS $c1 per direct referral. 5 people = TZS " . self::number(5 * $ctx['commL1']) . ". 10 people = TZS " . self::number(10 * $ctx['commL1']) . ". Plus TZS $c2 and TZS $c3 from their referrals.",
+            "How much can you earn? TZS $c1 per direct referral. 5 people = TZS " . self::number(5 * $ctx['commL1']) . ". 10 people = TZS " . self::number(10 * $ctx['commL1']) . ". Plus TZS $c2 from their referrals.",
             "Timeline? Most people see their first earnings within the first week of sharing their link.",
             "Yes, you can do this alongside a job! Most members treat $site as a side hustle using spare time.",
             "No special skills needed. Just a phone, willingness to share, and TZS $f to join.",
             "Proof? Many members have already withdrawn. $site pays directly to M-Pesa/Airtel. Start with a few friends.",
             "Unlike other businesses, there are no monthly fees. TZS $f is one-time. Invite 2-3 people and you've made it back.",
-            "Yes, you also earn from people your referrals bring! Level 2: TZS $c2, Level 3: TZS $c3. Your whole network works for you.",
+            "Yes, you also earn from people your referrals bring! Level 2: TZS $c2. Your whole network works for you.",
             "No pressure. If you'd like, I can send you full details on how $site works. 😊",
             "For your question, should I send more details or screenshots? I'm here to help you understand fully.",
         ]);
@@ -993,7 +989,6 @@ class AIAssistant {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $f = self::number($ctx['regFee']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
@@ -1005,7 +1000,7 @@ class AIAssistant {
                 "\"Sina pesa sasa hivi\" - Naelewa! Lakini fikiria hivi: TZS $f ni kama bei ya chakula kimoja. Na kurudi kwake ni TZS $c1 kwa kila mtu unayemwalika. Unaweza kuanza na TZS $f inayopatikana.",
                 "\"Hii ni kama ukora/miraa\" - Hapana! $site ni tofauti. Inalipa wanachama kwa kazi halisi ya kualika. Hakuna ahadi ya kupata bila kufanya chochote - unapata kwa kufanya kazi ya kushare link.",
                 "\"Nimeshachomwa na mifumo mingine\" - Naelewa hisia zako, na ni sawa kuwa makini. Lakini tofauti: $site ina malipo ya mara moja pekee, hakuna mzunguko wa pesa za watu, na unaweza kutoa pesa zako M-Pesa/Airtel.",
-                "\"Sina watu wa kuwaalika\" - Hata marafiki 5 tu wa karibu wanatosha kuanza! Kila mmoja anakuletea TZS $c1. Na pia unapata $c2 na $c3 kutoka kwa watu wanaokuja kupitia kwao.",
+                "\"Sina watu wa kuwaalika\" - Hata marafiki 5 tu wa karibu wanatosha kuanza! Kila mmoja anakuletea TZS $c1. Na pia unapata $c2 kutoka kwa watu wanaokuja kupitia kwao.",
                 "\"Nitaona baadaye\" - Nakuelewa. Lakini kumbuka, fursa hii inapatikana sasa. Kadiri unavyoanza mapema, ndivyo mapato yako yanaanza mapema. Kila siku ya kuchelewa ni TZS $c1× marafiki wako.",
                 "\"Hii ni ngumu sana\" - Kinyume chake! Unachohitaji ni kushare link yako. Hakuna ujuzi wa teknolojia. Ukishajiunga, utapata maelezo ya hatua kwa hatua.",
                 "\"Nahisi ni ya kudanganya\" - Ni haki kuuliza! Hapa kuna mambo 3: 1) Hakuna ada za kila mwezi, 2) Unatoa pesa zako M-Pesa/Airtel, 3) Unapata TZS $c1 kwa kila mwaliko halisi. Hakuna mzunguko wa pesa.",
@@ -1022,7 +1017,7 @@ class AIAssistant {
             "\"I don't have money right now\" - I understand! But think: TZS $f is like the price of one meal. The return is TZS $c1 per referral. You can start small.",
             "\"This is like a pyramid scheme\" - No! $site is different. It pays members for real referral work. There's no money circle - you earn by sharing your link.",
             "\"I've been burned by other systems\" - I understand your caution, and it's smart. But $site has only one-time payments, no money circulation, and direct withdrawal to M-Pesa/Airtel.",
-            "\"I don't know people to invite\" - Just 5 close friends are enough to start! Each brings TZS $c1. Plus you earn TZS $c2 and TZS $c3 from their referrals.",
+            "\"I don't know people to invite\" - Just 5 close friends are enough to start! Each brings TZS $c1. Plus you earn TZS $c2 from their referrals.",
             "\"I'll see later\" - I get it. But this opportunity is available now. The earlier you start, the sooner your income begins. Every day of delay is TZS $c1 × your friends.",
             "\"It's too complicated\" - Quite the opposite! All you do is share your link. No tech skills. Step-by-step guidance after joining.",
             "\"It feels like a scam\" - Fair question! Three reasons it's not: 1) No monthly fees, 2) Direct withdrawal to M-Pesa/Airtel, 3) You earn TZS $c1 per real referral.",
@@ -1046,8 +1041,8 @@ class AIAssistant {
             ? "$site ni jukwaa la Tanzania linalokulipa kwa kualika marafiki. Kwa malipo ya mara moja ya TZS $f tu, unaanza kupata commission kwa kila mtu."
             : "$site is a Tanzanian platform that pays you for inviting friends. For a one-time fee of TZS $f, you earn commissions on every person.";
         $body2 = $sw
-            ? "Ngazi 1: TZS $c1 kwa kila mwaliko. Ngazi 2: TZS " . self::number($ctx['commL2']) . ". Ngazi 3: TZS " . self::number($ctx['commL3']) . ". Watu wanaokuja kupitia kwao wanakuletea wewe commission!"
-            : "Level 1: TZS $c1 per direct referral. Level 2: TZS " . self::number($ctx['commL2']) . ". Level 3: TZS " . self::number($ctx['commL3']) . ". You earn from your entire network!";
+            ? "Ngazi 1: TZS $c1 kwa kila mwaliko. Ngazi 2: TZS " . self::number($ctx['commL2']) . ". Watu wanaokuja kupitia kwao wanakuletea wewe commission!"
+            : "Level 1: TZS $c1 per direct referral. Level 2: TZS " . self::number($ctx['commL2']) . ". You earn from your entire network!";
         $cta = $sw ? "Bonyeza link kwenye description. Jiunge. Anza kupata leo!" : "Click the link in description. Join. Start earning today!";
         $outro = $sw ? "Kumboka: Withdraw M-Pesa/Airtel. Hakuna vikwazo." : "Remember: Withdraw to M-Pesa/Airtel. No restrictions.";
         return "[INTRO HOOK]\n$intro $e\n\n[SCENE 1 - WHAT IS $site]\n$body1\n\n[SCENE 2 - COMMISSION STRUCTURE]\n$body2\n\n[SCENE 3 - PROOF / TESTIMONIAL]\nPeople are earning TZS $w per week from home!\n\n[OUTRO - CTA]\n$cta\n\n[END SCREEN]\n$outro\n\n📲 $link";
@@ -1119,8 +1114,8 @@ class AIAssistant {
         $f = self::number($ctx['regFee']);
         $m = self::number($ctx['monthly']);
         $desc = $sw
-            ? "Pata mapato ya ziada kwa $site! Jiunge kwa TZS $f tu, pata TZS $c1 kwa kila mwaliko (Ngazi 1), TZS " . self::number($ctx['commL2']) . " (Ngazi 2), TZS " . self::number($ctx['commL3']) . " (Ngazi 3). Withdraw M-Pesa/Airtel. Anza leo!"
-            : "Earn extra income with $site! Join for TZS $f, earn TZS $c1 per referral (Level 1), TZS " . self::number($ctx['commL2']) . " (Level 2), TZS " . self::number($ctx['commL3']) . " (Level 3). Withdraw to M-Pesa/Airtel. Start today!";
+            ? "Pata mapato ya ziada kwa $site! Jiunge kwa TZS $f tu, pata TZS $c1 kwa kila mwaliko (Ngazi 1), TZS " . self::number($ctx['commL2']) . " (Ngazi 2). Withdraw M-Pesa/Airtel. Anza leo!"
+            : "Earn extra income with $site! Join for TZS $f, earn TZS $c1 per referral (Level 1), TZS " . self::number($ctx['commL2']) . " (Level 2). Withdraw to M-Pesa/Airtel. Start today!";
         if (mb_strlen($desc) > 160) $desc = mb_substr($desc, 0, 157) . '...';
         return $desc;
     }
@@ -1129,7 +1124,6 @@ class AIAssistant {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $f = self::number($ctx['regFee']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
@@ -1138,7 +1132,7 @@ class AIAssistant {
         $h = $sw ? "Pata Mapato Ya Ziada Kwa Kushare Link" : "Earn Extra Income by Sharing a Link";
         $sh = $sw ? "Jiunge na $site kwa TZS $f tu na anza kupata TZS $c1 kwa kila mwaliko" : "Join $site for just TZS $f and start earning TZS $c1 per referral";
         $feat1 = $sw ? "✅ Malipo ya mara moja TZS $f - Hakuna ada za kila mwezi" : "✅ One-time payment TZS $f - No monthly fees";
-        $feat2 = $sw ? "✅ Commission ngazi 3: $c1 → $c2 → $c3" : "✅ 3-level commission: $c1 → $c2 → $c3";
+        $feat2 = $sw ? "✅ Commission ngazi 2: $c1 → $c2" : "✅ 2-level commission: $c1 → $c2";
         $feat3 = $sw ? "✅ Withdraw M-Pesa / Airtel Money - Papo hapo" : "✅ Instant withdrawal M-Pesa / Airtel Money";
         $feat4 = $sw ? "✅ Hakuna ujuzi wa teknolojia unaohitajika" : "✅ No technical skills required";
         $social = $sw
@@ -1147,9 +1141,9 @@ class AIAssistant {
         $link = $ctx['link'];
         $cta = $sw ? "ANZA SASA - Jiunge Kwa TZS $f Tu" : "START NOW - Join For Only TZS $f";
         if ($sw) {
-            return "HERO SECTION\n══════════\n\"$h\"\n\n$sh\n\n[$cta]\n\n---\n\nFEATURES & BENEFITS\n══════════════════\n$feat1\n$feat2\n$feat3\n$feat4\n\n---\n\nHOW IT WORKS\n══════════════\n1. Jiunge kwa TZS $f\n2. Pata link yako ya kipekee\n3. Share na marafiki\n4. Pata TZS $c1 kwa kila mtu!\n\n---\n\nSOCIAL PROOF\n══════════════\n$social\n\n---\n\nCOMMISSION STRUCTURE\n════════════════════\nLevel 1: TZS $c1\nLevel 2: TZS $c2\nLevel 3: TZS $c3\n\n---\n\nFAQ\n════\nJe, hii ni halali? Ndiyo, $site ni jukwaa halali la Tanzania.\nJe, nahakikishaje kupata pesa? Ukialika watu, unapata commission. Rahisi.\nJe, naweza kutoa pesa wakati wowote? Ndiyo, M-Pesa/Airtel.\n\n---\n\nFINAL CTA\n══════════\n\"$e Usikose Fursa Hii! $e\"\n\n👉 $link";
+            return "HERO SECTION\n══════════\n\"$h\"\n\n$sh\n\n[$cta]\n\n---\n\nFEATURES & BENEFITS\n══════════════════\n$feat1\n$feat2\n$feat3\n$feat4\n\n---\n\nHOW IT WORKS\n══════════════\n1. Jiunge kwa TZS $f\n2. Pata link yako ya kipekee\n3. Share na marafiki\n4. Pata TZS $c1 kwa kila mtu!\n\n---\n\nSOCIAL PROOF\n══════════════\n$social\n\n---\n\nCOMMISSION STRUCTURE\n════════════════════\nLevel 1: TZS $c1\nLevel 2: TZS $c2\n\n---\n\nFAQ\n════\nJe, hii ni halali? Ndiyo, $site ni jukwaa halali la Tanzania.\nJe, nahakikishaje kupata pesa? Ukialika watu, unapata commission. Rahisi.\nJe, naweza kutoa pesa wakati wowote? Ndiyo, M-Pesa/Airtel.\n\n---\n\nFINAL CTA\n══════════\n\"$e Usikose Fursa Hii! $e\"\n\n👉 $link";
         }
-        return "HERO SECTION\n══════════\n\"$h\"\n\n$sh\n\n[$cta]\n\n---\n\nFEATURES & BENEFITS\n══════════════════\n$feat1\n$feat2\n$feat3\n$feat4\n\n---\n\nHOW IT WORKS\n══════════════\n1. Join for TZS $f\n2. Get your unique referral link\n3. Share with friends\n4. Earn TZS $c1 per person!\n\n---\n\nSOCIAL PROOF\n══════════════\n$social\n\n---\n\nCOMMISSION STRUCTURE\n════════════════════\nLevel 1: TZS $c1\nLevel 2: TZS $c2\nLevel 3: TZS $c3\n\n---\n\nFAQ\n════\nIs this legitimate? Yes, $site is a legitimate Tanzanian platform.\nHow do I get paid? Invite people, earn commissions. Simple.\nCan I withdraw anytime? Yes, to M-Pesa/Airtel.\n\n---\n\nFINAL CTA\n══════════\n\"$e Don't Miss This Opportunity! $e\"\n\n👉 $link";
+        return "HERO SECTION\n══════════\n\"$h\"\n\n$sh\n\n[$cta]\n\n---\n\nFEATURES & BENEFITS\n══════════════════\n$feat1\n$feat2\n$feat3\n$feat4\n\n---\n\nHOW IT WORKS\n══════════════\n1. Join for TZS $f\n2. Get your unique referral link\n3. Share with friends\n4. Earn TZS $c1 per person!\n\n---\n\nSOCIAL PROOF\n══════════════\n$social\n\n---\n\nCOMMISSION STRUCTURE\n════════════════════\nLevel 1: TZS $c1\nLevel 2: TZS $c2\n\n---\n\nFAQ\n════\nIs this legitimate? Yes, $site is a legitimate Tanzanian platform.\nHow do I get paid? Invite people, earn commissions. Simple.\nCan I withdraw anytime? Yes, to M-Pesa/Airtel.\n\n---\n\nFINAL CTA\n══════════\n\"$e Don't Miss This Opportunity! $e\"\n\n👉 $link";
     }
 
     private static function generateHomepageHero(bool $sw, bool $mixed, array $ctx, array $tw): string {
@@ -1157,15 +1151,14 @@ class AIAssistant {
         $c1 = self::number($ctx['commL1']);
         $link = $ctx['link'];
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $f = self::number($ctx['regFee']);
         $e = self::pick($tw['emoji']);
         $headline = $sw
             ? self::pick(["Pata Mapato Kwa Kushare Link", "Kipato Chako Cha Ziada Kiko Hapa", "Badilisha Maisha Yako Leo", "Fursa Yako Ya Kipato Cha Ziada"])
             : self::pick(["Earn Income By Sharing Links", "Your Extra Income Starts Here", "Change Your Life Today", "Your Opportunity For Extra Income"]);
         $sub = $sw
-            ? "$site inakupa TZS $c1 kwa kila mtu unayemwalika. Level 2: $c2, Level 3: $c3. Withdraw M-Pesa."
-            : "$site gives you TZS $c1 per referral. Level 2: $c2, Level 3: $c3. Withdraw to M-Pesa.";
+            ? "$site inakupa TZS $c1 kwa kila mtu unayemwalika. Level 2: $c2. Withdraw M-Pesa."
+            : "$site gives you TZS $c1 per referral. Level 2: $c2. Withdraw to M-Pesa.";
         $cta = $sw ? "Jiunge Sasa - TZS $f Tu" : "Join Now - Only TZS $f";
         $support = $sw ? "Wanachama 500+ Tanzania" : "500+ Members in Tanzania";
         return "\"HERO SECTION\"\n\n\"$headline\" $e\n\n$sub\n\n[$cta]\n\n$support\n\n📲 $link";
@@ -1175,7 +1168,6 @@ class AIAssistant {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $f = self::number($ctx['regFee']);
         $w = self::number($ctx['weekly']);
         $m = self::number($ctx['monthly']);
@@ -1188,8 +1180,8 @@ class AIAssistant {
             ? "1. Jiunge kwa TZS $f (malipo ya mara moja)\n2. Pata link yako mwenyewe\n3. Anza kushare na marafiki\n4. Pata TZS $c1 kwa kila mtu anayejiunga!"
             : "1. Join for TZS $f (one-time payment)\n2. Get your own referral link\n3. Start sharing with friends\n4. Earn TZS $c1 for every person who joins!";
         $comm = $sw
-            ? "Ngazi 1: TZS $c1 | Ngazi 2: TZS $c2 | Ngazi 3: TZS $c3"
-            : "Level 1: TZS $c1 | Level 2: TZS $c2 | Level 3: TZS $c3";
+            ? "Ngazi 1: TZS $c1 | Ngazi 2: TZS $c2"
+            : "Level 1: TZS $c1 | Level 2: TZS $c2";
         $test = $sw
             ? "\"Nilijiunga wiki 3 zilizopita na nashapata TZS $w kwa wiki!\" - Asha"
             : "\"I joined 3 weeks ago I'm earning TZS $w per week!\" - Sarah";
@@ -1202,14 +1194,13 @@ class AIAssistant {
         $site = $ctx['siteName'];
         $c1 = self::number($ctx['commL1']);
         $c2 = self::number($ctx['commL2']);
-        $c3 = self::number($ctx['commL3']);
         $f = self::number($ctx['regFee']);
         $link = $ctx['link'];
         if ($sw) {
             return "\"Maswali Ya Kawaida - $site\"\n\n" .
                    "\"Swali: $site ni nini?\"\nJibu: $site ni jukwaa la Tanzania linalokulipa kwa kuwalika marafiki kujiunga. Unapata commission kwa kila mtu unayemleta kwenye mfumo.\n\n" .
                    "\"Swali: Nahitaji pesa ngapi kuanza?\"\nJibu: TZS $f tu - malipo ya mara moja. Hakuna ada za kila mwezi wala ada zilizofichwa.\n\n" .
-                   "\"Swali: Napata kiasi gani kwa kila mtu?\"\nJibu: Ngazi 1: TZS $c1, Ngazi 2: TZS $c2, Ngazi 3: TZS $c3. Unapata commission kutoka kwa watu wote unaowalika na wanaokuja kupitia kwao.\n\n" .
+                   "\"Swali: Napata kiasi gani kwa kila mtu?\"\nJibu: Ngazi 1: TZS $c1, Ngazi 2: TZS $c2. Unapata commission kutoka kwa watu wote unaowalika na wanaokuja kupitia kwao.\n\n" .
                    "\"Swali: Je, hii ni halali?\"\nJibu: Ndiyo! $site ni jukwaa halali la Tanzania linalofanya kazi kwa kufuata sheria za biashara za Tanzania.\n\n" .
                    "\"Swali: Naondoa pesa vipi?\"\nJibu: Withdraw moja kwa moja M-Pesa au Airtel Money. Kiasi cha chini cha withdrawal ni TZS 5,000.\n\n" .
                    "\"Swali: Nahitaji ujuzi gani?\"\nJibu: Hakuna ujuzi maalum unaohitajika. Unachohitaji ni simu na nia ya kushare link yako.\n\n" .
@@ -1219,7 +1210,7 @@ class AIAssistant {
         return "\"Frequently Asked Questions - $site\"\n\n" .
                "\"Q: What is $site?\"\nA: $site is a Tanzanian referral platform that pays you for inviting friends to join. You earn commissions for every person you bring to the platform.\n\n" .
                "\"Q: How much do I need to start?\"\nA: Just TZS $f - a one-time payment. No monthly fees or hidden charges.\n\n" .
-               "\"Q: How much do I earn per person?\"\nA: Level 1: TZS $c1, Level 2: TZS $c2, Level 3: TZS $c3. You earn from everyone you invite PLUS those they invite.\n\n" .
+               "\"Q: How much do I earn per person?\"\nA: Level 1: TZS $c1, Level 2: TZS $c2. You earn from everyone you invite PLUS those they invite.\n\n" .
                "\"Q: Is this legitimate?\"\nA: Yes! $site is a legitimate Tanzanian platform operating under Tanzanian business regulations.\n\n" .
                "\"Q: How do I withdraw?\"\nA: Direct withdrawal to M-Pesa or Airtel Money. Minimum withdrawal is TZS 5,000.\n\n" .
                "\"Q: What skills do I need?\"\nA: No special skills required. Just a phone and willingness to share your referral link.\n\n" .

@@ -3,6 +3,7 @@ require_once __DIR__ . '/AblinerClient.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/Wallet.php';
 require_once __DIR__ . '/CommissionEngine.php';
+require_once __DIR__ . '/CommissionPlan.php';
 
 class AblinerPayment {
     private AblinerClient $client;
@@ -23,6 +24,8 @@ class AblinerPayment {
 
     private function startDeposit(int $userId, string $phone, float $amount, string $purpose): array {
         if (!$this->client->ready()) return ['success' => false, 'error' => 'Abliner payments are not configured yet. Contact support.'];
+        $plan = $purpose === 'registration' ? CommissionPlan::values() : null;
+        if ($plan) $amount = (float) $plan['registration_fee'];
         $phone = AblinerClient::normalizePhone($phone);
         if (!is_finite($amount) || $amount < 500 || $amount > 3000000 || floor($amount) !== $amount) return ['success' => false, 'error' => 'Enter a whole TZS amount from 500 to 3,000,000.'];
         Database::beginTransaction();
@@ -39,7 +42,8 @@ class AblinerPayment {
             $order = 'ES-' . bin2hex(random_bytes(12));
             $id = Database::insert('payments', ['user_id' => $userId, 'order_id' => $order, 'amount' => $amount,
                 'currency' => 'TZS', 'phone' => $phone, 'payment_method' => 'mobile_money', 'status' => 'pending',
-                'gateway' => 'abliner', 'idempotency_key' => $order, 'purpose' => $purpose]);
+                'gateway' => 'abliner', 'idempotency_key' => $order, 'purpose' => $purpose,
+                'metadata' => json_encode($plan ? ['commission_plan' => $plan] : [])]);
             Database::commit();
         } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }
         $result = $this->client->deposit(['amount' => (int) $amount, 'method' => 'mobile', 'currency' => 'TZS',
@@ -121,13 +125,20 @@ class AblinerPayment {
             'fees' => $payout['fees'], 'error' => $result['error'] ?? null];
     }
 
+    private function metadata(array $row, array $provider): string {
+        $stored = json_decode($row['metadata'] ?? '{}', true) ?: [];
+        unset($provider['commission_plan']);
+        if (isset($stored['commission_plan'])) $provider['commission_plan'] = $stored['commission_plan'];
+        return json_encode($provider, JSON_THROW_ON_ERROR);
+    }
+
     private function handleSubmission(string $table, int $id, array $result): void {
         if ($result['success']) {
             // An accepted request is never sufficient to credit the wallet. Validate all fields.
             $this->applyTransaction($table, $id, $result['data']);
         } elseif (!empty($result['uncertain'])) {
             // A timeout, 5xx or transaction_id may mean a transfer exists. Keep the hold.
-            Database::update($table, ['metadata' => json_encode(['code' => $result['code'], 'message' => $result['error'],
+            Database::update($table, ['metadata' => $this->metadata(Database::fetchOne("SELECT * FROM $table WHERE id = ?", [$id]), ['code' => $result['code'], 'message' => $result['error'],
                 'transaction_id' => $result['transaction_id'] ?? null])], 'id = ? AND status = ?', [$id, 'pending']);
         } else {
             Database::beginTransaction();
@@ -135,7 +146,7 @@ class AblinerPayment {
                 $row = Database::fetchOne("SELECT * FROM $table WHERE id = ? FOR UPDATE", [$id]);
                 if ($row['status'] === 'pending') {
                     if ($table === 'payouts') $this->settleWithdrawal($row, 'failed');
-                    Database::update($table, ['status' => 'failed', 'metadata' => json_encode(['code' => $result['code'], 'message' => $result['error']])], 'id = ?', [$id]);
+                    Database::update($table, ['status' => 'failed', 'metadata' => $this->metadata($row, ['code' => $result['code'], 'message' => $result['error']])], 'id = ?', [$id]);
                 }
                 Database::commit();
             } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }
@@ -215,7 +226,7 @@ class AblinerPayment {
                 if (!$nested) Database::commit();
                 return; // Duplicate terminal events and late pending/failed events cannot change balances.
             }
-            $changes = ['gateway_id' => $data['id'], 'status' => $status, 'metadata' => json_encode($data)];
+            $changes = ['gateway_id' => $data['id'], 'status' => $status, 'metadata' => $this->metadata($row, $data)];
             if ($table === 'payments') {
                 $changes['gateway_reference'] = $data['reference'] ?? $row['gateway_reference'];
                 $changes['transaction_ref'] = $data['reference'] ?? $row['transaction_ref'];
@@ -225,7 +236,10 @@ class AblinerPayment {
                     if (!$user) throw new RuntimeException('Payment user not found.');
                     if ($user['status'] === 'pending') {
                         Database::update('users', ['status' => 'active'], 'id = ?', [$row['user_id']]);
-                        CommissionEngine::processRegistrationCommissions((int) $row['user_id']);
+                        $stored = json_decode($row['metadata'] ?? '{}', true) ?: [];
+                        $plan = $stored['commission_plan'] ?? CommissionPlan::values();
+                        if ((int) $plan['commission_l1'] + (int) $plan['commission_l2'] > (float) $row['amount']) throw new RuntimeException('Commission amounts exceed this older payment. Manual reconciliation required.');
+                        CommissionEngine::processRegistrationCommissions((int) $row['user_id'], $plan);
                         Database::insert('abliner_notifications', ['payment_id' => $row['id'], 'user_id' => $row['user_id'], 'amount' => $row['amount']]);
                     } elseif ($user['status'] !== 'active') throw new RuntimeException('Account cannot be activated automatically.');
                 }

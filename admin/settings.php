@@ -7,6 +7,7 @@
 require_once dirname(__DIR__) . '/config/database.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
+require_once dirname(__DIR__) . '/classes/CommissionPlan.php';
 
 Auth::initSession();
 if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
@@ -14,7 +15,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') 
     exit;
 }
 
-$success = '';
+$success = getFlash('success') ?? '';
 $error = '';
 
 // Handle settings update
@@ -27,49 +28,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($settings[$secret]) && trim((string) $settings[$secret]) === '') unset($settings[$secret]);
     }
 
-    // Commission validation
-    $regFee    = (int)($settings['registration_fee'] ?? 0);
-    $company   = (int)($settings['company_earning'] ?? 0);
-    $commTotal = (int)($settings['commission_total'] ?? 0);
-    $l1        = (int)($settings['commission_l1'] ?? 0);
-    $l2        = (int)($settings['commission_l2'] ?? 0);
-    $l3        = (int)($settings['commission_l3'] ?? 0);
-
-    $commissionChanged = false;
-    foreach (['registration_fee', 'company_earning', 'commission_total', 'commission_l1', 'commission_l2', 'commission_l3'] as $key) {
-        if (isset($settings[$key])) {
-            $old = Database::fetchOne('SELECT setting_value FROM settings WHERE setting_key = ?', [$key]);
-            if (!$old || (string) $old['setting_value'] !== (string) $settings[$key]) $commissionChanged = true;
-        }
-    }
-    if ($commissionChanged && $regFee > 0 && $company > 0 && $commTotal > 0) {
-        if ($company + $commTotal !== $regFee) {
-            $error = "Company earning ({$company}) + Commission total ({$commTotal}) must equal Registration fee ({$regFee}).";
-        } elseif ($l1 + $l2 + $l3 !== $commTotal) {
-            $error = "L1 ({$l1}) + L2 ({$l2}) + L3 ({$l3}) must equal Commission total ({$commTotal}).";
-        }
+    // Derive totals on the server; posted total/company/L3 values cannot override the two-level plan.
+    try {
+        $settings = array_replace($settings, CommissionPlan::fromInput($settings));
+    } catch (InvalidArgumentException $e) {
+        $error = $e->getMessage();
     }
 
     if (empty($error)) {
-        foreach ($settings as $key => $value) {
-            $existing = Database::fetchOne("SELECT id FROM settings WHERE setting_key = ?", [$key]);
-            if ($existing) {
-                Database::update('settings', [
-                    'setting_value' => $value,
-                ], 'setting_key = ?', [$key]);
-            } else {
-                Database::insert('settings', [
-                    'setting_key'   => $key,
-                    'setting_value' => $value,
-                    'description'   => $key,
-                ]);
+        Database::beginTransaction();
+        try {
+            foreach ($settings as $key => $value) {
+                $existing = Database::fetchOne("SELECT id FROM settings WHERE setting_key = ?", [$key]);
+                if ($existing) {
+                    Database::update('settings', [
+                        'setting_value' => $value,
+                    ], 'setting_key = ?', [$key]);
+                } else {
+                    Database::insert('settings', [
+                        'setting_key'   => $key,
+                        'setting_value' => $value,
+                        'description'   => $key,
+                    ]);
+                }
             }
+
+            Database::commit();
+            setFlash('success', 'Settings updated. The registration fee and Level 1/Level 2 commissions now apply to new payments.');
+            header('Location: ' . SITE_URL . '/admin/settings');
+            exit;
+        } catch (Throwable $e) {
+            if (Database::inTransaction()) Database::rollback();
+            error_log('Settings update failed: ' . $e->getMessage());
+            $error = 'Settings could not be saved. Please try again.';
         }
-
-        // Clear app_setting cache so new values take effect immediately
-        if (function_exists('opcache_reset')) { @opcache_reset(); }
-
-        $success = 'Settings updated!';
     }
 }
 
@@ -82,11 +74,16 @@ foreach ($allSettings as $s) {
     $settingsMap[$s['setting_key']] = $s;
 }
 
+foreach (['registration_fee' => 'Registration fee (TZS)', 'commission_l1' => 'Level 1 commission (TZS)', 'commission_l2' => 'Level 2 commission (TZS)', 'commission_total' => 'Total referral commissions (automatic)', 'company_earning' => 'Company share (automatic)'] as $key => $label) {
+    $defaults = ['registration_fee' => REGISTRATION_FEE, 'commission_l1' => COMMISSION_L1, 'commission_l2' => COMMISSION_L2, 'commission_total' => 0, 'company_earning' => 0];
+    $settingsMap[$key] = ['setting_value' => $settingsMap[$key]['setting_value'] ?? (string) $defaults[$key], 'description' => $label];
+}
+
 // Group by category
 $categories = [
     'general'  => ['site_name', 'site_tagline', 'currency', 'admin_email', 'support_phone', 'terms_url', 'privacy_url'],
     'payment'  => ['registration_fee', 'min_withdrawal', 'max_withdrawal'],
-    'commission' => ['commission_l1', 'commission_l2', 'commission_l3', 'company_earning', 'commission_total'],
+    'commission' => ['commission_l1', 'commission_l2', 'company_earning', 'commission_total'],
     'abliner' => ['abliner_api_key', 'abliner_webhook_secret'],
     'payout'   => ['payout_channel', 'payout_webhook_url'],
     'sms'      => ['meseji_api_key', 'meseji_api_url', 'meseji_sender_id', 'meseji_enabled', 'sms_welcome_enabled', 'sms_payment_enabled'],
@@ -154,6 +151,7 @@ include __DIR__ . '/admin_header.php';
     </div>
 
     <!-- Commission Settings -->
+    <p class="text-muted">Set the registration fee and two commission amounts. Total commissions and the remaining company share update automatically. Existing payments keep their original amounts.</p>
     <div class="card mb-4">
         <div class="card-header">
             <h6><i class="fas fa-coins me-1"></i> Commission Settings</h6>
@@ -167,7 +165,6 @@ include __DIR__ . '/admin_header.php';
                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem 1.5rem;font-size:0.85rem;">
                     <span>L1 (Direct): <strong id="previewL1">0</strong></span>
                     <span>L2 (Grand): <strong id="previewL2">0</strong></span>
-                    <span>L3 (Great-grand): <strong id="previewL3">0</strong></span>
                     <span>Company: <strong id="previewCompany">0</strong></span>
                     <span style="font-weight:700;border-top:1px solid #ccc;padding-top:4px;">Total: <strong id="previewTotal">0</strong></span>
                 </div>
@@ -183,7 +180,7 @@ include __DIR__ . '/admin_header.php';
                         </label>
                         <input type="number" class="form-control commission-input" name="settings[<?= $key ?>]"
                                value="<?= sanitize($s['setting_value']) ?>"
-                               data-key="<?= $key ?>" min="0" step="100">
+                               data-key="<?= $key ?>" min="0" step="1" <?= in_array($key, ['commission_total', 'company_earning'], true) ? 'readonly' : '' ?>>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -288,58 +285,6 @@ include __DIR__ . '/admin_header.php';
     </div>
 </form>
 
-<script>
-(function() {
-    var inputs = document.querySelectorAll('.commission-input');
-    var regFeeInput = document.querySelector('input[name="settings[registration_fee]"]');
-
-    function getVal(key) {
-        var el = document.querySelector('input[name="settings[' + key + ']"]');
-        return el ? parseInt(el.value) || 0 : 0;
-    }
-
-    function updatePreview() {
-        var l1 = getVal('commission_l1');
-        var l2 = getVal('commission_l2');
-        var l3 = getVal('commission_l3');
-        var company = getVal('company_earning');
-        var commTotal = getVal('commission_total');
-        var regFee = regFeeInput ? parseInt(regFeeInput.value) || 0 : 0;
-
-        var commSum = l1 + l2 + l3;
-
-        document.getElementById('previewL1').textContent = 'TZS ' + l1.toLocaleString();
-        document.getElementById('previewL2').textContent = 'TZS ' + l2.toLocaleString();
-        document.getElementById('previewL3').textContent = 'TZS ' + l3.toLocaleString();
-        document.getElementById('previewCompany').textContent = 'TZS ' + company.toLocaleString();
-        document.getElementById('previewTotal').textContent = 'TZS ' + (commSum + company).toLocaleString();
-
-        var msg = document.getElementById('validationMsg');
-        if (regFee > 0 && company > 0 && commTotal > 0) {
-            if (company + commTotal !== regFee) {
-                msg.style.display = 'block';
-                msg.style.color = '#e74a3b';
-                msg.textContent = 'Company (' + company.toLocaleString() + ') + Commission (' + commTotal.toLocaleString() + ') = ' + (company + commTotal).toLocaleString() + ' but Registration fee is ' + regFee.toLocaleString();
-            } else if (commSum !== commTotal) {
-                msg.style.display = 'block';
-                msg.style.color = '#e74a3b';
-                msg.textContent = 'L1+L2+L3 = ' + commSum.toLocaleString() + ' but Commission total is ' + commTotal.toLocaleString();
-            } else {
-                msg.style.display = 'block';
-                msg.style.color = '#1cc88a';
-                msg.textContent = 'All amounts match correctly.';
-            }
-        } else {
-            msg.style.display = 'none';
-        }
-    }
-
-    inputs.forEach(function(input) {
-        input.addEventListener('input', updatePreview);
-    });
-    if (regFeeInput) regFeeInput.addEventListener('input', updatePreview);
-    updatePreview();
-})();
-</script>
+<script src="<?= sanitize(SITE_URL) ?>/assets/js/commission-settings.js"></script>
 
 <?php include __DIR__ . '/admin_footer.php'; ?>

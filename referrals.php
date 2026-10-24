@@ -17,22 +17,14 @@ $stats = CommissionEngine::getReferralStats($_SESSION['user_id']);
 $referralLink = getReferralLink($user['referral_code']);
 $level = (int)($_GET['level'] ?? 1);
 
-// Get referred users by level
+// Only the two supported referral levels are part of the current network.
+$level = in_array($level, [1, 2], true) ? $level : 1;
 $users = Database::fetchAll(
     "SELECT u.id, u.full_name, u.phone, u.status, u.created_at,
-            CASE 
-                WHEN u.referred_by = ? THEN 1
-                WHEN u.referred_by IN (SELECT id FROM users WHERE referred_by = ?) THEN 2
-                WHEN u.referred_by IN (SELECT id FROM users WHERE referred_by IN (SELECT id FROM users WHERE referred_by = ?)) THEN 3
-            END as ref_level
-     FROM users u
-     WHERE (u.referred_by = ? 
-            OR u.referred_by IN (SELECT id FROM users WHERE referred_by = ?)
-            OR u.referred_by IN (SELECT id FROM users WHERE referred_by IN (SELECT id FROM users WHERE referred_by = ?)))
-     AND u.status = 'active'
-     ORDER BY u.created_at DESC",
-    [$_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id'],
-     $_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id']]
+            CASE WHEN u.referred_by = ? THEN 1 ELSE 2 END AS ref_level
+     FROM users u WHERE (u.referred_by = ? OR u.referred_by IN (SELECT id FROM users WHERE referred_by = ?))
+     AND u.status = 'active' ORDER BY u.created_at DESC",
+    [$_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id']]
 );
 
 $pageTitle = 'Referrals';
@@ -86,10 +78,7 @@ include __DIR__ . '/includes/public_head.php';
             <div class="stat-number" style="color:var(--secondary);"><?= number_format($stats['level_2']) ?></div>
             <div class="stat-label">Level 2</div>
         </div>
-        <div class="stat-box">
-            <div class="stat-number" style="color:var(--accent);"><?= number_format($stats['level_3']) ?></div>
-            <div class="stat-label">Level 3</div>
-        </div>
+
         <div class="stat-box">
             <div class="stat-number" style="color:var(--info);"><?= number_format($stats['total_referrals']) ?></div>
             <div class="stat-label">Total</div>
@@ -103,9 +92,6 @@ include __DIR__ . '/includes/public_head.php';
         </a>
         <a href="?level=2" class="btn <?= $level == 2 ? 'btn-primary' : 'btn-outline-primary' ?> btn-sm">
             Level 2 (<?= $stats['level_2'] ?>)
-        </a>
-        <a href="?level=3" class="btn <?= $level == 3 ? 'btn-primary' : 'btn-outline-primary' ?> btn-sm">
-            Level 3 (<?= $stats['level_3'] ?>)
         </a>
     </div>
     

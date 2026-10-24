@@ -198,14 +198,7 @@ fetch(<?= json_encode(SITE_URL . '/api/abliner_balance.php') ?>).then(r => r.jso
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card" style="margin-bottom:0;">
-            <div class="card-body text-center">
-                <div style="font-size:1.75rem;font-weight:700;color:#F6C23E;"><?= formatCurrency($commissions['total_l3'] ?? 0) ?></div>
-                <div style="font-size:0.8rem;color:var(--text-muted);font-weight:500;">Commission L3</div>
-            </div>
-        </div>
-    </div>
+
     <div class="col-md-3">
         <div class="card" style="margin-bottom:0;">
             <div class="card-body text-center">

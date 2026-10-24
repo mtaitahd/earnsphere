@@ -368,10 +368,7 @@ include __DIR__ . '/includes/public_head.php';
                 <span style="color:var(--gray-600);"><i class="fas fa-user-group me-1" style="color:var(--secondary);"></i> Level 2 (Grand)</span>
                 <strong style="color:var(--secondary);">TZS <?= number_format((int) app_setting('commission_l2', COMMISSION_L2)) ?></strong>
             </div>
-            <div class="d-flex justify-content-between" style="font-size:0.85rem;">
-                <span style="color:var(--gray-600);"><i class="fas fa-people-arrows me-1" style="color:var(--accent);"></i> Level 3 (Great-grand)</span>
-                <strong style="color:var(--accent);">TZS <?= number_format((int) app_setting('commission_l3', COMMISSION_L3)) ?></strong>
-            </div>
+
         </div>
         
         <!-- QR Code -->
@@ -396,10 +393,7 @@ include __DIR__ . '/includes/public_head.php';
                 <div class="stat-number" style="color:var(--secondary);"><?= number_format($stats['level_2']) ?></div>
                 <div class="stat-label">Level 2 (Grand)</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-number" style="color:var(--accent);"><?= number_format($stats['level_3']) ?></div>
-                <div class="stat-label">Level 3 (Great-grand)</div>
-            </div>
+
             <div class="stat-box">
                 <div class="stat-number" style="color:var(--info);"><?= formatCurrency($wallet['total_earned']) ?></div>
                 <div class="stat-label">Total Earnings</div>

@@ -6,7 +6,6 @@
  * Commission Structure:
  * - Level 1 (Direct referrer): 2,000 TZS
  * - Level 2 (Grand referrer):  1,200 TZS
- * - Level 3 (Great-grand):       800 TZS
  * - Company:                    6,000 TZS
  */
 
@@ -32,18 +31,17 @@ class CommissionEngine {
      * 
      * @param int $newUserId The ID of the newly activated user
      */
-    public static function processRegistrationCommissions(int $newUserId): void {
+    public static function processRegistrationCommissions(int $newUserId, ?array $plan = null): void {
         // Find the referral chain for this user
         $referralChain = self::getReferralChain($newUserId);
         
         $commissions = [
-            1 => (int) app_setting('commission_l1', COMMISSION_L1),
-            2 => (int) app_setting('commission_l2', COMMISSION_L2),
-            3 => (int) app_setting('commission_l3', COMMISSION_L3),
+            1 => (int) ($plan['commission_l1'] ?? app_setting('commission_l1', COMMISSION_L1)),
+            2 => (int) ($plan['commission_l2'] ?? app_setting('commission_l2', COMMISSION_L2)),
         ];
         
         foreach ($commissions as $level => $amount) {
-            if (!isset($referralChain[$level])) continue;
+            if ($amount <= 0 || !isset($referralChain[$level])) continue;
             
             $earnerId = $referralChain[$level];
             
@@ -93,7 +91,7 @@ class CommissionEngine {
     
     /**
      * Get the referral chain for a user
-     * Returns [1 => userId, 2 => userId, 3 => userId] for each level
+     * Returns [1 => userId, 2 => userId] for each level
      */
     public static function getReferralChain(int $userId): array {
         $chain = [];
@@ -118,16 +116,6 @@ class CommissionEngine {
         
         $chain[2] = $level2['referred_by'];
         
-        // Level 3: Who referred the level 2 referrer
-        $level3 = Database::fetchOne(
-            "SELECT referred_by FROM users WHERE id = ?",
-            [$level2['referred_by']]
-        );
-        
-        if (!$level3 || !$level3['referred_by']) return $chain;
-        
-        $chain[3] = $level3['referred_by'];
-        
         return $chain;
     }
     
@@ -139,7 +127,6 @@ class CommissionEngine {
             'total_referrals' => 0,
             'level_1'         => 0,
             'level_2'         => 0,
-            'level_3'         => 0,
             'total_earned'    => 0,
             'recent_referrals' => [],
         ];
@@ -159,16 +146,7 @@ class CommissionEngine {
             [$userId]
         )['cnt'] ?? 0;
         
-        // Count Level 3 referrals
-        $stats['level_3'] = Database::fetchOne(
-            "SELECT COUNT(*) as cnt FROM users u 
-             INNER JOIN users ref1 ON u.referred_by = ref1.id 
-             INNER JOIN users ref2 ON ref1.referred_by = ref2.id 
-             WHERE ref2.referred_by = ? AND u.status = 'active'",
-            [$userId]
-        )['cnt'] ?? 0;
-        
-        $stats['total_referrals'] = $stats['level_1'] + $stats['level_2'] + $stats['level_3'];
+        $stats['total_referrals'] = $stats['level_1'] + $stats['level_2'];
         
         // Total earned
         $stats['total_earned'] = Database::fetchOne(
@@ -217,8 +195,8 @@ class CommissionEngine {
     /**
      * Get full referral tree for a user (visual tree)
      */
-    public static function getReferralTree(int $userId, int $maxDepth = 3): array {
-        $tree = self::buildTree($userId, $maxDepth, 0);
+    public static function getReferralTree(int $userId, int $maxDepth = 2): array {
+        $tree = self::buildTree($userId, min(2, $maxDepth), 0);
         return $tree;
     }
     

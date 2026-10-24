@@ -81,14 +81,7 @@ include __DIR__ . '/includes/public_head.php';
             </div>
         </div>
         
-        <div class="commission-card">
-            <div class="commission-level" style="background:var(--accent);">L3</div>
-            <div class="commission-info">
-                <h6>Level 3 - Great-grand</h6>
-                <div class="amount" style="color:var(--accent);"><?= formatCurrency($earnings['l3_total'] ?? 0) ?></div>
-                <small><?= number_format($stats['level_3']) ?> referrals</small>
-            </div>
-        </div>
+
     </div>
     
     <!-- Wallet Summary -->

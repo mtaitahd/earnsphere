@@ -10,6 +10,7 @@ require_once __DIR__ . '/classes/AblinerPayment.php';
 require_once __DIR__ . '/includes/helpers.php';
 
 Auth::initSession();
+header('Cache-Control: no-store, private');
 
 $userId = (int) ($_SESSION['user_id'] ?? $_SESSION['pending_user_id'] ?? 0);
 if (isset($_GET['user_id']) && (int) $_GET['user_id'] !== $userId) {
@@ -35,6 +36,8 @@ $existingPayment = Database::fetchOne(
     "SELECT * FROM payments WHERE user_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
     [$userId]
 );
+
+$displayRegistrationFee = $existingPayment ? (float) $existingPayment['amount'] : (float) app_setting('registration_fee', REGISTRATION_FEE);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['pay', 'change_number'])) {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
@@ -311,7 +314,7 @@ $referralLink = getReferralLink($refCode);
             <i class="fas fa-gem"></i>
         </div>
     <div class="amount-label">Registration Fee</div>
-    <div class="amount-value"><?= formatCurrency(app_setting('registration_fee', REGISTRATION_FEE)) ?></div>
+    <div class="amount-value"><?= formatCurrency($displayRegistrationFee) ?></div>
     <div class="amount-sub">One-time payment only</div>
     </div>
 
@@ -361,7 +364,7 @@ $referralLink = getReferralLink($refCode);
             </div>
 
             <button type="submit" class="pay-btn">
-                <i class="fas fa-lock"></i> Pay Now — <?= formatCurrency(app_setting('registration_fee', REGISTRATION_FEE)) ?>
+                <i class="fas fa-lock"></i> Pay Now — <?= formatCurrency($displayRegistrationFee) ?>
             </button>
         </form>
     </div>

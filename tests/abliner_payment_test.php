@@ -36,6 +36,7 @@ $schema = [
 ];
 foreach ($schema as $table => $columns) $db->exec("CREATE TABLE $table ($columns)");
 $db->exec("INSERT INTO users(id,status,role,referred_by) VALUES (1,'pending','user',2),(2,'active','user',NULL),(3,'active','admin',NULL),(4,'pending','user',NULL),(5,'pending','user',NULL),(6,'pending','user',NULL)");
+$db->exec("INSERT INTO settings(setting_key, setting_value) VALUES ('registration_fee','12000'),('commission_l1','2500'),('commission_l2','1500'),('commission_l3','9000')");
 $db->exec('INSERT INTO wallets(id,user_id,balance,withdrawable_balance) VALUES (2,2,50000,50000)');
 
 class MockAbliner extends AblinerClient {
@@ -104,7 +105,7 @@ $service->processWebhook(eventFor($completed, 'deposit-complete'));
 expect(Database::fetchOne('SELECT status FROM users WHERE id = 1')['status'] === 'active', 'Completed deposit did not activate user');
 expect(Database::count('commissions') === 1, 'Registration commission missing');
 $wallet = Database::fetchOne('SELECT * FROM wallets WHERE user_id = 2');
-expect((float) $wallet['balance'] === 52000.0, 'Referrer commission incorrect');
+expect((float) $wallet['balance'] === 52500.0, 'Referrer commission did not use admin settings');
 $service->processWebhook(eventFor($completed, 'deposit-complete'));
 $service->processWebhook(eventFor($completed, 'deposit-complete-different-event'));
 expect(Database::count('commissions') === 1, 'Duplicate callbacks paid commissions twice');
@@ -185,5 +186,39 @@ $funding = $service->initiateFunding(3, '0712345678', 1000);
 expect($funding['status'] === 'completed', 'Admin funding failed');
 expect(Database::count('commissions') === $commissionCount, 'Company funding paid referral commissions');
 rejects(fn() => $service->initiateFunding(2, '0712345678', 1000), 'Non-admin funded via admin deposit flow');
+
+// The current plan uses two levels even when an old L3 setting still exists.
+$plan = CommissionPlan::fromInput(['registration_fee' => '15000', 'commission_l1' => '3000', 'commission_l2' => '2000', 'commission_l3' => '99999', 'company_earning' => '1', 'commission_total' => '1']);
+expect($plan['commission_total'] === 5000 && $plan['company_earning'] === 10000 && $plan['commission_l3'] === 0, 'Two-level totals were not derived on the server');
+rejects(fn() => CommissionPlan::fromInput(['registration_fee' => '500', 'commission_l1' => '400', 'commission_l2' => '400']), 'Commissions exceeding the fee were accepted');
+rejects(fn() => CommissionPlan::fromInput(['registration_fee' => '10000', 'commission_l1' => '-1', 'commission_l2' => '0']), 'Negative commission accepted');
+$db->exec("INSERT INTO users(id,status,role,referred_by) VALUES (10,'pending','user',11),(11,'active','user',12),(12,'active','user',13),(13,'active','user',NULL),(14,'pending','user',11)");
+$twoLevelDeposit = $service->initiatePayment(10, '0712345678');
+expect(Database::count('commissions', 'source_user_id = ?', [10]) === 2, 'New registration did not pay exactly two ancestors');
+expect(Database::count('commissions', 'source_user_id = ? AND level = ?', [10, 3]) === 0, 'A Level 3 commission was paid');
+expect((float) Database::fetchOne('SELECT balance FROM wallets WHERE user_id = 11')['balance'] === 2500.0, 'Level 1 did not use the admin amount');
+expect((float) Database::fetchOne('SELECT balance FROM wallets WHERE user_id = 12')['balance'] === 1500.0, 'Level 2 did not use the admin amount');
+expect(!Database::fetchOne('SELECT id FROM wallets WHERE user_id = 13'), 'Third ancestor was credited');
+expect(CommissionEngine::getReferralChain(10) === [1 => 11, 2 => 12], 'Referral chain still includes Level 3');
+$snapshot = json_decode(Database::fetchOne('SELECT metadata FROM payments WHERE id = ?', [$twoLevelDeposit['payment_id']])['metadata'], true)['commission_plan'];
+expect($snapshot['registration_fee'] === 12000 && $snapshot['commission_l1'] === 2500 && $snapshot['commission_l2'] === 1500, 'Payment did not retain its original commission plan');
+$db->exec('CREATE TABLE referrals (id INTEGER PRIMARY KEY, referrer_id INTEGER, referred_id INTEGER, level INTEGER)');
+$createChain = new ReflectionMethod(Auth::class, 'createReferralChain');
+$createChain->invoke(null, 14, 11);
+expect(Database::count('referrals', 'referred_id = ?', [14]) === 2, 'Registration referral records still include a third level');
+
+// Render the real public registration form using the saved admin values.
+ini_set('session.save_path', sys_get_temp_dir());
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_SERVER['REQUEST_URI'] = '/register';
+$_GET = [];
+Auth::initSession();
+$_SESSION = [];
+ob_start();
+require __DIR__ . '/../register.php';
+$registrationHtml = ob_get_clean();
+expect(str_contains($registrationHtml, 'TZS 12,000'), 'Registration form ignored the saved fee');
+expect(str_contains($registrationHtml, 'Level 1 TZS 2,500') && str_contains($registrationHtml, 'Level 2 TZS 1,500'), 'Registration form ignored saved commission amounts');
+expect(!str_contains($registrationHtml, 'Level 3'), 'Registration form still advertises Level 3');
 
 echo "Abliner offline integration checks passed. No live transactions were sent.\n";

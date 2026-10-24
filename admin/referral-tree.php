@@ -31,7 +31,7 @@ if ($userId) {
 }
 
 if ($searchedUser) {
-    $tree = CommissionEngine::getReferralTree($searchedUser['id'], 3);
+    $tree = CommissionEngine::getReferralTree($searchedUser['id'], 2);
 }
 
 $pageTitle = 'Referral Network';
@@ -80,7 +80,7 @@ include __DIR__ . '/admin_header.php';
 <!-- Referral Tree -->
 <div class="card">
     <div class="card-header">
-        <h6><i class="fas fa-sitemap me-1"></i> Network (3 Levels)</h6>
+        <h6><i class="fas fa-sitemap me-1"></i> Network (2 Levels)</h6>
     </div>
     <div class="card-body">
         <?php if (empty($tree)): ?>

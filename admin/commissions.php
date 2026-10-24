@@ -114,16 +114,10 @@ include __DIR__ . '/admin_header.php';
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-2">
-        <div class="card">
-            <div class="card-body text-center">
-                <div style="font-size:1.5rem;font-weight:800;color:#f59e0b;"><?= formatCurrency($summary['total_l3'] ?? 0) ?></div>
-                <div style="font-size:0.8rem;color:#6b7280;">Level 3</div>
-            </div>
-        </div>
-    </div>
+
 </div>
 
+<p class="text-muted">New commissions use Level 1 and Level 2. Older commission records remain in All for your history.</p>
 <!-- Filters -->
 <div class="card mb-4">
     <div class="card-body">
@@ -131,7 +125,6 @@ include __DIR__ . '/admin_header.php';
             <a href="?level=" class="btn <?= !$level ? 'btn-primary' : 'btn-outline-primary' ?> btn-sm">All</a>
             <a href="?level=1" class="btn <?= $level === '1' ? 'btn-primary' : 'btn-outline-primary' ?> btn-sm">Level 1</a>
             <a href="?level=2" class="btn <?= $level === '2' ? 'btn-primary' : 'btn-outline-primary' ?> btn-sm">Level 2</a>
-            <a href="?level=3" class="btn <?= $level === '3' ? 'btn-primary' : 'btn-outline-primary' ?> btn-sm">Level 3</a>
         </div>
     </div>
 </div>

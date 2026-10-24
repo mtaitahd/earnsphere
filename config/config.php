@@ -61,7 +61,7 @@ define('COMPANY_EARNING', (int)(getenv('COMPANY_EARNING') ?: 6000));
 define('COMMISSION_TOTAL', (int)(getenv('COMMISSION_TOTAL') ?: 4000));
 define('COMMISSION_L1', (int)(getenv('COMMISSION_L1') ?: 2000));
 define('COMMISSION_L2', (int)(getenv('COMMISSION_L2') ?: 1200));
-define('COMMISSION_L3', (int)(getenv('COMMISSION_L3') ?: 800));
+// Only Level 1 and Level 2 commissions are paid on new registrations.
 
 // ============================================================
 // Withdrawal Settings

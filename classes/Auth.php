@@ -187,7 +187,7 @@ class Auth {
     }
     
     /**
-     * Create referral chain records (up to 3 levels)
+     * Create referral chain records (up to 2 levels)
      */
     private static function createReferralChain(int $newUserId, int $directReferrerId): void {
         // Level 1: Direct referrer
@@ -210,19 +210,7 @@ class Auth {
                 'level'       => 2,
             ]);
             
-            // Level 3: Who referred the level 2 referrer
-            $level3Referrer = Database::fetchOne(
-                "SELECT referred_by FROM users WHERE id = ? AND referred_by IS NOT NULL",
-                [$level2Referrer['referred_by']]
-            );
-            
-            if ($level3Referrer && $level3Referrer['referred_by'] != $newUserId) {
-                Database::insert('referrals', [
-                    'referrer_id' => $level3Referrer['referred_by'],
-                    'referred_id' => $newUserId,
-                    'level'       => 3,
-                ]);
-            }
+
         }
     }
     

@@ -99,3 +99,17 @@ real money and must be deliberately performed with a small amount by the operato
 Rotate the earlier hardcoded email password at the provider and supply its
 replacement through `SMTP_PASS`. Removing it from current code does not erase Git
 history. Retired installer/debug/test URLs remain disabled.
+
+## Two-level commission settings
+
+New registrations pay only Level 1 and Level 2. In Admin → Settings, edit the
+registration fee and those two amounts. Total commissions and the company share
+are calculated automatically; Level 1 + Level 2 cannot exceed the fee. Saving is
+atomic and changes appear on the registration/payment screens on the next load.
+No database migration is needed for this change. Save Settings once to persist
+the recalculated totals and set the retired Level 3 setting to zero.
+
+New payment requests retain a snapshot of their fee and commission amounts.
+Historical records and balances are retained. Existing pending requests without
+a snapshot use the current two-level plan, but stop for manual reconciliation if
+those commissions exceed the amount paid.
