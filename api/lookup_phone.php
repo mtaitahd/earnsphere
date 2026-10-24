@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/payment_api.php';
 paymentApiUser();
 paymentApiPost();
+if ((StaffAccess::current()['role'] ?? '') === 'agent' && !StaffAccess::can('withdrawals') && !StaffAccess::can('wallet')) StaffAccess::deny(true);
 $recent = array_filter($_SESSION['lookup_times'] ?? [], fn($time) => $time > time() - 60);
 if (count($recent) >= 12) paymentApiReply(['success' => false, 'error' => 'Please wait before checking another number.'], 429);
 $recent[] = time();

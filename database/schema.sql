@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS `users` (
     `referred_by_level` TINYINT UNSIGNED DEFAULT NULL COMMENT '1=direct,2=level2,3=level3',
     `avatar` VARCHAR(255) DEFAULT NULL,
     `status` ENUM('pending','active','suspended') NOT NULL DEFAULT 'pending',
-    `role` ENUM('user','admin') NOT NULL DEFAULT 'user',
+    `role` ENUM('user','admin','agent') NOT NULL DEFAULT 'user',
+    `staff_version` INT UNSIGNED NOT NULL DEFAULT 0,
     `is_online` TINYINT(1) NOT NULL DEFAULT 0,
     `last_login` DATETIME DEFAULT NULL,
     `ip_address` VARCHAR(45) DEFAULT NULL,
@@ -40,6 +41,14 @@ CREATE TABLE IF NOT EXISTS `users` (
     KEY `idx_status` (`status`),
     KEY `idx_role` (`role`),
     CONSTRAINT `fk_users_referred_by` FOREIGN KEY (`referred_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Staff permission grants; regular users have no rows here.
+CREATE TABLE IF NOT EXISTS `agent_permissions` (
+    `user_id` INT UNSIGNED NOT NULL,
+    `permission` VARCHAR(60) NOT NULL,
+    PRIMARY KEY (`user_id`, `permission`),
+    CONSTRAINT `fk_agent_permissions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================

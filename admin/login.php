@@ -1,17 +1,18 @@
 <?php
 /**
- * EarnSphere - Admin Login
+ * EarnSphere - Staff Login
  */
 
 require_once dirname(__DIR__) . '/config/database.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
+require_once dirname(__DIR__) . '/classes/StaffAccess.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
 
 // Redirect if already logged in as admin
-if (Auth::isLoggedIn() && Auth::isAdmin()) {
-    header('Location: ' . SITE_URL . '/admin/index');
+if (Auth::isLoggedIn() && StaffAccess::isStaff()) {
+    header('Location: ' . StaffAccess::landingUrl());
     exit;
 }
 
@@ -22,14 +23,14 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
-        ErrorLogger::log('login', 'Admin login failed: invalid CSRF token', [], null, 'warning', 'admin/login.php');
+        ErrorLogger::log('login', 'Staff login failed: invalid CSRF token', [], null, 'warning', 'admin/login.php');
     } else {
         $identifier = trim($_POST['identifier'] ?? '');
         $password = $_POST['password'] ?? '';
         
         if (empty($identifier) || empty($password)) {
             $error = 'Please fill all fields.';
-            ErrorLogger::log('login', 'Admin login failed: missing identifier or password', [
+            ErrorLogger::log('login', 'Staff login failed: missing identifier or password', [
                 'identifier_present' => $identifier !== '',
                 'password_present'   => $password !== '',
             ], null, 'notice', 'admin/login.php');
@@ -37,11 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = Auth::login($identifier, $password);
             
             if ($result['success']) {
-                if ($result['user']['role'] === 'admin') {
-                    header('Location: ' . SITE_URL . '/admin/index');
+                if (StaffAccess::isStaff()) {
+                    header('Location: ' . StaffAccess::landingUrl());
                     exit;
                 } else {
-                    ErrorLogger::log('login', 'Admin login failed: non-admin user attempted admin panel', [
+                    ErrorLogger::log('login', 'Staff login failed: non-admin user attempted admin panel', [
                         'identifier' => $identifier,
                     ], (int) $result['user']['id'], 'warning', 'admin/login.php');
                     Auth::logout();
@@ -61,7 +62,7 @@ $csrf = Auth::generateCSRF();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login | EarnSphere</title>
+    <title>Staff Login | EarnSphere</title>
     <link rel="icon" type="image/png" href="<?= SITE_URL ?>/assets/img/logoo.png">
     <meta name="csrf-token" content="<?= $csrf ?>">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">

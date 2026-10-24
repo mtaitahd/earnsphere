@@ -131,3 +131,41 @@ The charge is frozen on each withdrawal; future setting changes do not affect
 pending requests. Successful transfers deduct the gross amount exactly once.
 Failed transfers restore the entire gross hold, including the user charge.
 Admin and user history both show the saved charge and net amount.
+
+## Agent accounts and checkbox permissions
+
+After pulling this update, run `php database/migrate_agents.php`. It adds the
+agent role, a password-reset session version, and the permission table. Existing
+administrators retain full access; regular user accounts are unchanged.
+
+Open **Admin → Agents & Permissions** to create an agent or edit an existing one.
+Choose work permissions with checkboxes. Each view permission adds one work
+sidebar link; a management permission automatically includes its matching view
+permission without adding a duplicate link. Profile, View Site and Logout remain
+available to staff. Agents with no work permissions land on a neutral staff page.
+
+Agents log in through `/admin/login` (or the regular login) using their phone or
+email and password. The landing page is selected from their actual permissions.
+Only administrators can create/edit agents or change system settings. Revocation
+and suspension take effect on the next request. Resetting an agent password
+invalidates previous agent sessions.
+
+Read-only permissions cannot submit modifications or send payouts. To manually
+mark a user paid/unpaid, an agent needs both Manage users and Manage payments.
+Company funding requires Fund Abliner wallet; payout dispatch requires Manage
+withdrawals. Regular user management cannot change or delete admin/agent accounts.
+The server checks permissions on pages and payment APIs independently of sidebar
+visibility. Account and permission changes are recorded in activity logs.
+
+Additional offline checks:
+
+```bash
+php tests/staff_access_test.php
+python tests/check_staff_routes.py /path/to/php
+node tests/agent_permissions_test.js
+```
+
+The route tests use an isolated SQLite fixture and do not access the real database
+or payment provider. After migration, create a support-only test agent on the live
+server and confirm the assigned links and ticket replies before distributing
+staff credentials.

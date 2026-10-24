@@ -12,10 +12,8 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
 
-if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login');
-    exit;
-}
+require_once dirname(__DIR__) . '/classes/StaffAccess.php';
+StaffAccess::requirePage('index');
 
 // Get stats
 $totalUsers = Database::count('users', "role = 'user'");
@@ -64,6 +62,7 @@ include __DIR__ . '/admin_header.php';
     </div>
 </div>
 
+<?php if (StaffAccess::can('wallet')): ?>
 <div class="card mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
@@ -81,6 +80,7 @@ fetch(<?= json_encode(SITE_URL . '/api/abliner_balance.php') ?>).then(r => r.jso
 }).catch(() => { document.getElementById('abliner-balance').textContent = 'Balance unavailable. Try again later.'; });
 </script>
 
+<?php endif; ?>
 <!-- Stat Cards - Row 1 -->
 <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 g-3 mb-4">
     <div class="col">

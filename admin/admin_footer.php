@@ -18,6 +18,16 @@
 </div>
 <!-- End Wrapper -->
 
+<?php if ($staffReadOnly ?? false): ?>
+<script>
+document.querySelectorAll('form[method="POST" i]').forEach(form => {
+    form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(button => { button.disabled = true; });
+    form.addEventListener('submit', event => event.preventDefault());
+});
+document.querySelectorAll('.send-payout-btn').forEach(button => { button.disabled = true; });
+</script>
+<?php endif; ?>
+
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 

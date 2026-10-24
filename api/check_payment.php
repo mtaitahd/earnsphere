@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/payment_api.php';
 $userId = paymentApiUser();
+if ((StaffAccess::current()['role'] ?? '') === 'agent') StaffAccess::requirePermission('wallet', true);
 $order = (string) ($_GET['order_id'] ?? '');
 $payment = Database::fetchOne('SELECT * FROM payments WHERE order_id = ? AND user_id = ?', [$order, $userId]);
 if (!$payment) paymentApiReply(['status' => 'not_found'], 404);

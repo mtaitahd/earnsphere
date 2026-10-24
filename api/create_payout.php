@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/payment_api.php';
-paymentApiUser(true);
+paymentApiUser(true, 'withdrawals_manage');
 paymentApiPost();
 $wd = Database::fetchOne('SELECT * FROM withdrawals WHERE id = ?', [(int) ($_POST['withdrawal_id'] ?? 0)]);
 if (!$wd) paymentApiReply(['success' => false, 'error' => 'Withdrawal not found.'], 404);

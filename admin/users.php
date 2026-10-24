@@ -11,10 +11,8 @@ require_once dirname(__DIR__) . '/classes/Wallet.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
-if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login');
-    exit;
-}
+require_once dirname(__DIR__) . '/classes/StaffAccess.php';
+StaffAccess::requirePage('users');
 
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -29,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'update_status') {
         $userId = (int)($_POST['user_id'] ?? 0);
         $newStatus = in_array($_POST['new_status'] ?? '', ['active', 'pending', 'suspended'], true) ? $_POST['new_status'] : 'active';
-        Database::update('users', ['status' => $newStatus], 'id = ?', [$userId]);
+        Database::update('users', ['status' => $newStatus], "id = ? AND role = 'user'", [$userId]);
         Auth::logActivity($userId, 'status_updated', 'Account status set to ' . ucfirst($newStatus) . ' by admin');
         setFlash('success', 'User status updated to ' . ucfirst($newStatus));
         header('Location: ' . $_SERVER['REQUEST_URI']);
@@ -44,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($existing) {
                 setFlash('error', 'Email already in use by another user');
             } else {
-                Database::update('users', ['email' => $newEmail], 'id = ?', [$userId]);
+                Database::update('users', ['email' => $newEmail], "id = ? AND role = 'user'", [$userId]);
                 setFlash('success', 'Email updated successfully');
             }
         } else {
@@ -97,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         'payment'
                     );
                     if ($user['status'] !== 'active') {
-                        Database::update('users', ['status' => 'active'], 'id = ?', [$userId]);
+                        Database::update('users', ['status' => 'active'], "id = ? AND role = 'user'", [$userId]);
                         CommissionEngine::processRegistrationCommissions($userId);
                         Auth::logActivity($userId, 'account_activated', 'Account activated by admin (Mark as Paid)');
                     }
@@ -254,6 +252,9 @@ function deleteUsersAndData(array $ids): int {
         return 0;
     }
 
+    $allowed = implode(',', array_fill(0, count($ids), '?'));
+    $ids = array_column(Database::fetchAll("SELECT id FROM users WHERE role = 'user' AND id IN ($allowed)", $ids), 'id');
+    if (!$ids) return 0;
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $params = $ids;
 

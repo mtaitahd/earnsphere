@@ -111,7 +111,7 @@ class Auth {
         $referrerId = null;
         if (!empty($referralCode)) {
             $referrer = Database::fetchOne(
-                "SELECT id, status FROM users WHERE referral_code = ? AND status != 'suspended'",
+                "SELECT id, status FROM users WHERE referral_code = ? AND status != 'suspended' AND role = 'user'",
                 [$referralCode]
             );
             if (!$referrer) {
@@ -256,6 +256,8 @@ class Auth {
         session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_role'] = $user['role'];
+        $_SESSION['staff_version'] = (int) ($user['staff_version'] ?? 0);
+        if (class_exists('StaffAccess')) StaffAccess::clearCache();
         $_SESSION['user_name'] = $user['full_name'];
         $_SESSION['user_status'] = $user['status'];
         $_SESSION['last_regeneration'] = time();
@@ -322,7 +324,8 @@ class Auth {
      * Check if current user is admin
      */
     public static function isAdmin(): bool {
-        return isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
+        require_once __DIR__ . '/StaffAccess.php';
+        return StaffAccess::isAdministrator();
     }
     
     /**
@@ -332,6 +335,13 @@ class Auth {
         self::initSession();
         if (!self::isLoggedIn()) {
             header('Location: ' . SITE_URL . '/login');
+            exit;
+        }
+        if (($_SESSION['user_role'] ?? '') === 'agent') {
+            require_once __DIR__ . '/StaffAccess.php';
+            if (str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/api/')) StaffAccess::deny(true);
+            if (!StaffAccess::isStaff()) StaffAccess::deny();
+            header('Location: ' . StaffAccess::landingUrl());
             exit;
         }
     }
@@ -403,7 +413,7 @@ class Auth {
      */
     public static function getUserByReferralCode(string $code): ?array {
         return Database::fetchOne(
-            "SELECT id, full_name, referral_code FROM users WHERE referral_code = ? AND status != 'suspended'",
+            "SELECT id, full_name, referral_code FROM users WHERE referral_code = ? AND status != 'suspended' AND role = 'user'",
             [$code]
         );
     }

@@ -1,9 +1,8 @@
 <?php
 require_once __DIR__ . '/../classes/AblinerPayment.php';
 Auth::initSession();
-if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login'); exit;
-}
+require_once dirname(__DIR__) . '/classes/StaffAccess.php';
+StaffAccess::requirePage('abliner-wallet');
 $error = '';
 $message = '';
 $service = new AblinerPayment();
@@ -30,6 +29,7 @@ include __DIR__ . '/admin_header.php';
 </div></div>
 <?php if ($error): ?><div class="alert alert-danger"><?= sanitize($error) ?></div><?php endif; ?>
 <?php if ($message): ?><div id="deposit-notice" class="alert alert-info" role="status"><?= sanitize($message) ?></div><?php endif; ?>
+<?php if (StaffAccess::can('wallet_manage')): ?>
 <div class="card mb-4"><div class="card-header"><h6>Add money by mobile money</h6></div><div class="card-body">
     <form method="POST">
         <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
@@ -42,6 +42,7 @@ include __DIR__ . '/admin_header.php';
         <button class="btn btn-primary" type="submit">Request deposit</button>
     </form>
 </div></div>
+<?php endif; ?>
 <div class="card"><div class="card-header"><h6>Your recent company deposits</h6></div><div class="card-body table-responsive">
     <table class="table"><thead><tr><th>Reference</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>
     <?php foreach ($deposits as $deposit): ?>

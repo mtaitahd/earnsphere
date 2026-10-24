@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/payment_api.php';
-paymentApiUser(true);
+paymentApiUser(true, 'withdrawals');
 $id = (int) ($_GET['payout_id'] ?? 0);
 $ref = (string) ($_GET['reference'] ?? '');
 $payout = $id > 0 ? Database::fetchOne('SELECT * FROM payouts WHERE id = ?', [$id]) : Database::fetchOne('SELECT * FROM payouts WHERE reference = ?', [$ref]);

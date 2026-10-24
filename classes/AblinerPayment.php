@@ -5,6 +5,7 @@ require_once __DIR__ . '/Wallet.php';
 require_once __DIR__ . '/CommissionEngine.php';
 require_once __DIR__ . '/CommissionPlan.php';
 require_once __DIR__ . '/WithdrawalCharge.php';
+require_once __DIR__ . '/StaffAccess.php';
 
 class AblinerPayment {
     private AblinerClient $client;
@@ -32,8 +33,8 @@ class AblinerPayment {
         Database::beginTransaction();
         try {
             $user = Database::fetchOne('SELECT * FROM users WHERE id = ? FOR UPDATE', [$userId]);
-            if (!$user || ($purpose === 'registration' && $user['status'] !== 'pending')
-                || ($purpose === 'admin_funding' && ($user['role'] !== 'admin' || $user['status'] !== 'active'))) throw new RuntimeException('Account cannot initiate this deposit.');
+            if (!$user || ($purpose === 'registration' && ($user['status'] !== 'pending' || $user['role'] !== 'user'))
+                || ($purpose === 'admin_funding' && !StaffAccess::canForUser($userId, 'wallet_manage'))) throw new RuntimeException('Account cannot initiate this deposit.');
             $existing = Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", [$userId, $purpose]);
             if ($existing) {
                 Database::commit();
@@ -76,8 +77,8 @@ class AblinerPayment {
         if ($expectedName !== '' && $lookup['data']['name'] !== $expectedName) throw new RuntimeException('Recipient name changed. Verify and confirm the number again.');
         Database::beginTransaction();
         try {
-            $user = Database::fetchOne('SELECT status FROM users WHERE id = ? FOR UPDATE', [$userId]);
-            if (!$user || $user['status'] !== 'active') throw new RuntimeException('An active account is required.');
+            $user = Database::fetchOne('SELECT status, role FROM users WHERE id = ? FOR UPDATE', [$userId]);
+            if (!$user || $user['status'] !== 'active' || $user['role'] !== 'user') throw new RuntimeException('An active user account is required.');
             $wallet = Database::fetchOne('SELECT * FROM wallets WHERE user_id = ? FOR UPDATE', [$userId]);
             // withdrawable_balance already excludes held withdrawals: do not subtract pending twice.
             if (!$wallet || $amount > (float) $wallet['withdrawable_balance']) throw new RuntimeException('Insufficient available commission earnings.');

@@ -4,10 +4,8 @@ require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
-if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login');
-    exit;
-}
+require_once dirname(__DIR__) . '/classes/StaffAccess.php';
+StaffAccess::requirePage('announcements');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {

@@ -5,13 +5,14 @@
 
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/classes/Auth.php';
+require_once __DIR__ . '/classes/StaffAccess.php';
 require_once __DIR__ . '/includes/helpers.php';
 
 Auth::initSession();
 
 // Redirect if already logged in
 if (Auth::isLoggedIn()) {
-                    header('Location: ' . SITE_URL . '/dashboard');
+                    header('Location: ' . (StaffAccess::isStaff() ? StaffAccess::landingUrl() : SITE_URL . '/dashboard'));
     exit;
 }
 
@@ -36,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($result['success']) {
                 $user = $result['user'];
-                if ($user['role'] === 'admin') {
-                    header('Location: ' . SITE_URL . '/admin/index');
+                if (in_array($user['role'], ['admin', 'agent'], true)) {
+                    header('Location: ' . StaffAccess::landingUrl());
                 } else {
     header('Location: ' . SITE_URL . '/dashboard');
                 }

@@ -4,20 +4,19 @@
  * Matching Mtaita Tech design system: white sidebar, purple topbar
  */
 
-if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login');
-    exit;
-}
-
-require_once dirname(__DIR__) . '/includes/security_headers.php';
-require_once dirname(__DIR__) . '/classes/Auth.php';
+require_once dirname(__DIR__) . '/classes/StaffAccess.php';
+require_once dirname(__DIR__) . '/includes/helpers.php';
 Auth::initSession();
+StaffAccess::requirePage(basename($_SERVER['PHP_SELF'], '.php'));
+require_once dirname(__DIR__) . '/includes/security_headers.php';
 
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
+$staffPagePermission = StaffAccess::pagePermission($currentPage);
+$staffReadOnly = $staffPagePermission !== null && !StaffAccess::can(StaffAccess::writePermission($staffPagePermission));
 $adminUser = Database::fetchOne("SELECT full_name, avatar FROM users WHERE id = ?", [$_SESSION['user_id']]);
 
-$pendingWd = Database::count('withdrawals', 'status = ?', ['pending']);
-$openTickets = Database::count('support_tickets', 'status = ?', ['open']);
+$pendingWd = StaffAccess::can('withdrawals') ? Database::count('withdrawals', 'status = ?', ['pending']) : 0;
+$openTickets = StaffAccess::can('support') ? Database::count('support_tickets', 'status = ?', ['open']) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -50,7 +49,7 @@ $openTickets = Database::count('support_tickets', 'status = ?', ['open']);
 <!-- Sidebar -->
 <ul class="navbar-nav sidebar sidebar-light accordion" id="accordionSidebar">
     <!-- Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?= SITE_URL ?>/admin/index">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?= htmlspecialchars(StaffAccess::landingUrl(), ENT_QUOTES) ?>">
         <div class="sidebar-brand-icon">
             <i class="fas fa-gem"></i>
         </div>
@@ -58,144 +57,18 @@ $openTickets = Database::count('support_tickets', 'status = ?', ['open']);
     </a>
     <hr class="sidebar-divider my-0">
     
-    <!-- Nav Item - Dashboard -->
-    <li class="nav-item <?= $currentPage === 'index' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/index">
-            <i class="fas fa-fw fa-tachometer-alt"></i>
-            <span>Dashboard</span>
+    <?php foreach (StaffAccess::menu() as $item): ?>
+    <li class="nav-item <?= $currentPage === $item['page'] ? 'active' : '' ?>" data-permission="<?= htmlspecialchars($item['permission'], ENT_QUOTES) ?>">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/<?= htmlspecialchars($item['page'], ENT_QUOTES) ?>">
+            <i class="fas fa-fw fa-<?= htmlspecialchars($item['icon'], ENT_QUOTES) ?>"></i>
+            <span><?= htmlspecialchars($item['label'], ENT_QUOTES) ?></span>
+            <?php $count = $item['permission'] === 'withdrawals' ? $pendingWd : ($item['permission'] === 'support' ? $openTickets : 0); ?>
+            <?php if ($count > 0): ?><span class="badge badge-danger badge-pill"><?= (int) $count ?></span><?php endif; ?>
         </a>
     </li>
-    
-    <hr class="sidebar-divider">
-    <div class="sidebar-heading">Manage</div>
-    
-    <!-- Users -->
-    <li class="nav-item <?= $currentPage === 'users' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/users">
-            <i class="fas fa-fw fa-users"></i>
-            <span>Users</span>
-        </a>
-    </li>
-    
-    <li class="nav-item <?= $currentPage === 'abliner-wallet' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/abliner-wallet"><i class="fas fa-fw fa-wallet"></i><span>Abliner Wallet</span></a>
-    </li>
+    <?php endforeach; ?>
+    <li class="nav-item"><a class="nav-link" href="<?= SITE_URL ?>" target="_blank"><i class="fas fa-fw fa-external-link-alt"></i><span>View Site</span></a></li>
 
-    <!-- Payments -->
-    <li class="nav-item <?= $currentPage === 'payments' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/payments">
-            <i class="fas fa-fw fa-credit-card"></i>
-            <span>Payments</span>
-        </a>
-    </li>
-    
-    <!-- Commissions -->
-    <li class="nav-item <?= $currentPage === 'commissions' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/commissions">
-            <i class="fas fa-fw fa-coins"></i>
-            <span>Commissions</span>
-        </a>
-    </li>
-    
-    <!-- Withdrawals -->
-    <li class="nav-item <?= $currentPage === 'withdrawals' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/withdrawals">
-            <i class="fas fa-fw fa-money-bill-wave"></i>
-            <span>Withdrawals</span>
-            <?php if ($pendingWd > 0): ?>
-                <span class="badge badge-danger badge-pill" style="font-size:0.65rem;"><?= $pendingWd ?></span>
-            <?php endif; ?>
-        </a>
-    </li>
-    
-    <!-- Referral Tree -->
-    <li class="nav-item <?= $currentPage === 'referral-tree' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/referral-tree">
-            <i class="fas fa-fw fa-sitemap"></i>
-            <span>Referral Network</span>
-        </a>
-    </li>
-    
-    <hr class="sidebar-divider">
-    <div class="sidebar-heading">Settings</div>
-    
-    <!-- Settings -->
-    <li class="nav-item <?= $currentPage === 'settings' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/settings">
-            <i class="fas fa-fw fa-cog"></i>
-            <span>Settings</span>
-        </a>
-    </li>
-
-    <!-- Announcements -->
-    <li class="nav-item <?= $currentPage === 'announcements' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/announcements">
-            <i class="fas fa-fw fa-bullhorn"></i>
-            <span>Announcements</span>
-        </a>
-    </li>
-
-    <!-- Contests -->
-    <li class="nav-item <?= $currentPage === 'contests' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/contests">
-            <i class="fas fa-fw fa-trophy"></i>
-            <span>Contests</span>
-        </a>
-    </li>
-
-    <!-- SMS -->
-    <li class="nav-item <?= $currentPage === 'sms' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/sms">
-            <i class="fas fa-fw fa-sms"></i>
-            <span>SMS Broadcast</span>
-        </a>
-    </li>
-
-    <!-- Support -->
-    <li class="nav-item <?= $currentPage === 'support' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/support">
-            <i class="fas fa-fw fa-life-ring"></i>
-            <span>Support</span>
-            <?php if ($openTickets > 0): ?>
-                <span class="badge badge-danger badge-pill" style="font-size:0.65rem;"><?= $openTickets ?></span>
-            <?php endif; ?>
-        </a>
-    </li>
-
-    <!-- Profile -->
-    <li class="nav-item <?= $currentPage === 'profile' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/profile">
-            <i class="fas fa-fw fa-user-cog"></i>
-            <span>Profile</span>
-        </a>
-    </li>
-    
-    <!-- Activity Logs -->
-    <li class="nav-item <?= $currentPage === 'logs' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/logs">
-            <i class="fas fa-fw fa-list-alt"></i>
-            <span>Activity Logs</span>
-        </a>
-    </li>
-    
-    <!-- Error Logs -->
-    <li class="nav-item <?= $currentPage === 'error-logs' ? 'active' : '' ?>">
-        <a class="nav-link" href="<?= SITE_URL ?>/admin/error-logs">
-            <i class="fas fa-fw fa-bug"></i>
-            <span>Error Logs</span>
-        </a>
-    </li>
-    
-    <hr class="sidebar-divider">
-    
-    <!-- Back to Site -->
-    <li class="nav-item">
-        <a class="nav-link" href="<?= SITE_URL ?>/dashboard" target="_blank">
-            <i class="fas fa-fw fa-external-link-alt"></i>
-            <span>View Site</span>
-        </a>
-    </li>
-    
     <!-- Sidebar Footer -->
     <div class="sidebar-footer" style="padding: 0.75rem 1.25rem; margin-top: auto;">
         <hr class="sidebar-divider mb-2">
@@ -260,7 +133,7 @@ $openTickets = Database::count('support_tickets', 'status = ?', ['open']);
                 <li class="nav-item dropdown no-arrow">
                     <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" style="color: rgba(255,255,255,0.85);">
                         <span class="mr-2 d-none d-lg-inline small" style="font-weight:700;">
-                            <?= $adminUser['full_name'] ?? 'Admin' ?>
+                            <?= htmlspecialchars($adminUser['full_name'] ?? 'Staff', ENT_QUOTES) ?>
                         </span>
                         <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);color:white;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;vertical-align:middle;margin-left:0.5rem;border:2px solid rgba(255,255,255,0.3);">
                             <?= strtoupper(substr($adminUser['full_name'] ?? 'A', 0, 1)) ?>
@@ -270,10 +143,12 @@ $openTickets = Database::count('support_tickets', 'status = ?', ['open']);
                         <a class="dropdown-item" href="<?= SITE_URL ?>/admin/profile">
                             <i class="fas fa-user-cog fa-sm fa-fw mr-2 text-gray-400"></i> Profile
                         </a>
+                        <?php if (StaffAccess::can('settings')): ?>
                         <a class="dropdown-item" href="<?= SITE_URL ?>/admin/settings">
                             <i class="fas fa-cog fa-sm fa-fw mr-2 text-gray-400"></i> Settings
                         </a>
-                        <a class="dropdown-item" href="<?= SITE_URL ?>/dashboard" target="_blank">
+                        <?php endif; ?>
+                        <a class="dropdown-item" href="<?= SITE_URL ?>" target="_blank">
                             <i class="fas fa-external-link-alt fa-sm fa-fw mr-2 text-gray-400"></i> View Site
                         </a>
                         <div class="dropdown-divider"></div>
@@ -288,3 +163,5 @@ $openTickets = Database::count('support_tickets', 'status = ?', ['open']);
         
         <!-- Page Content -->
         <div class="container-fluid" id="container-wrapper">
+
+<?php if ($staffReadOnly): ?><div class="alert alert-info">You have view-only access to this section. Editing and payment actions require an additional permission.</div><?php endif; ?>

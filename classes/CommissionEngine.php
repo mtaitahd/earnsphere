@@ -50,7 +50,7 @@ class CommissionEngine {
             
             // Check earner is active
             $earner = Database::fetchOne(
-                "SELECT id, status FROM users WHERE id = ? AND status = 'active'",
+                "SELECT id, status FROM users WHERE id = ? AND status = 'active' AND role = 'user'",
                 [$earnerId]
             );
             

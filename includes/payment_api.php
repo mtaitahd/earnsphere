@@ -1,14 +1,19 @@
 <?php
 require_once __DIR__ . '/../classes/AblinerPayment.php';
+require_once __DIR__ . '/../classes/StaffAccess.php';
 Auth::initSession();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-function paymentApiUser(bool $admin = false): int {
+function paymentApiUser(bool $admin = false, ?string $permission = null): int {
     $id = (int) ($_SESSION['user_id'] ?? $_SESSION['pending_user_id'] ?? 0);
     if (!$id) paymentApiReply(['success' => false, 'error' => 'Please log in first.'], 401);
-    if ($admin && (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin')) {
-        paymentApiReply(['success' => false, 'error' => 'Admin access required.'], 403);
+    if ($admin) {
+        // Admin-only remains the default; endpoints explicitly grant module access to agents.
+        if ($permission !== null) StaffAccess::requirePermission($permission, true);
+        elseif (!StaffAccess::isAdministrator()) StaffAccess::deny(true);
+    } elseif (($_SESSION['user_role'] ?? '') === 'agent' && !StaffAccess::isStaff()) {
+        StaffAccess::deny(true);
     }
     return $id;
 }

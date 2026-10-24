@@ -13,8 +13,10 @@ root = Path(__file__).resolve().parent.parent
 def run(endpoint, method="POST", session=None):
     setup = 'ini_set("session.save_path",sys_get_temp_dir());$_SERVER["REQUEST_METHOD"]=' + json.dumps(method) + ';'
     if session is not None:
-        setup += 'require_once ' + json.dumps(str(root / "classes/Auth.php")) + ';Auth::initSession();'
+        setup += 'require ' + json.dumps(str(root / "tests/staff_fixture.php")) + ';'
+        setup += 'Database::update("users",["role"=>' + json.dumps(session) + '],"id = ?",[1]);'
         setup += '$_SESSION=["user_id"=>1,"user_role"=>' + json.dumps(session) + '];'
+        setup += '$_SERVER["REQUEST_METHOD"]=' + json.dumps(method) + ';StaffAccess::clearCache();'
     setup += 'register_shutdown_function(function(){echo "HTTP:".http_response_code();});'
     setup += 'include ' + json.dumps(str(root / endpoint)) + ';'
     result = subprocess.run([php, "-r", setup], capture_output=True, text=True, timeout=15)

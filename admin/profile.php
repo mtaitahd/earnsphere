@@ -9,10 +9,8 @@ require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
-if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: ' . SITE_URL . '/admin/login');
-    exit;
-}
+require_once dirname(__DIR__) . '/classes/StaffAccess.php';
+StaffAccess::requirePage('profile');
 
 $success = '';
 $error = '';
@@ -53,8 +51,8 @@ $admin = Database::fetchOne(
 
         if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
             $error = 'All password fields are required.';
-        } elseif (strlen($newPassword) < 6) {
-            $error = 'New password must be at least 6 characters.';
+        } elseif (strlen($newPassword) < ($admin['role'] === 'agent' ? 10 : 6) || strlen($newPassword) > 72) {
+            $error = $admin['role'] === 'agent' ? 'Agent passwords must contain 10 to 72 characters.' : 'New password must contain 6 to 72 characters.';
         } elseif ($newPassword !== $confirmPassword) {
             $error = 'New passwords do not match.';
         } elseif ($newPassword === $currentPassword) {
@@ -68,7 +66,12 @@ $admin = Database::fetchOne(
                     'password' => password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]),
                 ], 'id = ?', [$_SESSION['user_id']]);
 
-                Auth::logActivity($_SESSION['user_id'], 'password_changed', 'Admin changed their password');
+                if ($admin['role'] === 'agent') {
+                    Database::query('UPDATE users SET staff_version = staff_version + 1 WHERE id = ?', [$_SESSION['user_id']]);
+                    $_SESSION['staff_version'] = (int) Database::fetchOne('SELECT staff_version FROM users WHERE id = ?', [$_SESSION['user_id']])['staff_version'];
+                    StaffAccess::clearCache();
+                }
+                Auth::logActivity($_SESSION['user_id'], 'password_changed', 'Staff changed their password');
                 $success = 'Password updated successfully!';
             }
         }
@@ -106,7 +109,7 @@ include __DIR__ . '/admin_header.php';
                     <?= strtoupper(substr($admin['full_name'] ?? 'A', 0, 1)) ?>
                 </div>
                 <h5 style="font-weight:800;"><?= sanitize($admin['full_name']) ?></h5>
-                <span class="badge bg-primary mb-2">Administrator</span>
+                <span class="badge bg-primary mb-2"><?= $admin['role'] === 'agent' ? 'Agent' : 'Administrator' ?></span>
                 <div class="text-start mt-3" style="font-size:0.85rem;">
                     <p class="mb-2"><i class="fas fa-envelope me-2 text-muted"></i><?= sanitize($admin['email'] ?: 'Not set') ?></p>
                     <p class="mb-2"><i class="fas fa-phone me-2 text-muted"></i><?= sanitize($admin['phone'] ?: 'Not set') ?></p>
