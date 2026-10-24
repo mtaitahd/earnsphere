@@ -20,6 +20,7 @@ $csrf = Auth::generateCSRF();
 $pageTitle = 'Abliner Wallet';
 include __DIR__ . '/admin_header.php';
 ?>
+<div id="abliner-wallet" data-balance-url="<?= sanitize(SITE_URL) ?>/api/abliner_balance.php" data-status-url="<?= sanitize(SITE_URL) ?>/api/check_payment.php">
 <h1 class="h3 mb-4">Abliner Wallet</h1>
 <div class="card mb-4"><div class="card-body">
     <h6>Available company balance</h6>
@@ -28,7 +29,7 @@ include __DIR__ . '/admin_header.php';
     <p class="text-muted mt-2 mb-0">This is the company payment wallet at Abliner. User commission balances are managed separately.</p>
 </div></div>
 <?php if ($error): ?><div class="alert alert-danger"><?= sanitize($error) ?></div><?php endif; ?>
-<?php if ($message): ?><div class="alert alert-info"><?= sanitize($message) ?></div><?php endif; ?>
+<?php if ($message): ?><div id="deposit-notice" class="alert alert-info" role="status"><?= sanitize($message) ?></div><?php endif; ?>
 <div class="card mb-4"><div class="card-header"><h6>Add money by mobile money</h6></div><div class="card-body">
     <form method="POST">
         <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
@@ -46,35 +47,13 @@ include __DIR__ . '/admin_header.php';
     <?php foreach ($deposits as $deposit): ?>
         <tr><td><?= sanitize($deposit['order_id']) ?></td><td><?= formatCurrency((float) $deposit['amount']) ?></td>
             <td data-status-for="<?= sanitize($deposit['order_id']) ?>"><?= sanitize($deposit['status']) ?></td>
-            <td><button type="button" class="btn btn-sm btn-outline-primary check-deposit" data-order="<?= sanitize($deposit['order_id']) ?>">Check status</button></td></tr>
+            <td><button type="button" class="btn btn-sm btn-outline-primary check-deposit" data-order="<?= sanitize($deposit['order_id']) ?>" data-status="<?= sanitize($deposit['status']) ?>">Check status</button></td></tr>
     <?php endforeach; ?>
     <?php if (!$deposits): ?><tr><td colspan="4">No company deposits yet.</td></tr><?php endif; ?>
     </tbody></table>
     <p id="deposit-message" role="status"></p>
 </div></div>
 <script src="<?= sanitize(SITE_URL) ?>/assets/js/recipient-lookup.js"></script>
-<script>
-async function refreshBalance() {
-    const el = document.getElementById('wallet-balance');
-    el.textContent = 'Loading…';
-    try {
-        const result = await (await fetch(<?= json_encode(SITE_URL . '/api/abliner_balance.php') ?>)).json();
-        if (!result.success) throw new Error(result.error || 'Balance unavailable.');
-        const balances = result.data.balances || { [result.data.currency || 'TZS']: result.data.balance };
-        el.textContent = Object.entries(balances).map(([currency, amount]) => currency + ' ' + Number(amount).toLocaleString()).join(' · ');
-    } catch (error) { el.textContent = error.message; }
-}
-document.getElementById('refresh-balance').addEventListener('click', refreshBalance);
-document.querySelectorAll('.check-deposit').forEach(button => button.addEventListener('click', async () => {
-    button.disabled = true;
-    try {
-        const result = await (await fetch(<?= json_encode(SITE_URL . '/api/check_payment.php?order_id=') ?> + encodeURIComponent(button.dataset.order))).json();
-        button.closest('tr').querySelector('[data-status-for]').textContent = result.status || 'unavailable';
-        document.getElementById('deposit-message').textContent = result.message || '';
-        if (result.status === 'completed') refreshBalance();
-    } catch (error) { document.getElementById('deposit-message').textContent = 'Status check unavailable. Do not start another deposit yet.'; }
-    finally { button.disabled = false; }
-}));
-refreshBalance();
-</script>
+</div>
+<script src="<?= sanitize(SITE_URL) ?>/assets/js/admin-wallet.js"></script>
 <?php include __DIR__ . '/admin_footer.php'; ?>
