@@ -1870,3 +1870,16 @@ img {
 }
 
 
+
+/* Square login and registration forms. */
+.auth-page-square .auth-header,
+.auth-page-square .brand-icon,
+.auth-page-square .auth-card,
+.auth-page-square .form-control,
+.auth-page-square .form-select,
+.auth-page-square .input-group,
+.auth-page-square .btn,
+.auth-page-square .form-check-input,
+.auth-page-square .alert {
+    border-radius: 0;
+}

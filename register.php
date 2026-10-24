@@ -58,7 +58,7 @@ $pageKeywords = 'EarnSphere register, join EarnSphere, EarnSphere signup, create
 include __DIR__ . '/includes/public_head.php';
 ?>
 
-<div class="auth-page">
+<div class="auth-page auth-page-square">
     <div class="auth-header">
         <div class="brand-icon">
             <i class="fas fa-user-plus"></i>
