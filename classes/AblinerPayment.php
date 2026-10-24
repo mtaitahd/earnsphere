@@ -30,6 +30,14 @@ class AblinerPayment {
         if ($plan) $amount = (float) $plan['registration_fee'];
         $phone = AblinerClient::normalizePhone($phone);
         if (!is_finite($amount) || $amount < 500 || $amount > 3000000 || floor($amount) !== $amount) return ['success' => false, 'error' => 'Enter a whole TZS amount from 500 to 3,000,000.'];
+        // Check an older request before deciding whether another push is safe.
+        // Never expire an ambiguous payment locally or repeat a push after a timeout.
+        $previous = Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", [$userId, $purpose]);
+        if ($previous && ($previous['gateway'] ?? '') === 'abliner') {
+            $this->reconcile('payments', (int) $previous['id']);
+            $checked = Database::fetchOne('SELECT * FROM payments WHERE id = ?', [$previous['id']]);
+            if ($checked['status'] === 'completed') return $this->paymentResult($checked, 'Payment confirmed.');
+        }
         Database::beginTransaction();
         try {
             $user = Database::fetchOne('SELECT * FROM users WHERE id = ? FOR UPDATE', [$userId]);
@@ -39,7 +47,8 @@ class AblinerPayment {
             if ($existing) {
                 Database::commit();
                 if (($existing['gateway'] ?? 'snippe') !== 'abliner') return ['success' => false, 'error' => 'An earlier payment needs reconciliation by support before starting an Abliner payment.'];
-                return $this->paymentResult($existing, 'A payment is already awaiting confirmation. Check its status before starting another.');
+                if ($existing['phone'] !== $phone) return ['success' => false, 'error' => 'The previous payment to ' . $existing['phone'] . ' is still pending. No prompt was sent to the new number. Wait for Abliner to confirm that request has failed before changing the number.'];
+                return $this->paymentResult($existing, 'Your earlier request is still pending. No new prompt was sent. If no prompt appears, contact support with this order ID so the request can be checked with Abliner.');
             }
             $order = 'ES-' . bin2hex(random_bytes(12));
             $id = Database::insert('payments', ['user_id' => $userId, 'order_id' => $order, 'amount' => $amount,
@@ -175,7 +184,7 @@ class AblinerPayment {
         }
         $current = Database::fetchOne("SELECT * FROM $table WHERE id = ?", [$id]);
         return ['success' => true, 'status' => $current['status'], 'found' => $found,
-            'message' => $found ? 'Status checked with Abliner.' : 'No matching transaction found yet. Funds remain held; contact support before another attempt.'];
+            'message' => $found ? ($current['status'] === 'pending' ? 'Abliner still reports this request as pending. No new prompt was sent. If no prompt arrived, contact support with the order ID before paying again.' : 'Status checked with Abliner.') : 'Abliner has not returned a matching transaction yet. No new prompt was sent. Contact support with the order ID before another attempt.'];
     }
 
     private function matches(string $table, array $row, array $data): bool {

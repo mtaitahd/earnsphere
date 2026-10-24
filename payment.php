@@ -64,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['pay', 'change_n
             
                 if ($result['success']) {
                     $_SESSION['pending_user_id'] = $userId;
+                    $_SESSION['payment_notice'] = $result['message'] ?? '';
                     $orderId = $result['order_id'];
                     $ref = $result['reference'] ?? '';
                     header('Location: ' . SITE_URL . '/payment?user_id=' . $userId . '&action=waiting&order_id=' . $orderId . '&ref=' . urlencode($ref));
@@ -87,6 +88,13 @@ $fullName = sanitize($user['full_name']);
 $refCode = $user['referral_code'];
 $userIdVal = $user['id'];
 $orderIdVal = sanitize($_GET['order_id'] ?? '');
+$paymentNotice = (string) ($_SESSION['payment_notice'] ?? '');
+unset($_SESSION['payment_notice']);
+if ($action === 'waiting') {
+    // The waiting screen must correspond to a payment owned by this account.
+    $waitingPayment = Database::fetchOne('SELECT * FROM payments WHERE order_id = ? AND user_id = ?', [(string) ($_GET['order_id'] ?? ''), $userId]);
+    if (!$waitingPayment) { $action = 'show'; }
+}
 $refVal = sanitize($_GET['ref'] ?? '');
 $referralLink = getReferralLink($refCode);
 ?>
@@ -404,7 +412,8 @@ $referralLink = getReferralLink($refCode);
         </div>
         <?php endif; ?>
 
-        <div id="payment-status" style="display:none;"></div>
+        <p id="payment-notice" class="alert alert-info" role="status"><?= sanitize($paymentNotice ?: 'Checking your existing request with Abliner. An accepted request does not guarantee a phone prompt was delivered.') ?></p>
+        <div id="payment-status" style="display:none;" role="status"></div>
 
         <div id="payment-error" class="alert alert-danger d-none" style="font-size:0.85rem;">
             <i class="fas fa-exclamation-triangle me-1"></i> <span id="error-msg"></span>
@@ -449,79 +458,9 @@ $referralLink = getReferralLink($refCode);
 </div>
 
 <script>
-var orderId = <?= json_encode($orderIdVal) ?>;
-var checkInterval;
-
-function toggleChangeNum() {
-    var section = document.getElementById('changeNumSection');
-    var btn = document.getElementById('toggleChangeNumBtn');
-    if (section.style.display === 'none') {
-        section.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-times me-1"></i> Cancel';
-    } else {
-        section.style.display = 'none';
-        btn.innerHTML = '<i class="fas fa-sync me-1"></i> Change Number';
-    }
-}
-
-function checkStatusNow() {
-    var btn = document.getElementById('checkStatusBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Checking...';
-    document.getElementById('payment-error').classList.add('d-none');
-
-    fetch('<?= $siteUrl ?>/api/check_payment.php?order_id=' + encodeURIComponent(orderId))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check me-1"></i> I\'ve Confirmed Payment';
-
-            if (data.status === 'completed') {
-                clearInterval(checkInterval);
-                document.getElementById('payment-status').innerHTML =
-                    '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payment confirmed! Redirecting...</div>';
-                document.getElementById('payment-status').style.display = 'block';
-                setTimeout(function() { window.location.href = '<?= $siteUrl ?>/login'; }, 1000);
-            } else if (data.status === 'failed' || data.status === 'voided' || data.status === 'expired') {
-                clearInterval(checkInterval);
-                document.getElementById('payment-status').innerHTML =
-                    '<div class="alert alert-danger"><i class="fas fa-times-circle me-1"></i> Payment failed. <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show" class="alert-link">Try again</a></div>';
-                document.getElementById('payment-status').style.display = 'block';
-            } else {
-                document.getElementById('payment-error').classList.remove('d-none');
-                document.getElementById('error-msg').textContent = 'Payment not yet confirmed. Please check your phone and try again.';
-            }
-        })
-        .catch(function() {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check me-1"></i> I\'ve Confirmed Payment';
-            document.getElementById('payment-error').classList.remove('d-none');
-            document.getElementById('error-msg').textContent = 'Connection error. Please try again.';
-        });
-}
-
-if (orderId) {
-    checkInterval = setInterval(function() {
-        fetch('<?= $siteUrl ?>/api/check_payment.php?order_id=' + encodeURIComponent(orderId))
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.status === 'completed') {
-                    clearInterval(checkInterval);
-                    document.getElementById('payment-status').innerHTML =
-                        '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payment confirmed! Redirecting to your dashboard...</div>';
-                    document.getElementById('payment-status').style.display = 'block';
-                    setTimeout(function() { window.location.href = '<?= $siteUrl ?>/login'; }, 2000);
-                } else if (data.status === 'failed' || data.status === 'voided' || data.status === 'expired') {
-                    clearInterval(checkInterval);
-                    document.getElementById('payment-status').innerHTML =
-                        '<div class="alert alert-danger"><i class="fas fa-times-circle me-1"></i> Payment failed. <a href="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=show" class="alert-link">Try again</a></div>';
-                    document.getElementById('payment-status').style.display = 'block';
-                }
-            })
-            .catch(function() {});
-    }, 5000);
-}
+window.paymentWaiting = <?= json_encode(['orderId' => (string) ($_GET['order_id'] ?? ''), 'siteUrl' => $siteUrl, 'userId' => (int) $userIdVal], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
+<script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/payment-waiting.js?v=<?= filemtime(__DIR__ . '/assets/js/payment-waiting.js') ?>"></script>
 <?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
