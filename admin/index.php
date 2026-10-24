@@ -23,8 +23,8 @@ $activeUsers = Database::count('users', "role = 'user' AND status = 'active'");
 $pendingUsers = Database::count('users', "role = 'user' AND status = 'pending'");
 $todayRegistrations = Database::count('users', "role = 'user' AND DATE(created_at) = CURDATE()");
 
-$totalPayments = Database::fetchOne("SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE status = 'completed'")['total'] ?? 0;
-$todayPayments = Database::fetchOne("SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE status = 'completed' AND DATE(completed_at) = CURDATE()")['total'] ?? 0;
+$totalPayments = Database::fetchOne("SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE purpose = 'registration' AND status = 'completed'")['total'] ?? 0;
+$todayPayments = Database::fetchOne("SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE purpose = 'registration' AND status = 'completed' AND DATE(completed_at) = CURDATE()")['total'] ?? 0;
 
 $totalCommissions = Database::fetchOne("SELECT COALESCE(SUM(amount),0) as total FROM commissions WHERE status != 'cancelled'")['total'] ?? 0;
 $pendingWithdrawals = Database::count('withdrawals', "status = 'pending'");
@@ -63,6 +63,23 @@ include __DIR__ . '/admin_header.php';
         </span>
     </div>
 </div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div><h6>Abliner Wallet</h6><div id="abliner-balance" aria-live="polite">Loading balance…</div></div>
+            <a href="abliner-wallet" class="btn btn-primary">Wallet &amp; Deposit</a>
+        </div>
+    </div>
+</div>
+<script>
+fetch(<?= json_encode(SITE_URL . '/api/abliner_balance.php') ?>).then(r => r.json()).then(result => {
+    const el = document.getElementById('abliner-balance');
+    if (!result.success) { el.textContent = result.error || 'Balance unavailable. Check Abliner settings.'; return; }
+    const balances = result.data.balances || { [result.data.currency || 'TZS']: result.data.balance };
+    el.textContent = Object.entries(balances).map(([currency, amount]) => currency + ' ' + Number(amount).toLocaleString()).join(' · ');
+}).catch(() => { document.getElementById('abliner-balance').textContent = 'Balance unavailable. Try again later.'; });
+</script>
 
 <!-- Stat Cards - Row 1 -->
 <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 g-3 mb-4">

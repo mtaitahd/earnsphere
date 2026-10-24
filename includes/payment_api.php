@@ -1,0 +1,25 @@
+<?php
+require_once __DIR__ . '/../classes/AblinerPayment.php';
+Auth::initSession();
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
+
+function paymentApiUser(bool $admin = false): int {
+    $id = (int) ($_SESSION['user_id'] ?? $_SESSION['pending_user_id'] ?? 0);
+    if (!$id) paymentApiReply(['success' => false, 'error' => 'Please log in first.'], 401);
+    if ($admin && (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin')) {
+        paymentApiReply(['success' => false, 'error' => 'Admin access required.'], 403);
+    }
+    return $id;
+}
+function paymentApiPost(): void {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') paymentApiReply(['success' => false, 'error' => 'POST required.'], 405);
+    if (!Auth::validateCSRF()) paymentApiReply(['success' => false, 'error' => 'Invalid security token.'], 403);
+}
+function paymentApiReply(array $body, int $status = 200, ?AblinerPayment $service = null): void {
+    http_response_code($status);
+    echo json_encode($body, JSON_UNESCAPED_UNICODE);
+    if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+    if ($service) $service->flushNotifications();
+    exit;
+}

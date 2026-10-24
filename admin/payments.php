@@ -27,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'delete_single') {
         $payId = (int)($_POST['payment_id'] ?? 0);
         if ($payId > 0) {
-            Database::delete('payments', 'id = ?', [$payId]);
-            setFlash('success', 'Payment record deleted');
+            Database::delete('payments', "id = ? AND gateway != 'abliner'", [$payId]);
+            setFlash('success', 'Legacy payment record deleted; Abliner records are retained for reconciliation');
         }
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
@@ -38,8 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $ids = $_POST['payment_ids'] ?? [];
         if (!empty($ids)) {
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            Database::query("DELETE FROM payments WHERE id IN ({$placeholders})", array_map('intval', $ids));
-            setFlash('success', count($ids) . ' payment record(s) deleted');
+            Database::query("DELETE FROM payments WHERE gateway != 'abliner' AND id IN ({$placeholders})", array_map('intval', $ids));
+            setFlash('success', count($ids) . ' legacy payment record(s) selected; Abliner records are retained');
         }
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
@@ -128,7 +128,7 @@ include __DIR__ . '/admin_header.php';
                             <th>Amount</th>
                             <th>Phone</th>
                             <th>Order ID</th>
-                            <th>Snippe Ref</th>
+                            <th>Payment Ref</th>
                             <th>Status</th>
                             <th>Failure Reason</th>
                             <th>Date</th>
@@ -145,8 +145,8 @@ include __DIR__ . '/admin_header.php';
                             <td><?= formatPhone($p['phone'] ?? $p['user_phone']) ?></td>
                             <td><code style="font-size:0.7rem;"><?= $p['order_id'] ?></code></td>
                             <td>
-                                <?php if ($p['snippe_reference']): ?>
-                                    <small style="font-size:0.7rem;" title="<?= $p['snippe_reference'] ?>"><?= truncate($p['snippe_reference'], 16) ?></small>
+                                <?php if (($p['gateway_reference'] ?? $p['snippe_reference'] ?? $p['transaction_ref'] ?? '')): ?>
+                                    <small style="font-size:0.7rem;" title="<?= ($p['gateway_reference'] ?? $p['snippe_reference'] ?? $p['transaction_ref'] ?? '') ?>"><?= truncate(($p['gateway_reference'] ?? $p['snippe_reference'] ?? $p['transaction_ref'] ?? ''), 16) ?></small>
                                 <?php else: ?>
                                     <span class="text-muted">-</span>
                                 <?php endif; ?>

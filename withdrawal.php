@@ -184,13 +184,14 @@ include __DIR__ . '/includes/public_head.php';
             </div>
             
             <div class="form-floating mb-3">
-                <input type="tel" class="form-control" id="phone" name="phone" 
+                <input type="tel" class="form-control" id="phone" name="phone" data-recipient-lookup data-require-confirmation="1" data-lookup-url="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/api/lookup_phone.php" data-csrf="<?= $csrf ?>" data-csrf-name="<?= CSRF_TOKEN_NAME ?>"
                        placeholder="Phone Number" required
                        value="<?= sanitize($user['phone']) ?>">
                 <label for="phone"><i class="fas fa-mobile-alt me-1"></i> Payment Phone Number</label>
                 <small class="text-muted ms-1">Money will be sent to this number</small>
             </div>
             
+            <p class="text-muted small">Confirm the registered name and network below before withdrawing. Transfer fees are paid from the company Abliner wallet.</p><p id="payout-fees" class="text-muted small" aria-live="polite"></p>
             <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn" <?= ($wallet['withdrawable_balance'] ?? 0) < app_setting('min_withdrawal', MIN_WITHDRAWAL) ? 'disabled' : '' ?>>
                 <i class="fas fa-paper-plane me-1"></i> Submit Request
             </button>
@@ -295,4 +296,24 @@ function setMax() {
     </a>
 </nav>
 
+<script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/recipient-lookup.js"></script>
+<script>
+(() => {
+    const amount = document.getElementById('amount');
+    const output = document.getElementById('payout-fees');
+    if (!amount || !output) return;
+    let timer, version = 0;
+    async function preview() {
+        const current = ++version;
+        const value = amount.value;
+        try {
+            const result = await (await fetch(<?= json_encode(SITE_URL . '/api/payout_preview.php?amount=') ?> + encodeURIComponent(value))).json();
+            if (current !== version || amount.value !== value) return;
+            output.textContent = result.success ? 'Estimated company transfer fee: TZS ' + Number(result.data.fee_tzs).toLocaleString() + '. You receive TZS ' + Number(value).toLocaleString() + '.' : 'Fee estimate is unavailable.';
+        } catch (error) { if (current === version) output.textContent = 'Fee estimate is unavailable.'; }
+    }
+    amount.addEventListener('input', () => { clearTimeout(timer); version++; timer = setTimeout(preview, 700); });
+    preview();
+})();
+</script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

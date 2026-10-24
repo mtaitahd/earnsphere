@@ -77,6 +77,10 @@ $openTickets = Database::count('support_tickets', 'status = ?', ['open']);
         </a>
     </li>
     
+    <li class="nav-item <?= $currentPage === 'abliner-wallet' ? 'active' : '' ?>">
+        <a class="nav-link" href="<?= SITE_URL ?>/admin/abliner-wallet"><i class="fas fa-fw fa-wallet"></i><span>Abliner Wallet</span></a>
+    </li>
+
     <!-- Payments -->
     <li class="nav-item <?= $currentPage === 'payments' ? 'active' : '' ?>">
         <a class="nav-link" href="<?= SITE_URL ?>/admin/payments">

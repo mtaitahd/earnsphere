@@ -49,12 +49,8 @@ define('SITE_URL', getenv('APP_URL') ?: 'http://localhost/earnsphere');
 define('ADMIN_URL', SITE_URL . '/admin');
 
 // ============================================================
-// Payment Configuration (Snippe API)
+// Payment currency and registration fee
 // ============================================================
-define('SNIPPE_API_KEY', getenv('SNIPPE_API_KEY') ?: '');
-define('SNIPPE_WEBHOOK_SECRET', getenv('SNIPPE_WEBHOOK_SECRET') ?: '');
-define('SNIPPE_API_URL', getenv('SNIPPE_API_URL') ?: 'https://api.snippe.sh');
-define('SNIPPE_API_VERSION', getenv('SNIPPE_API_VERSION') ?: '2026-01-25');
 define('CURRENCY', 'TZS');
 define('REGISTRATION_FEE', (int)(getenv('REGISTRATION_FEE') ?: 11500));
 
@@ -74,10 +70,10 @@ define('MIN_WITHDRAWAL', (int)(getenv('MIN_WITHDRAWAL') ?: 5000));
 define('MAX_WITHDRAWAL', (int)(getenv('MAX_WITHDRAWAL') ?: 500000));
 
 // ============================================================
-// Payout Configuration (Snippe Disbursement)
+// Payout Configuration
 // ============================================================
 define('PAYOUT_CHANNEL', 'mobile');
-define('PAYOUT_WEBHOOK_URL', getenv('PAYOUT_WEBHOOK_URL') ?: 'http://localhost/earnsphere/webhooks/snippe.php');
+// Abliner callback URL is derived from SITE_URL in config/abliner.php.
 
 // ============================================================
 // Session Configuration

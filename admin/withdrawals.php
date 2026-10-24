@@ -1,14 +1,14 @@
 <?php
 /**
  * EarnSphere - Admin: Withdrawals Management
- * Supports approve/reject, Snippe payout dispatch, delete (single + bulk)
+ * Supports approve/reject, Abliner payout dispatch, delete (single + bulk)
  */
 
 require_once dirname(__DIR__) . '/config/database.php';
-require_once dirname(__DIR__) . '/config/snippe.php';
+require_once dirname(__DIR__) . '/config/abliner.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/classes/Wallet.php';
-require_once dirname(__DIR__) . '/classes/SnippePayment.php';
+require_once dirname(__DIR__) . '/classes/AblinerPayment.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
@@ -28,6 +28,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     $wdAction = $_POST['action'];
+    if (in_array($wdAction, ['delete_single', 'delete_selected'], true)) {
+        $ids = $wdAction === 'delete_single' ? [(int) ($_POST['withdrawal_id'] ?? 0)] : array_map('intval', (array) ($_POST['withdrawal_ids'] ?? []));
+        if ($ids) {
+            $marks = implode(',', array_fill(0, count($ids), '?'));
+            $protected = Database::fetchOne("SELECT id FROM withdrawals WHERE gateway = 'abliner' AND id IN ($marks) LIMIT 1", $ids);
+            if ($protected) {
+                setFlash('error', 'Abliner withdrawal records are retained for payment reconciliation.');
+                header('Location: ' . SITE_URL . '/admin/withdrawals');
+                exit;
+            }
+        }
+    }
+
 
     if (in_array($wdAction, ['approve', 'reject', 'complete'])) {
         $wdId = (int)($_POST['withdrawal_id'] ?? 0);
@@ -227,7 +240,7 @@ include __DIR__ . '/admin_header.php';
                     </div>
                     <?php endif; ?>
 
-                    <?php if (in_array($wd['status'], ['pending', 'approved', 'failed']) && (empty($wd['payout_id']) || in_array($wd['payout_status'], ['failed', 'pending', 'superseded']))): ?>
+                    <?php if (($wd['gateway'] ?? '') === 'abliner' && in_array($wd['status'], ['pending', 'approved']) && empty($wd['payout_id'])): ?>
                     <div class="mt-2">
                         <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>" id="csrf-<?= $wd['id'] ?>">
                         <button type="button" class="btn <?= empty($wd['payout_id']) ? 'btn-primary' : 'btn-warning' ?> btn-sm send-payout-btn"
@@ -240,12 +253,12 @@ include __DIR__ . '/admin_header.php';
                         <?php if (!empty($wd['payout_error'])): ?>
                             <small class="d-block text-danger mt-1" style="font-size:0.7rem;"><?= sanitize($wd['payout_error']) ?></small>
                         <?php else: ?>
-                            <small class="d-block text-muted mt-1" style="font-size:0.7rem;">Snippe Disbursement</small>
+                            <small class="d-block text-muted mt-1" style="font-size:0.7rem;">Abliner Disbursement</small>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
 
-                    <?php if (in_array($wd['status'], ['pending', 'approved']) && !empty($wd['payout_id']) && !in_array($wd['payout_status'], ['completed', 'failed'])): ?>
+                    <?php if (in_array($wd['status'], ['pending', 'approved', 'processing']) && !empty($wd['payout_id']) && !in_array($wd['payout_status'], ['completed', 'failed'])): ?>
                     <div class="mt-2">
                         <button type="button" class="btn btn-outline-info btn-sm"
                                 onclick="checkPayout(<?= $wd['payout_id'] ?>, '<?= $wd['payout_reference'] ?>', this)">

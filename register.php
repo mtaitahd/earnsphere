@@ -38,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = Auth::register($_POST);
 
         if ($result['success']) {
+            $_SESSION['pending_user_id'] = (int) $result['user_id'];
             // Clear referral from session after use
             unset($_SESSION['referral_code']);
 

@@ -6,12 +6,16 @@
 
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/classes/Auth.php';
-require_once __DIR__ . '/classes/SnippePayment.php';
+require_once __DIR__ . '/classes/AblinerPayment.php';
 require_once __DIR__ . '/includes/helpers.php';
 
 Auth::initSession();
 
-$userId = (int)($_GET['user_id'] ?? $_SESSION['pending_user_id'] ?? 0);
+$userId = (int) ($_SESSION['user_id'] ?? $_SESSION['pending_user_id'] ?? 0);
+if (isset($_GET['user_id']) && (int) $_GET['user_id'] !== $userId) {
+    http_response_code(403);
+    exit('Please log in to your own account.');
+}
 $action = $_GET['action'] ?? $_POST['action'] ?? 'show';
 
 if (!$userId) {
@@ -24,11 +28,7 @@ if (!$user) {
 }
 
 if ($user['status'] === 'active') {
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['user_role'] = $user['role'];
-    $_SESSION['user_name'] = $user['full_name'];
-    $_SESSION['user_status'] = $user['status'];
-    redirect(SITE_URL . '/dashboard', 'success', 'Your account is already activated!');
+    redirect(SITE_URL . '/login', 'success', 'Your account is activated. Please log in.');
 }
 
 $existingPayment = Database::fetchOne(
@@ -45,14 +45,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['pay', 'change_n
         if (empty($phone)) {
             $error = 'Enter payment phone number.';
         } else {
-            $snippe = new SnippePayment();
-            $phoneCheck = $snippe->validatePhone($phone);
+            $abliner = new AblinerPayment();
+            $phoneCheck = $abliner->validatePhone($phone);
             
             if (!$phoneCheck['valid']) {
                 $error = $phoneCheck['error'];
                 $action = 'show';
             } else {
-                $result = $snippe->initiatePayment($userId, $phoneCheck['phone']);
+                try {
+                    $result = $abliner->initiatePayment($userId, $phoneCheck['phone']);
+                } catch (Throwable $e) {
+                    error_log('Abliner payment page error: ' . $e->getMessage());
+                    $result = ['success' => false, 'error' => 'Payment could not be confirmed. Check existing payment status before trying again.'];
+                }
             
                 if ($result['success']) {
                     $_SESSION['pending_user_id'] = $userId;
@@ -333,7 +338,7 @@ $referralLink = getReferralLink($refCode);
             <input type="hidden" name="action" value="pay">
 
             <div class="form-floating mb-2">
-                <input type="tel" class="form-control" id="phone" name="phone"
+                <input type="tel" class="form-control" id="phone" name="phone" data-recipient-lookup data-lookup-url="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/api/lookup_phone.php" data-csrf="<?= $csrf ?>" data-csrf-name="<?= CSRF_TOKEN_NAME ?>"
                        placeholder="Payment Phone Number" required
                        pattern="^(?:\+?255|0)[67]\d{8}$" title="Enter a valid Tanzanian mobile number (e.g. 0712 345 678 or 0616 123 456)"
                        value="<?= sanitize($phone) ?>">
@@ -363,7 +368,7 @@ $referralLink = getReferralLink($refCode);
 
     <div class="secure-badge">
         <i class="fas fa-shield-halved me-1"></i>
-        Your payment is secure — powered by Snippe API
+        Your payment is secure — powered by Abliner API
     </div>
 </div>
 
@@ -373,7 +378,7 @@ $referralLink = getReferralLink($refCode);
         <i class="fas fa-arrow-left"></i> Change Number
     </a>
     <h2><i class="fas fa-hourglass-half me-2"></i>Processing Payment</h2>
-    <p>Please check your phone to complete the payment</p>
+    <p>Check your phone and approve the payment prompt if it appears.</p>
 </div>
 
 <div class="payment-body">
@@ -383,7 +388,7 @@ $referralLink = getReferralLink($refCode);
         <h5 style="font-weight:800;color:var(--gray-800);">Waiting for Payment Confirmation</h5>
 
         <p style="color:var(--gray-500);font-size:0.9rem;margin:0.5rem 0 1.5rem;">
-            <i class="fas fa-mobile-screen me-1"></i> A payment prompt has been sent to your phone.<br>
+            <i class="fas fa-mobile-screen me-1"></i> Your payment request is awaiting confirmation. Approve the prompt if it appears.<br>
             Enter your PIN to confirm the payment.
         </p>
 
@@ -424,7 +429,7 @@ $referralLink = getReferralLink($refCode);
                 <input type="hidden" name="<?= $csrfName ?>" value="<?= $csrfVal ?>">
                 <div class="input-group" style="border-radius:var(--radius-sm);overflow:hidden;">
                     <span class="input-group-text" style="background:var(--gray-100);border:none;font-size:0.9rem;"><i class="fas fa-phone"></i></span>
-                    <input type="tel" name="phone" class="form-control" placeholder="e.g. 0712 345 678" required
+                    <input type="tel" data-recipient-lookup data-lookup-url="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/api/lookup_phone.php" data-csrf="<?= $csrf ?>" data-csrf-name="<?= CSRF_TOKEN_NAME ?>" name="phone" class="form-control" placeholder="e.g. 0712 345 678" required
                            pattern="^(?:\+?255|0)[67]\d{8}$" title="Enter a valid Tanzanian mobile number (e.g. 0712 345 678 or 0616 123 456)"
                            style="border:none;font-size:0.9rem;padding:0.6rem 0.8rem;">
                     <button type="submit" class="btn btn-primary" style="border:none;font-size:0.85rem;padding:0.6rem 1rem;">
@@ -473,7 +478,7 @@ function checkStatusNow() {
                 document.getElementById('payment-status').innerHTML =
                     '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payment confirmed! Redirecting...</div>';
                 document.getElementById('payment-status').style.display = 'block';
-                setTimeout(function() { window.location.href = '<?= $siteUrl ?>/dashboard'; }, 1000);
+                setTimeout(function() { window.location.href = '<?= $siteUrl ?>/login'; }, 1000);
             } else if (data.status === 'failed' || data.status === 'voided' || data.status === 'expired') {
                 clearInterval(checkInterval);
                 document.getElementById('payment-status').innerHTML =
@@ -502,7 +507,7 @@ if (orderId) {
                     document.getElementById('payment-status').innerHTML =
                         '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payment confirmed! Redirecting to your dashboard...</div>';
                     document.getElementById('payment-status').style.display = 'block';
-                    setTimeout(function() { window.location.href = '<?= $siteUrl ?>/dashboard'; }, 2000);
+                    setTimeout(function() { window.location.href = '<?= $siteUrl ?>/login'; }, 2000);
                 } else if (data.status === 'failed' || data.status === 'voided' || data.status === 'expired') {
                     clearInterval(checkInterval);
                     document.getElementById('payment-status').innerHTML =
@@ -517,5 +522,6 @@ if (orderId) {
 <?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/recipient-lookup.js"></script>
 </body>
 </html>

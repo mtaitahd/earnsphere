@@ -19,7 +19,13 @@ $error = '';
 
 // Handle settings update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!Auth::validateCSRF()) { http_response_code(403); exit('Invalid security token.'); }
     $settings = $_POST['settings'] ?? [];
+    if (!is_array($settings)) { http_response_code(422); exit('Invalid settings.'); }
+    unset($settings['snippe_api_key'], $settings['snippe_webhook_secret'], $settings['snippe_api_url'], $settings['snippe_api_version']);
+    foreach (['abliner_api_key', 'abliner_webhook_secret'] as $secret) {
+        if (isset($settings[$secret]) && trim((string) $settings[$secret]) === '') unset($settings[$secret]);
+    }
 
     // Commission validation
     $regFee    = (int)($settings['registration_fee'] ?? 0);
@@ -29,7 +35,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $l2        = (int)($settings['commission_l2'] ?? 0);
     $l3        = (int)($settings['commission_l3'] ?? 0);
 
-    if ($regFee > 0 && $company > 0 && $commTotal > 0) {
+    $commissionChanged = false;
+    foreach (['registration_fee', 'company_earning', 'commission_total', 'commission_l1', 'commission_l2', 'commission_l3'] as $key) {
+        if (isset($settings[$key])) {
+            $old = Database::fetchOne('SELECT setting_value FROM settings WHERE setting_key = ?', [$key]);
+            if (!$old || (string) $old['setting_value'] !== (string) $settings[$key]) $commissionChanged = true;
+        }
+    }
+    if ($commissionChanged && $regFee > 0 && $company > 0 && $commTotal > 0) {
         if ($company + $commTotal !== $regFee) {
             $error = "Company earning ({$company}) + Commission total ({$commTotal}) must equal Registration fee ({$regFee}).";
         } elseif ($l1 + $l2 + $l3 !== $commTotal) {
@@ -74,7 +87,7 @@ $categories = [
     'general'  => ['site_name', 'site_tagline', 'currency', 'admin_email', 'support_phone', 'terms_url', 'privacy_url'],
     'payment'  => ['registration_fee', 'min_withdrawal', 'max_withdrawal'],
     'commission' => ['commission_l1', 'commission_l2', 'commission_l3', 'company_earning', 'commission_total'],
-    'snippe'   => ['snippe_api_key', 'snippe_webhook_secret', 'snippe_api_url', 'snippe_api_version'],
+    'abliner' => ['abliner_api_key', 'abliner_webhook_secret'],
     'payout'   => ['payout_channel', 'payout_webhook_url'],
     'sms'      => ['meseji_api_key', 'meseji_api_url', 'meseji_sender_id', 'meseji_enabled', 'sms_welcome_enabled', 'sms_payment_enabled'],
     'system'   => ['maintenance_mode'],
@@ -102,6 +115,7 @@ include __DIR__ . '/admin_header.php';
 <?php endif; ?>
 
 <form method="POST">
+    <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
 
     <!-- General Settings -->
     <div class="card mb-4">
@@ -176,61 +190,22 @@ include __DIR__ . '/admin_header.php';
         </div>
     </div>
 
-    <!-- Snippe API Settings -->
     <div class="card mb-4">
-        <div class="card-header">
-            <h6><i class="fas fa-plug me-1"></i> Snippe Payment API (Collection)</h6>
-        </div>
+        <div class="card-header"><h6><i class="fas fa-plug me-1"></i> Abliner Payments</h6></div>
         <div class="card-body">
+            <p>Collect registration payments, verify mobile money recipients, and send withdrawals with Abliner.</p>
             <div class="row g-3">
-                <?php foreach ($categories['snippe'] as $key): ?>
-                    <?php $s = $settingsMap[$key] ?? null; if (!$s) continue; ?>
-                    <div class="col-md-6">
-                        <label class="form-label" style="font-weight:700;font-size:0.85rem;"><?= $s['description'] ?: $key ?></label>
-                        <input type="text" class="form-control" name="settings[<?= $key ?>]" value="<?= sanitize($s['setting_value']) ?>">
-                    </div>
+                <?php foreach (['abliner_api_key' => 'API key', 'abliner_webhook_secret' => 'Webhook signing secret'] as $key => $label): ?>
+                <div class="col-md-6">
+                    <label class="form-label" for="<?= $key ?>"><?= $label ?></label>
+                    <input id="<?= $key ?>" type="password" autocomplete="new-password" class="form-control" name="settings[<?= $key ?>]" value="" placeholder="Leave blank to keep the saved secret">
+                    <small class="text-muted"><?= !empty($settingsMap[$key]['setting_value']) || getenv(strtoupper($key)) ? 'Configured' : 'Not configured' ?></small>
+                </div>
                 <?php endforeach; ?>
             </div>
-        </div>
-    </div>
-
-    <!-- Payout / Disbursement Settings -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h6><i class="fas fa-paper-plane me-1"></i> Snippe Payout (Disbursement)</h6>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">Payout Channel</label>
-                    <select class="form-select" name="settings[payout_channel]">
-                        <?php
-                        $currentChannel = $settingsMap['payout_channel']['setting_value'] ?? 'mobile';
-                        $channels = [
-                            'mobile'       => 'Mobile Money (All)',
-                            'mpesa'        => 'Vodacom M-Pesa',
-                            'airtel_money' => 'Airtel Money',
-                            'mixx_yas'     => 'Mixx by Yas (Tigo Pesa)',
-                            'halopesa'     => 'HaloPesa',
-                        ];
-                        foreach ($channels as $val => $label):
-                        ?>
-                            <option value="<?= $val ?>" <?= $currentChannel === $val ? 'selected' : '' ?>><?= $label ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <small class="text-muted">Payment channel for customers</small>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">Payout Webhook URL</label>
-                    <input type="url" class="form-control" name="settings[payout_webhook_url]"
-                           value="<?= sanitize($settingsMap['payout_webhook_url']['setting_value'] ?? 'https://earnsphere.site.je/webhooks/snippe.php') ?>">
-                    <small class="text-muted">Snippe will send status updates to this URL</small>
-                    <div class="alert alert-warning mt-2 mb-0" style="font-size:0.8rem;padding:0.5rem 0.75rem;">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        <strong>HTTPS required!</strong> Snippe does not allow HTTP webhooks. On localhost, webhooks will not work. Deploy with HTTPS URL in production.
-                    </div>
-                </div>
-            </div>
+            <p class="mt-3 mb-1"><strong>Callback URL:</strong></p>
+            <code><?= htmlspecialchars(rtrim(SITE_URL, '/') . '/webhooks/abliner.php', ENT_QUOTES) ?></code>
+            <p class="text-muted mt-2 mb-0">Save this HTTPS URL in Abliner Dashboard → API Keys → Add Your URL callback. Generate your personal signing secret there. Both secrets stay on the server.</p>
         </div>
     </div>
 

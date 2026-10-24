@@ -14,7 +14,7 @@ class Wallet {
      */
     public static function getWallet(int $userId): array {
         $wallet = Database::fetchOne(
-            "SELECT * FROM wallets WHERE user_id = ?",
+            "SELECT * FROM wallets WHERE user_id = ?" . (Database::inTransaction() ? ' FOR UPDATE' : ''),
             [$userId]
         );
         
@@ -42,21 +42,18 @@ class Wallet {
         ?int $referenceId = null,
         ?string $referenceType = null
     ): int {
-        $wallet = self::getWallet($userId);
-        $balanceBefore = (float) $wallet['balance'];
-        $balanceAfter = $balanceBefore + $amount;
-        
-        // Commission, daily mission and contest bonuses are withdrawable
-        $isWithdrawable = in_array($type, ['commission', 'daily_mission_bonus', 'contest_bonus']);
-        $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
-        $withdrawableAfter = $isWithdrawable ? $withdrawableBefore + $amount : $withdrawableBefore;
-        
         $isNested = Database::inTransaction();
         if (!$isNested) {
             Database::beginTransaction();
         }
         
         try {
+            $wallet = self::getWallet($userId);
+            $balanceBefore = (float) $wallet['balance'];
+            $balanceAfter = $balanceBefore + $amount;
+            $isWithdrawable = in_array($type, ['commission', 'daily_mission_bonus', 'contest_bonus']);
+            $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
+            $withdrawableAfter = $isWithdrawable ? $withdrawableBefore + $amount : $withdrawableBefore;
             $updateData = [
                 'balance'      => $balanceAfter,
                 'total_earned' => $wallet['total_earned'] + $amount,
@@ -273,127 +270,26 @@ class Wallet {
         ];
     }
     
-    /**
-     * Request withdrawal - holds withdrawable balance, sends payout via Snippe
-     * Balance is only deducted when payout succeeds (webhook confirms)
-     */
+    /** Reserve earnings and send a verified Abliner withdrawal. */
     public static function requestWithdrawal(int $userId, float $amount, string $phone): array {
-        $errors = [];
-        
-        if ($amount < app_setting('min_withdrawal', MIN_WITHDRAWAL)) {
-            $errors[] = "Minimum amount is TZS " . number_format(app_setting('min_withdrawal', MIN_WITHDRAWAL));
-        }
-        
-        if ($amount > app_setting('max_withdrawal', MAX_WITHDRAWAL)) {
-            $errors[] = "Maximum amount is TZS " . number_format(app_setting('max_withdrawal', MAX_WITHDRAWAL));
-        }
-        
-        $wallet = self::getWallet($userId);
-        $withdrawable = (float) ($wallet['withdrawable_balance'] ?? 0);
-        $pendingAmount = (float) ($wallet['pending_amount'] ?? 0);
-        $available = $withdrawable - $pendingAmount;
-        
-        if ($amount > $available) {
-            $errors[] = "Insufficient available balance. You have TZS " . number_format($available) . " available (earnings minus pending withdrawals)";
-        }
-        
-        if (!empty($errors)) {
-            ErrorLogger::log('withdrawal', 'Withdrawal request failed validation', [
-                'amount' => $amount,
-                'phone'  => $phone,
-                'errors' => $errors,
-            ], $userId, 'warning', 'Wallet::requestWithdrawal');
-            return ['success' => false, 'errors' => $errors];
-        }
-        
+        require_once __DIR__ . '/AblinerPayment.php';
         try {
-            Database::beginTransaction();
-            
-            $balanceBefore = (float) $wallet['balance'];
-            $balanceAfter = $balanceBefore;
-            $withdrawableBefore = (float) $wallet['withdrawable_balance'];
-            $withdrawableAfter = $withdrawableBefore - $amount;
-            
-            Database::update('wallets', [
-                'withdrawable_balance' => $withdrawableAfter,
-                'pending_amount'       => $pendingAmount + $amount,
-            ], 'id = ?', [$wallet['id']]);
-            
-            $transactionId = Database::insert('wallet_transactions', [
-                'wallet_id'      => $wallet['id'],
-                'user_id'        => $userId,
-                'type'           => 'withdrawal',
-                'amount'         => -$amount,
-                'balance_before' => $balanceBefore,
-                'balance_after'  => $balanceAfter,
-                'description'    => "Withdrawal request TZS " . number_format($amount),
-                'status'         => 'pending',
-            ]);
-            
-            $withdrawalId = Database::insert('withdrawals', [
-                'user_id'        => $userId,
-                'amount'         => $amount,
-                'phone'          => $phone,
-                'payment_method' => 'mobile_money',
-                'status'         => 'pending',
-            ]);
-            
-            Database::update('wallet_transactions', [
-                'reference_id'   => $withdrawalId,
-                'reference_type' => 'withdrawal',
-            ], 'id = ?', [$transactionId]);
-            
-            Database::commit();
-            
-            Auth::logActivity($userId, 'withdrawal_requested', "Requested TZS " . number_format($amount));
-            
-            $user = Database::fetchOne("SELECT full_name, phone FROM users WHERE id = ?", [$userId]);
-            $wname = $user['full_name'] ?? 'Unknown';
-            $wphone = $user['phone'] ?? 'Unknown';
-            @notifyAdmin("Withdrawal Request - TZS " . number_format($amount), 
-                "New Withdrawal Request\n\nUser: {$wname}\nPhone: {$wphone}\nAmount: TZS " . number_format($amount) . "\nPayment: {$phone}");
-            
-            require_once __DIR__ . '/SnippePayment.php';
-            $snippe = new SnippePayment();
-            $payoutResult = $snippe->sendPayout($withdrawalId, $userId, $amount, $phone, $wname);
-            
-            if ($payoutResult['success']) {
-                $payoutStatus = $payoutResult['status'] ?? 'pending';
-                $fees = $payoutResult['fees'] ?? 0;
-                return [
-                    'success'       => true,
-                    'withdrawal_id' => $withdrawalId,
-                    'payout_status' => $payoutStatus,
-                    'amount'        => $amount,
-                    'phone'         => $phone,
-                    'fees'          => $fees,
-                    'reference'     => $payoutResult['reference'] ?? null,
-                    'message'       => $payoutStatus === 'completed'
-                        ? 'Money has been sent to your mobile money account.'
-                        : 'Payout is being processed. You will receive the money shortly.',
-                ];
-            } else {
-                $payoutStatus = $payoutResult['status'] ?? 'pending';
-                $errorMsg = $payoutResult['error'] ?? 'Payment service is temporarily unavailable.';
-                return [
-                    'success'       => true,
-                    'withdrawal_id' => $withdrawalId,
-                    'payout_status' => $payoutStatus,
-                    'amount'        => $amount,
-                    'phone'         => $phone,
-                    'fees'          => 0,
-                    'reference'     => $payoutResult['reference'] ?? null,
-                    'message'       => $errorMsg,
-                ];
+            $verified = $_SESSION['verified_recipient'] ?? [];
+            $normalized = AblinerClient::normalizePhone($phone);
+            if (($verified['phone'] ?? '') !== $normalized || ($verified['expires'] ?? 0) < time()
+                || ($_POST['confirm_recipient'] ?? '') !== '1') {
+                return ['success' => false, 'errors' => ['Verify and confirm the recipient name before withdrawing.']];
             }
-            
-        } catch (Exception $e) {
-            error_log("Withdrawal error: " . $e->getMessage());
-            ErrorLogger::logException($e, 'withdrawal', $userId, 'Wallet::requestWithdrawal');
-            return ['success' => false, 'errors' => ['System error: ' . $e->getMessage()]];
+            return (new AblinerPayment())->requestWithdrawal($userId, $amount, $normalized, $verified['name']);
+        } catch (InvalidArgumentException | RuntimeException $e) {
+            return ['success' => false, 'errors' => [$e->getMessage()]];
+        } catch (Throwable $e) {
+            if (Database::inTransaction()) Database::rollback();
+            error_log('Abliner withdrawal error: ' . $e->getMessage());
+            return ['success' => false, 'errors' => ['Withdrawal could not be confirmed. Check its status before another request.']];
         }
     }
-    
+
     /**
      * Reverse a failed withdrawal - restore withdrawable balance only (balance was never debited)
      */
@@ -441,6 +337,10 @@ class Wallet {
             return ['success' => false, 'errors' => ['Withdrawal request not found']];
         }
         
+        if (($withdrawal['gateway'] ?? '') === 'abliner') {
+            return ['success' => false, 'errors' => ['Use Abliner status verification to settle this withdrawal.']];
+        }
+
         if ($withdrawal['status'] !== 'pending') {
             ErrorLogger::log('withdrawal', 'Admin withdrawal processing failed: invalid status', [
                 'withdrawal_id' => $withdrawalId,

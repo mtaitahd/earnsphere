@@ -255,7 +255,7 @@ class CommissionEngine {
      */
     public static function getCompanyEarnings(): float {
         return (float) Database::fetchOne(
-            "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = 'completed'"
+            "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE purpose = 'registration' AND status = 'completed'"
         )['total'] ?? 0;
     }
     
