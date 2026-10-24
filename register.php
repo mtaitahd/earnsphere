@@ -134,10 +134,6 @@ include __DIR__ . '/includes/public_head.php';
                     <i class="fas fa-rocket me-1"></i> Sign Up
                 </button>
                 
-                <p class="text-center mt-3 mb-0" style="font-size:0.85rem; color: var(--gray-500);">
-                    Registration fee: <strong style="color:var(--primary);"><?= formatCurrency(app_setting('registration_fee', REGISTRATION_FEE)) ?></strong><br>
-                    <small>Referral commissions: Level 1 <?= formatCurrency((float) app_setting('commission_l1', COMMISSION_L1)) ?> · Level 2 <?= formatCurrency((float) app_setting('commission_l2', COMMISSION_L2)) ?></small>
-                </p>
             </form>
         </div>
         

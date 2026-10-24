@@ -207,7 +207,7 @@ $createChain = new ReflectionMethod(Auth::class, 'createReferralChain');
 $createChain->invoke(null, 14, 11);
 expect(Database::count('referrals', 'referred_id = ?', [14]) === 2, 'Registration referral records still include a third level');
 
-// Render the real public registration form using the saved admin values.
+// The public registration design does not display fee or commission details.
 ini_set('session.save_path', sys_get_temp_dir());
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_SERVER['REQUEST_URI'] = '/register';
@@ -217,8 +217,8 @@ $_SESSION = [];
 ob_start();
 require __DIR__ . '/../register.php';
 $registrationHtml = ob_get_clean();
-expect(str_contains($registrationHtml, 'TZS 12,000'), 'Registration form ignored the saved fee');
-expect(str_contains($registrationHtml, 'Level 1 TZS 2,500') && str_contains($registrationHtml, 'Level 2 TZS 1,500'), 'Registration form ignored saved commission amounts');
+expect(!str_contains($registrationHtml, 'Registration fee:'), 'Registration form still displays the fee');
+expect(!str_contains($registrationHtml, 'Referral commissions:'), 'Registration form still displays commission details');
 expect(!str_contains($registrationHtml, 'Level 3'), 'Registration form still advertises Level 3');
 
 echo "Abliner offline integration checks passed. No live transactions were sent.\n";
