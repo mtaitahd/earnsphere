@@ -327,12 +327,19 @@ $users = Database::fetchAll(
     "SELECT u.*,
             (SELECT COUNT(*) FROM users WHERE referred_by = u.id) as direct_referrals,
             (SELECT COALESCE(SUM(amount),0) FROM commissions WHERE earner_id = u.id AND status != 'cancelled') as total_earned,
-            (SELECT amount FROM payments WHERE user_id = u.id AND status = 'completed' ORDER BY id DESC LIMIT 1) as paid_amount,
-            (SELECT completed_at FROM payments WHERE user_id = u.id AND status = 'completed' ORDER BY id DESC LIMIT 1) as paid_date
+            (SELECT COALESCE(SUM(amount),0) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_amount,
+            (SELECT MAX(completed_at) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_date
      FROM users u
      WHERE {$where}
      ORDER BY u.created_at DESC
      LIMIT {$perPage} OFFSET {$offset}",
+    $params
+);
+
+$paidSummary = Database::fetchOne(
+    "SELECT COALESCE(SUM(p.amount),0) AS total_paid, COUNT(DISTINCT p.user_id) AS paid_users
+     FROM payments p WHERE p.status = 'completed' AND p.purpose = 'registration'
+     AND EXISTS (SELECT 1 FROM users WHERE id = p.user_id AND {$where})",
     $params
 );
 
@@ -346,6 +353,20 @@ include __DIR__ . '/admin_header.php';
         <h1><i class="fas fa-users me-2" style="color:var(--primary);"></i>Users</h1>
         <p>Manage all system users (<?= number_format($total) ?>)</p>
     </div>
+</div>
+
+<style>
+.users-paid-summary { background:#15803d; color:#fff; padding:1.25rem; margin-bottom:1.5rem; }
+.users-paid-summary strong { display:block; font-size:1.75rem; }
+.table > tbody > tr.user-paid > td { background-color:#dcfce7; --bs-table-bg:#dcfce7; --bs-table-accent-bg:transparent; }
+.payment-paid-label { display:inline-block; background:#15803d; color:#fff; padding:0.25rem 0.65rem; font-weight:800; }
+.payment-paid-total { display:block; color:#14532d; font-weight:800; margin-top:0.35rem; white-space:nowrap; }
+.payment-paid-date { color:#166534; font-size:0.75rem; }
+</style>
+<div class="users-paid-summary" role="status">
+    <div><i class="fas fa-check-circle me-1"></i> Total Paid</div>
+    <strong><?= formatCurrency((float) $paidSummary['total_paid']) ?></strong>
+    <div><?= number_format((int) $paidSummary['paid_users']) ?> paid users · completed registration payments matching your filters</div>
 </div>
 
 <?php displayFlash(); ?>
@@ -429,7 +450,7 @@ include __DIR__ . '/admin_header.php';
                     </thead>
                     <tbody>
                         <?php foreach ($users as $i => $u): ?>
-                        <tr>
+                        <tr class="<?= (float) $u['paid_amount'] > 0 ? 'user-paid' : '' ?>">
                             <td><input type="checkbox" name="user_ids[]" value="<?= $u['id'] ?>" class="form-check-input item-checkbox" form="bulkDeleteForm"></td>
                             <td><?= $offset + $i + 1 ?></td>
                             <td>
@@ -444,10 +465,11 @@ include __DIR__ . '/admin_header.php';
                             <td><strong style="color:#10b981;"><?= formatCurrency($u['total_earned']) ?></strong></td>
                             <td>
                                 <?php if ($u['paid_amount']): ?>
-                                    <span style="color:#10b981;font-weight:700;font-size:0.85rem;"><?= formatCurrency($u['paid_amount']) ?></span>
-                                    <br><small style="color:#9ca3af;font-size:0.7rem;"><?= date('d M Y', strtotime($u['paid_date'])) ?></small>
+                                    <span class="payment-paid-label"><i class="fas fa-check-circle me-1"></i> Paid</span>
+                                    <span class="payment-paid-total">Total paid: <?= formatCurrency((float) $u['paid_amount']) ?></span>
+                                    <?php if ($u['paid_date']): ?><small class="payment-paid-date"><?= date('d M Y', strtotime($u['paid_date'])) ?></small><?php endif; ?>
                                 <?php else: ?>
-                                    <span class="text-muted" style="font-size:0.85rem;">—</span>
+                                    <span class="text-muted" style="font-size:0.85rem;">Unpaid</span>
                                 <?php endif; ?>
                             </td>
                             <td><?= statusBadge($u['status']) ?></td>
