@@ -16,15 +16,15 @@ class AblinerPayment {
         catch (InvalidArgumentException $e) { return ['valid' => false, 'error' => $e->getMessage()]; }
     }
 
-    public function initiatePayment(int $userId, string $phone, float $amount = 0): array {
-        return $this->startDeposit($userId, $phone, (float) app_setting('registration_fee', REGISTRATION_FEE), 'registration');
+    public function initiatePayment(int $userId, string $phone, float $amount = 0, bool $confirmNumberChange = false, string $previousOrder = ''): array {
+        return $this->startDeposit($userId, $phone, (float) app_setting('registration_fee', REGISTRATION_FEE), 'registration', $confirmNumberChange, $previousOrder);
     }
 
     public function initiateFunding(int $adminId, string $phone, float $amount): array {
         return $this->startDeposit($adminId, $phone, $amount, 'admin_funding');
     }
 
-    private function startDeposit(int $userId, string $phone, float $amount, string $purpose): array {
+    private function startDeposit(int $userId, string $phone, float $amount, string $purpose, bool $confirmNumberChange = false, string $previousOrder = ''): array {
         if (!$this->client->ready()) return ['success' => false, 'error' => 'Abliner payments are not configured yet. Contact support.'];
         $plan = $purpose === 'registration' ? CommissionPlan::values() : null;
         if ($plan) $amount = (float) $plan['registration_fee'];
@@ -45,10 +45,24 @@ class AblinerPayment {
                 || ($purpose === 'admin_funding' && !StaffAccess::canForUser($userId, 'wallet_manage'))) throw new RuntimeException('Account cannot initiate this deposit.');
             $existing = Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", [$userId, $purpose]);
             if ($existing) {
-                Database::commit();
-                if (($existing['gateway'] ?? 'snippe') !== 'abliner') return ['success' => false, 'error' => 'An earlier payment needs reconciliation by support before starting an Abliner payment.'];
-                if ($existing['phone'] !== $phone) return ['success' => false, 'error' => 'The previous payment to ' . $existing['phone'] . ' is still pending. No prompt was sent to the new number. Wait for Abliner to confirm that request has failed before changing the number.'];
-                return $this->paymentResult($existing, 'Your earlier request is still pending. No new prompt was sent. If no prompt appears, contact support with this order ID so the request can be checked with Abliner.');
+                if (($existing['gateway'] ?? 'snippe') !== 'abliner') {
+                    Database::commit();
+                    return ['success' => false, 'error' => 'An earlier payment needs reconciliation by support before starting an Abliner payment.'];
+                }
+                $switch = $purpose === 'registration' && $existing['phone'] !== $phone
+                    && $confirmNumberChange && hash_equals($existing['order_id'], $previousOrder);
+                if (!$switch) {
+                    Database::commit();
+                    if ($existing['phone'] !== $phone) return ['success' => false, 'error' => 'To use another number, confirm below that you have not paid and will not approve the old prompt. Then submit again.'];
+                    return $this->paymentResult($existing, 'Your earlier request is still pending. No new prompt was sent.');
+                }
+                // A deliberate switch keeps the previous request available for late callbacks.
+                // Reusing a number with an unresolved request must never send another push.
+                $samePhone = Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = ? AND status = 'pending' AND phone = ? ORDER BY id DESC LIMIT 1", [$userId, $purpose, $phone]);
+                if ($samePhone) {
+                    Database::commit();
+                    return $this->paymentResult($samePhone, 'This number already has a pending request. No new prompt was sent.');
+                }
             }
             $order = 'ES-' . bin2hex(random_bytes(12));
             $id = Database::insert('payments', ['user_id' => $userId, 'order_id' => $order, 'amount' => $amount,
@@ -144,6 +158,10 @@ class AblinerPayment {
         $stored = json_decode($row['metadata'] ?? '{}', true) ?: [];
         unset($provider['commission_plan']);
         if (isset($stored['commission_plan'])) $provider['commission_plan'] = $stored['commission_plan'];
+        foreach (['superseded_by_payment', 'local_failure_reason'] as $key) {
+            unset($provider[$key]);
+            if (isset($stored[$key])) $provider[$key] = $stored[$key];
+        }
         return json_encode($provider, JSON_THROW_ON_ERROR);
     }
 
@@ -237,9 +255,14 @@ class AblinerPayment {
             if (!in_array($status, ['pending', 'processing', 'completed', 'failed'], true)) throw new RuntimeException('Unknown Abliner status; manual reconciliation required.');
             $status = $status === 'processing' ? 'pending' : $status;
             if ($row['status'] !== 'pending') {
-                if ($row['status'] === 'failed' && $status === 'completed') throw new RuntimeException('Conflicting final states; manual reconciliation required.');
-                if (!$nested) Database::commit();
-                return; // Duplicate terminal events and late pending/failed events cannot change balances.
+                $storedState = json_decode($row['metadata'] ?? '{}', true) ?: [];
+                $lateReplacedPayment = $table === 'payments' && $row['status'] === 'failed' && $status === 'completed'
+                    && !empty($storedState['superseded_by_payment']);
+                if ($row['status'] === 'failed' && $status === 'completed' && !$lateReplacedPayment) throw new RuntimeException('Conflicting final states; manual reconciliation required.');
+                if (!$lateReplacedPayment) {
+                    if (!$nested) Database::commit();
+                    return; // Ignore duplicate terminal events; retain late money on replaced requests.
+                }
             }
             $changes = ['gateway_id' => $data['id'], 'status' => $status, 'metadata' => $this->metadata($row, $data)];
             if ($table === 'payments') {
@@ -257,6 +280,15 @@ class AblinerPayment {
                         CommissionEngine::processRegistrationCommissions((int) $row['user_id'], $plan);
                         Database::insert('abliner_notifications', ['payment_id' => $row['id'], 'user_id' => $row['user_id'], 'amount' => $row['amount']]);
                     } elseif ($user['status'] !== 'active') throw new RuntimeException('Account cannot be activated automatically.');
+                    // Close only this account's other registration attempts after verified payment.
+                    // This is local supersession, not cancellation at the mobile network.
+                    $others = Database::fetchAll("SELECT * FROM payments WHERE user_id = ? AND purpose = 'registration' AND gateway = 'abliner' AND status = 'pending' AND id <> ? FOR UPDATE", [$row['user_id'], $id]);
+                    foreach ($others as $other) {
+                        $otherMetadata = json_decode($other['metadata'] ?? '{}', true) ?: [];
+                        $otherMetadata['superseded_by_payment'] = $id;
+                        $otherMetadata['local_failure_reason'] = 'Registration paid using another request; provider cancellation is not implied.';
+                        Database::update('payments', ['status' => 'failed', 'metadata' => json_encode($otherMetadata, JSON_THROW_ON_ERROR)], 'id = ? AND status = ?', [$other['id'], 'pending']);
+                    }
                 }
             } else {
                 $changes['reference'] = $data['reference'] ?? $row['reference'];

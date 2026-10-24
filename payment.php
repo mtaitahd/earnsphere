@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['pay', 'change_n
                 $action = 'show';
             } else {
                 try {
-                    $result = $abliner->initiatePayment($userId, $phoneCheck['phone']);
+                    $result = $abliner->initiatePayment($userId, $phoneCheck['phone'], 0, ($_POST['confirm_number_change'] ?? '') === '1', (string) ($_POST['previous_order'] ?? ''));
                 } catch (Throwable $e) {
                     error_log('Abliner payment page error: ' . $e->getMessage());
                     $result = ['success' => false, 'error' => 'Payment could not be confirmed. Check existing payment status before trying again.'];
@@ -371,6 +371,14 @@ $referralLink = getReferralLink($refCode);
                 </div>
             </div>
 
+            <?php if ($existingPayment && ($existingPayment['gateway'] ?? '') === 'abliner'): ?>
+            <input type="hidden" name="previous_order" value="<?= sanitize($existingPayment['order_id']) ?>">
+            <div class="alert alert-warning" style="font-size:0.85rem;">
+                Previous request: <?= sanitize($existingPayment['phone']) ?>. To use another number, confirm below. Do not approve the old prompt.
+                <label class="d-block mt-2"><input type="checkbox" name="confirm_number_change" value="1"> I have not paid. Send a new request to the different number I entered; I will not approve the old request.</label>
+            </div>
+            <?php endif; ?>
+
             <button type="submit" class="pay-btn">
                 <i class="fas fa-lock"></i> Pay Now — <?= formatCurrency($displayRegistrationFee) ?>
             </button>
@@ -435,10 +443,18 @@ $referralLink = getReferralLink($refCode);
 
         <div id="changeNumSection" style="display:none;margin-top:1rem;text-align:left;background:var(--gray-50);padding:1rem;border-radius:var(--radius-md);">
             <p style="font-size:0.85rem;font-weight:700;color:var(--gray-800);margin-bottom:0.5rem;">
-                <i class="fas fa-mobile-screen me-1"></i> Send USSD push to a different number
+                <i class="fas fa-mobile-screen me-1"></i> Use a different number (do not approve the old request)
             </p>
             <form method="POST" action="<?= $siteUrl ?>/payment?user_id=<?= $userIdVal ?>&action=change_number">
                 <input type="hidden" name="<?= $csrfName ?>" value="<?= $csrfVal ?>">
+                <?php if ($existingPayment && ($existingPayment['gateway'] ?? '') === 'abliner'): ?>
+            <input type="hidden" name="previous_order" value="<?= sanitize($existingPayment['order_id']) ?>">
+            <div class="alert alert-warning" style="font-size:0.85rem;">
+                Previous request: <?= sanitize($existingPayment['phone']) ?>. To use another number, confirm below. Do not approve the old prompt.
+                <label class="d-block mt-2"><input type="checkbox" name="confirm_number_change" value="1"> I have not paid. Send a new request to the different number I entered; I will not approve the old request.</label>
+            </div>
+            <?php endif; ?>
+
                 <div class="input-group" style="border-radius:var(--radius-sm);overflow:hidden;">
                     <span class="input-group-text" style="background:var(--gray-100);border:none;font-size:0.9rem;"><i class="fas fa-phone"></i></span>
                     <input type="tel" data-recipient-lookup data-lookup-url="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/api/lookup_phone.php" data-csrf="<?= $csrf ?>" data-csrf-name="<?= CSRF_TOKEN_NAME ?>" name="phone" class="form-control" placeholder="e.g. 0712 345 678" required
