@@ -93,7 +93,7 @@ include __DIR__ . '/includes/public_head.php';
                     $badgeClass = 'bg-success';
                 }
             ?>
-            <div class="list-item">
+            <div class="list-item"<?php if ($isPendingWithdrawal && ($tx['reference_type'] ?? '') === 'withdrawal'): ?> data-pending-withdrawal="<?= (int) $tx['reference_id'] ?>"<?php endif; ?>>
                 <div class="item-icon" style="background:<?= $iconBg ?>; color:<?= $iconColor ?>;">
                     <i class="fas fa-<?= $isPendingWithdrawal ? 'clock' : match($tx['type']) {
                         'commission' => 'percentage',
@@ -160,4 +160,8 @@ include __DIR__ . '/includes/public_head.php';
     </a>
 </nav>
 
+<script>
+window.transactionVerification = { endpoint: <?= json_encode(SITE_URL . '/api/check_withdrawal.php') ?> };
+</script>
+<script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/transaction-verification.js?v=<?= filemtime(__DIR__ . '/assets/js/transaction-verification.js') ?>"></script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

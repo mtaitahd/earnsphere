@@ -103,7 +103,7 @@ $total = Database::count('withdrawals w', $where, $params);
 $withdrawals = Database::fetchAll(
     "SELECT w.*, u.full_name, u.phone as user_phone, u.email,
             p.full_name as processor_name,
-            pay.id as payout_id, pay.status as payout_status, pay.reference as payout_reference, pay.metadata as payout_metadata,
+            pay.id as payout_id, pay.status as payout_status, pay.reference as payout_reference, pay.metadata as payout_metadata, pay.gateway_id as payout_gateway_id,
             pay.fees as payout_fees, pay.provider as payout_provider, pay.error_message as payout_error
      FROM withdrawals w
      JOIN users u ON w.user_id = u.id
@@ -211,7 +211,12 @@ include __DIR__ . '/admin_header.php';
                             <?php endif; ?>
                             <?php $diagnostic = json_decode($wd['payout_metadata'] ?? '{}', true) ?: []; ?>
                             <?php if (!empty($diagnostic['verification_error'])): ?>
-                                <div class="text-danger">Verification: <?= sanitize($diagnostic['verification_error']) ?></div>
+                                <div class="text-danger">Initial verification error: <?= sanitize($diagnostic['verification_error']) ?></div>
+                                <?php $submission = $diagnostic['submission_response'] ?? []; ?>
+                                <div>Bound provider ID: <?= sanitize($wd['payout_gateway_id'] ?? '') ?: 'Not yet linked' ?></div>
+                                <?php if (is_array($submission) && $submission): ?>
+                                <details><summary>Saved provider response identity</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;"><?= sanitize(json_encode(array_intersect_key($submission, array_flip(['id','type','status','reference','customer_reference','amount','amount_cents','currency','recipient'])), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre></details>
+                                <?php endif; ?>
                             <?php endif; ?>
                             <?php if ($wd['payout_error']): ?>
                                 <div><small class="text-danger"><?= sanitize($wd['payout_error']) ?></small></div>
