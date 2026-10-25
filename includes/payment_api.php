@@ -25,6 +25,9 @@ function paymentApiReply(array $body, int $status = 200, ?AblinerPayment $servic
     http_response_code($status);
     echo json_encode($body, JSON_UNESCAPED_UNICODE);
     if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
-    if ($service) $service->flushNotifications();
+    if ($service) {
+        try { $service->flushNotifications(); }
+        catch (Throwable $e) { error_log('Payment notification dispatch deferred: ' . $e->getMessage()); }
+    }
     exit;
 }

@@ -347,3 +347,11 @@ var historyPoll = setInterval(function () {
 }, 10000);
 </script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>
+<?php
+if ($payoutResult) {
+    if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+    elseif (function_exists('litespeed_finish_request')) litespeed_finish_request();
+    try { (new AblinerPayment())->flushNotifications(1); }
+    catch (Throwable $e) { error_log('Withdrawal success notification deferred: ' . $e->getMessage()); }
+}
+?>

@@ -23,6 +23,9 @@ expect((float)$wallet['balance'] === 83500.0 && (float)$wallet['withdrawable_bal
 $payout = Database::fetchOne('SELECT * FROM payouts WHERE withdrawal_id=?',[$paid['withdrawal_id']]);
 $review = json_decode($payout['metadata'],true)['settlement_review'];
 expect($review['requires_review'] && $review['requested_tzs'] === 16000 && $review['provider_reported_tzs'] === 15360 && $review['difference_tzs'] === 640,'Discrepancy evidence missing');
+$notice = Database::fetchOne('SELECT * FROM user_notifications WHERE event_key=?', ['withdrawal:' . $paid['withdrawal_id']]);
+$noticePayload = json_decode($notice['payload'], true);
+expect($noticePayload['system_charge'] === 500 && $noticePayload['provider_charge'] === 640 && $noticePayload['received_amount'] === 15360, 'Settled payout did not queue the exact fee snapshot');
 $posts = $client->postCount();
 $again = $service->requestWithdrawal(101,16500,'0712345678','TEST RECIPIENT',500,$key);
 expect($again['withdrawal_id'] === $paid['withdrawal_id'] && $client->postCount() === $posts,'Repeated browser submission sent another payout');

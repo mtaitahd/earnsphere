@@ -273,11 +273,11 @@ function notifyAdmin(string $subject, string $message): void {
  * @param int   $userId  The activated user
  * @param float $amount  Amount paid (defaults to registration fee)
  */
-function notifyAccountActivated(int $userId, float $amount = 0): void {
+function notifyAccountActivated(int $userId, float $amount = 0, bool $sendSms = true): void {
     // SMS notification (Meseji gateway)
     try {
         require_once __DIR__ . '/../classes/MesejiSms.php';
-        MesejiSms::notifyPaymentSuccess($userId, $amount);
+        if ($sendSms) MesejiSms::notifyPaymentSuccess($userId, $amount);
     } catch (Throwable $e) {
         error_log("Account activation SMS error: " . $e->getMessage());
     }

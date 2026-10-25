@@ -23,7 +23,7 @@ $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 (new ReflectionProperty(Database::class, 'instance'))->setValue(null, $db);
 $schema = [
     'settings' => 'id INTEGER PRIMARY KEY, setting_key TEXT, setting_value TEXT',
-    'users' => 'id INTEGER PRIMARY KEY, status TEXT, role TEXT DEFAULT "user", referred_by INTEGER',
+    'users' => 'id INTEGER PRIMARY KEY, status TEXT, role TEXT DEFAULT "user", referred_by INTEGER, phone TEXT DEFAULT "255712345678"',
     'wallets' => 'id INTEGER PRIMARY KEY, user_id INTEGER UNIQUE, balance REAL DEFAULT 0, withdrawable_balance REAL DEFAULT 0, pending_amount REAL DEFAULT 0, total_earned REAL DEFAULT 0, total_withdrawn REAL DEFAULT 0',
     'payments' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, order_id TEXT UNIQUE, purpose TEXT DEFAULT "registration", amount REAL, currency TEXT, phone TEXT, payment_method TEXT, status TEXT, gateway TEXT DEFAULT "snippe", gateway_id TEXT, gateway_reference TEXT, transaction_ref TEXT, idempotency_key TEXT, metadata TEXT, completed_at TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP',
     'withdrawals' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, request_key TEXT UNIQUE, amount REAL, withdrawal_charge REAL DEFAULT 0, phone TEXT, payment_method TEXT, status TEXT, gateway TEXT, recipient_name TEXT, recipient_network TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, processed_at TEXT',
@@ -31,6 +31,7 @@ $schema = [
     'wallet_transactions' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, wallet_id INTEGER, user_id INTEGER, type TEXT, amount REAL, balance_before REAL, balance_after REAL, description TEXT, status TEXT, reference_id INTEGER, reference_type TEXT',
     'commissions' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, earner_id INTEGER, source_user_id INTEGER, level INTEGER, amount REAL, status TEXT, wallet_transaction_id INTEGER',
     'activity_logs' => 'id INTEGER PRIMARY KEY, user_id INTEGER, action TEXT, description TEXT, ip_address TEXT, user_agent TEXT',
+    'user_notifications' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, event_key TEXT UNIQUE, user_id INTEGER, kind TEXT, title TEXT, message TEXT, payload TEXT, read_at TEXT, sms_status TEXT, sms_attempted_at TEXT, sms_sent_at TEXT, sms_error TEXT, created_at TEXT',
     'abliner_webhook_events' => 'event_id TEXT PRIMARY KEY',
     'abliner_notifications' => 'payment_id INTEGER PRIMARY KEY, user_id INTEGER, amount REAL, claimed_at TEXT, sent_at TEXT',
 ];

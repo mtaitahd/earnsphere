@@ -135,7 +135,7 @@ include __DIR__ . '/includes/public_head.php';
     <?php endif; ?>
 
     <?php if ($registrationPayment && $user['status'] === 'active' && $registrationPayment['status'] === 'completed'): ?>
-    <div style="background:linear-gradient(135deg,rgba(16,185,129,0.18),rgba(5,150,105,0.10));border:1px solid rgba(16,185,129,0.35);border-radius:12px;padding:1rem;margin-top:0.5rem;color:#065f46;">
+    <div style="background:#15803d;border:1px solid #22c55e;border-radius:12px;padding:1rem;margin-top:0.5rem;color:#fff;">
         <div class="d-flex align-items-center justify-content-between">
             <div>
                 <div style="font-size:0.8rem;opacity:0.85;"><i class="fas fa-check-circle me-1"></i> Registration Paid</div>
@@ -143,7 +143,7 @@ include __DIR__ . '/includes/public_head.php';
             </div>
             <div style="text-align:right;">
                 <div style="font-size:0.75rem;opacity:0.75;">Paid on</div>
-                <div style="font-size:0.85rem;font-weight:600;color:#047857;"><?= date('d M Y', strtotime($registrationPayment['completed_at'])) ?></div>
+                <div style="font-size:0.85rem;font-weight:700;color:#fff;"><?= date('d M Y', strtotime($registrationPayment['completed_at'])) ?></div>
             </div>
         </div>
     </div>
@@ -241,6 +241,16 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Dashboard Content -->
 <div class="dash-content mb-safe">
+    <section class="card mb-3" id="financial-notifications" data-endpoint="<?= sanitize(SITE_URL) ?>/api/notifications.php" data-csrf-name="<?= CSRF_TOKEN_NAME ?>" data-csrf="<?= sanitize($csrf) ?>">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div><h6 class="mb-1"><i class="fas fa-bell me-1"></i> Your notifications</h6><small data-notification-count role="status">Loading...</small></div>
+                <button type="button" class="btn btn-sm btn-outline-success" data-notification-read-all disabled>Mark all as read</button>
+            </div>
+            <div data-notification-list aria-live="polite"></div>
+        </div>
+    </section>
+
     
     <!-- Weekly Referral Contest -->
     <?php if ($contest): ?>
@@ -1351,4 +1361,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 
+<script src="<?= sanitize(SITE_URL) ?>/assets/js/payment-notifications.js?v=<?= filemtime(__DIR__ . '/assets/js/payment-notifications.js') ?>"></script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

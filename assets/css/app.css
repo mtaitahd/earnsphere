@@ -1904,3 +1904,8 @@ img {
     overflow-wrap: break-word;
 }
 .withdrawal-history-status [role="status"] { margin-top: 0.5rem; }
+
+.financial-notification { padding:0.85rem; margin-bottom:0.65rem; border:1px solid #e5e7eb; overflow-wrap:anywhere; }
+.financial-notification.is-unread { border-left:4px solid #15803d; background:#f0fdf4; }
+.financial-notification strong { color:#14532d; }
+.financial-notification p { margin:0.35rem 0; font-size:0.875rem; color:#1f2937; }

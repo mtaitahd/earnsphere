@@ -272,6 +272,7 @@ function deleteUsersAndData(array $ids): int {
         safeUserDelete('wallet_transactions', "wallet_id IN (SELECT id FROM wallets WHERE user_id IN ({$placeholders}))", $params);
         // Payouts for these users' withdrawals
         safeUserDelete('payouts', "withdrawal_id IN (SELECT id FROM withdrawals WHERE user_id IN ({$placeholders}))", $params);
+        safeUserDelete('user_notifications', "user_id IN ({$placeholders})", $params);
         // Direct references
         safeUserDelete('commissions', "earner_id IN ({$placeholders}) OR source_user_id IN ({$placeholders})", array_merge($params, $params));
         safeUserDelete('payments', "user_id IN ({$placeholders})", $params);

@@ -9,8 +9,9 @@ try {
     $last = $_SESSION['withdrawal_poll'][$payout['id']] ?? 0;
     if ($payout['status'] === 'pending' && time() - $last < 5) paymentApiReply(['success' => true, 'status' => 'pending', 'message' => 'Please wait a few seconds before checking again.']);
     $_SESSION['withdrawal_poll'][$payout['id']] = time();
-    $result = (new AblinerPayment())->reconcile('payouts', (int) $payout['id']);
-    paymentApiReply(['success' => $result['success'], 'status' => $result['status'] ?? $payout['status'], 'message' => $result['success'] ? ($result['message'] ?? 'Status checked.') : 'Verification unavailable. Your funds remain reserved; do not submit another payout.']);
+    $service = new AblinerPayment();
+    $result = $service->reconcile('payouts', (int) $payout['id']);
+    paymentApiReply(['success' => $result['success'], 'status' => $result['status'] ?? $payout['status'], 'message' => $result['success'] ? ($result['message'] ?? 'Status checked.') : 'Verification unavailable. Your funds remain reserved; do not submit another payout.'], 200, $service);
 } catch (Throwable $e) {
     error_log('User payout verification #' . $payout['id'] . ': ' . $e->getMessage());
     paymentApiReply(['success' => false, 'error' => 'Transfer verification is unavailable. Funds remain reserved; contact support before another withdrawal.'], 503);

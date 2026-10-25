@@ -41,4 +41,5 @@ foreach (['abliner_api_key' => 'Abliner API key', 'abliner_webhook_secret' => 'A
 }
 require __DIR__ . '/migrate_withdrawal_charge.php';
 require __DIR__ . '/migrate_payment_safety.php';
+require __DIR__ . '/migrate_notifications.php';
 echo "Abliner migration complete. Existing transactions retain their original gateway.\n";

@@ -204,3 +204,33 @@ Accounts with Abliner financial records cannot be deleted through Users manageme
 Launch verification still requires production webhook delivery and a real provider
 transaction showing requested, received and provider-debited amounts. Offline tests do
 not establish provider fee semantics or prove production MySQL concurrency behavior.
+
+## Dashboard and SMS success notifications
+
+Before accepting new payment events after this update, run:
+
+```sh
+php database/migrate_notifications.php
+```
+
+The migration only creates the notification/outbox table; it sends no SMS and changes
+no wallet balances. Verified registration and withdrawal success events enqueue one
+notification per unique payment/withdrawal inside the financial transaction. Dashboard
+history includes recent older completed transactions without sending historical SMS.
+
+SMS uses the existing Meseji settings, including `meseji_sender_id` from the database.
+No sender ID or API key is hardcoded. The global Enable SMS setting and payment-success
+SMS toggle remain in effect. Withdrawal messages state wallet debit, system charge,
+provider deduction and provider-reported received amount. The payout goes to the
+withdrawal number, but the notification SMS goes to the account owner's saved phone.
+
+Dispatch occurs after financial commit on webhook/API responses and withdrawal receipt
+requests; dashboard notification fetches also drain queued SMS. No cron is required.
+A gateway acceptance is recorded as sent, not proof of handset delivery. Sending is
+claimed before calling the gateway. Failed/unknown attempts are not automatically
+resent because a timeout may follow a successful send; inspect existing SMS logs before
+any manual resend. A process crash after claiming a send similarly needs operator
+review. SMS outages never reverse settlement or erase the dashboard notification.
+
+Mark all as read requires an authenticated, CSRF-validated POST and only affects that
+user's notifications up to the latest fetched ID. New notifications remain unread.

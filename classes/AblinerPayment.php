@@ -6,6 +6,7 @@ require_once __DIR__ . '/CommissionEngine.php';
 require_once __DIR__ . '/CommissionPlan.php';
 require_once __DIR__ . '/WithdrawalCharge.php';
 require_once __DIR__ . '/StaffAccess.php';
+require_once __DIR__ . '/PaymentNotifications.php';
 
 class AblinerPayment {
     private AblinerClient $client;
@@ -365,6 +366,7 @@ class AblinerPayment {
                         $plan = $stored['commission_plan'] ?? CommissionPlan::values();
                         if ((int) $plan['commission_l1'] + (int) $plan['commission_l2'] > (float) $row['amount']) throw new RuntimeException('Commission amounts exceed this older payment. Manual reconciliation required.');
                         CommissionEngine::processRegistrationCommissions((int) $row['user_id'], $plan);
+                        PaymentNotifications::payment($row);
                         Database::insert('abliner_notifications', ['payment_id' => $row['id'], 'user_id' => $row['user_id'], 'amount' => $row['amount']]);
                     } elseif ($user['status'] !== 'active') throw new RuntimeException('Account cannot be activated automatically.');
                     // Close only this account's other registration attempts after verified payment.
@@ -382,7 +384,7 @@ class AblinerPayment {
                 $changes['external_reference'] = $data['provider_reference'] ?? $row['external_reference'];
                 if (isset($data['fee_tzs']) && is_numeric($data['fee_tzs']) && (float) $data['fee_tzs'] >= 0) $changes['fees'] = (float) $data['fee_tzs'];
                 if (isset($data['total_debited_tzs']) && is_numeric($data['total_debited_tzs']) && (float) $data['total_debited_tzs'] >= (float) $row['amount']) $changes['total'] = (float) $data['total_debited_tzs'];
-                if (in_array($status, ['completed', 'failed'], true)) $this->settleWithdrawal($row, $status);
+                if (in_array($status, ['completed', 'failed'], true)) $this->settleWithdrawal($row, $status, $amount);
             }
             Database::update($table, $changes, 'id = ?', [$id]);
             if (!$nested) Database::commit();
@@ -392,7 +394,7 @@ class AblinerPayment {
         }
     }
 
-    private function settleWithdrawal(array $payout, string $status): void {
+    private function settleWithdrawal(array $payout, string $status, ?float $received = null): void {
         $wd = Database::fetchOne('SELECT * FROM withdrawals WHERE id = ? FOR UPDATE', [$payout['withdrawal_id']]);
         if (!$wd || $wd['gateway'] !== 'abliner' || !in_array($wd['status'], ['pending', 'approved', 'processing'], true)) throw new RuntimeException('Withdrawal hold is no longer available.');
         $wallet = Database::fetchOne('SELECT * FROM wallets WHERE user_id = ? FOR UPDATE', [$payout['user_id']]);
@@ -408,6 +410,7 @@ class AblinerPayment {
             $values['total_withdrawn'] = (float) $wallet['total_withdrawn'] + $amount;
         } else $values['withdrawable_balance'] = (float) $wallet['withdrawable_balance'] + $amount;
         Database::update('wallets', $values, 'id = ?', [$wallet['id']]);
+        if ($status === 'completed') PaymentNotifications::withdrawal($wd, $received ?? (float) $payout['amount']);
         Database::update('withdrawals', ['status' => $status, 'processed_at' => date('Y-m-d H:i:s')], 'id = ?', [$wd['id']]);
         Database::update('wallet_transactions', ['status' => $status, 'balance_after' => $balanceAfter],
             'reference_id = ? AND reference_type = ? AND user_id = ? AND status = ?', [$wd['id'], 'withdrawal', $wd['user_id'], 'pending']);
@@ -419,14 +422,15 @@ class AblinerPayment {
             Database::beginTransaction();
             try {
                 $row = Database::fetchOne('SELECT * FROM abliner_notifications WHERE sent_at IS NULL AND (claimed_at IS NULL OR claimed_at < ?) ORDER BY payment_id LIMIT 1 FOR UPDATE', [date('Y-m-d H:i:s', time() - 600)]);
-                if (!$row) { Database::commit(); return; }
+                if (!$row) { Database::commit(); break; }
                 Database::update('abliner_notifications', ['claimed_at' => date('Y-m-d H:i:s')], 'payment_id = ?', [$row['payment_id']]);
                 Database::commit();
             } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }
             try {
-                notifyAccountActivated((int) $row['user_id'], (float) $row['amount']);
+                notifyAccountActivated((int) $row['user_id'], (float) $row['amount'], false);
                 Database::update('abliner_notifications', ['sent_at' => date('Y-m-d H:i:s')], 'payment_id = ?', [$row['payment_id']]);
             } catch (Throwable $e) { error_log('Abliner activation notification failed'); }
         }
+        PaymentNotifications::dispatch($limit);
     }
 }

@@ -27,7 +27,7 @@ def run(endpoint, method="POST", session=None):
 for name in ["test-payout.php", "temp_setup_otp.php", "diagnostic.php", "mail_test.php", "install.php", "api/payment-debug.php"]:
     for method in ["GET", "POST"]:
         assert run(name, method) == "HTTP:404", f"Retired endpoint exposed: {name}"
-for name in ["create_payment.php", "check_payment.php", "check_withdrawal.php", "lookup_phone.php", "create_payout.php", "check_payout.php", "abliner_balance.php", "payout_preview.php"]:
+for name in ["create_payment.php", "check_payment.php", "check_withdrawal.php", "notifications.php", "lookup_phone.php", "create_payout.php", "check_payout.php", "abliner_balance.php", "payout_preview.php"]:
     assert run("api/" + name).endswith("HTTP:401"), f"Anonymous access accepted: {name}"
 for name in ["create_payment.php", "create_payout.php", "lookup_phone.php"]:
     assert run("api/" + name, session="admin").endswith("HTTP:403"), f"Missing CSRF accepted: {name}"
