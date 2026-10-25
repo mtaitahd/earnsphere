@@ -209,6 +209,10 @@ include __DIR__ . '/admin_header.php';
                             <?php if ($wd['payout_fees'] > 0): ?>
                                 <div><small class="text-muted">Fees: <?= formatCurrency($wd['payout_fees']) ?> | Provider: <?= $wd['payout_provider'] ?></small></div>
                             <?php endif; ?>
+                            <?php $diagnostic = json_decode($wd['payout_metadata'] ?? '{}', true) ?: []; ?>
+                            <?php if (!empty($diagnostic['verification_error'])): ?>
+                                <div class="text-danger">Verification: <?= sanitize($diagnostic['verification_error']) ?></div>
+                            <?php endif; ?>
                             <?php if ($wd['payout_error']): ?>
                                 <div><small class="text-danger"><?= sanitize($wd['payout_error']) ?></small></div>
                             <?php endif; ?>

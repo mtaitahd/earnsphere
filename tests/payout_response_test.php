@@ -7,6 +7,7 @@ class ReferenceOnlyPayoutClient extends MockAbliner {
         $result = parent::withdraw($payload, $key);
         unset($result['data']['customer_reference']);
         $result['data']['reference'] = $this->wrongReference ? 'another-order' : $payload['reference'];
+        if ($this->wrongReference) $result['data']['customer_reference'] = 'another-order';
         return $result;
     }
 }

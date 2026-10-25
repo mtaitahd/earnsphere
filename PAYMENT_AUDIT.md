@@ -5,7 +5,7 @@
 - Completed payouts reporting a different valid TZS amount previously stayed pending.
   A verified completed transfer now consumes the reserved gross wallet amount exactly
   once. The requested and provider-reported amounts and their difference are retained
-  separately and displayed for review. No fee is inferred, no difference is resent,
+  separately and displayed to administrators for review. No fee is inferred, no difference is resent,
   and no automatic refund is created. Deposit activation still requires exact payment.
 - Duplicate form submissions could create separate withdrawal requests. A session-issued,
   database-unique request key now identifies the original request across retries and
@@ -32,7 +32,7 @@ wrong/duplicate callbacks, provider signatures, atomic rollback, payout holds, c
 and failed transfers, exact and net-reported amounts, duplicate browser submissions,
 timeouts, reference-only recovery, malformed values, currency/cents inconsistencies,
 recipient validation and endpoint authorization. PHP syntax and browser-script checks
-are run separately. No live funds are moved by these tests or the reconciliation job.
+are run separately. No live funds are moved by these tests or status checks.
 
 ## Production status and limits
 
@@ -44,19 +44,27 @@ The business still needs Abliner to confirm gross/net/fee semantics and the amou
 actually received. Provider credentials and production data have not been accessed
 from this development workspace.
 
-Production webhook delivery, the minute reconciliation cron, provider funding and MySQL
+Production webhook delivery, provider funding and MySQL
 concurrency behavior require hosting verification. No audit can establish absence of all
-bugs or certify launch readiness solely from offline tests. Inspect the live verbose
-reconciliation output and a verified collection/withdrawal before opening broadly.
+bugs or certify launch readiness solely from offline tests. Inspect a live signed callback and a verified collection/withdrawal before opening broadly.
 
 ## Deployment
 
 ```sh
 git pull --ff-only origin main
 php database/migrate_payment_safety.php
-php cron/verify-pending-payments.php --verbose
 ```
 
 Run the migration before accepting new withdrawals. It adds schema support without
 changing balances. Reconciliation reads existing transactions, records their verified
 outcome and never invokes a transfer POST. Do not create a replacement for payout #169.
+
+## Webhook operation update
+
+The payment cron script has been removed at the owner's request. Verification now uses
+the signed callback, a single immediate status lookup for pending payouts, and bounded
+read-only checks while the user views withdrawal history. Outbound response IDs are
+bound before settlement so provider-generated references can be reconciled reliably.
+A saved submission response can recover an unbound old payout ID without resending.
+Notifications run after financial commit and do not depend on a cron; delivery retries
+are best effort on subsequent events, not a scheduled guarantee.

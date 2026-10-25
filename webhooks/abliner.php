@@ -12,7 +12,10 @@ try {
     $result = $service->processWebhook($body);
     echo json_encode(['success' => true] + $result);
     if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
-    // Cron sends queued email/SMS after the payment transaction has committed.
+    elseif (function_exists('litespeed_finish_request')) litespeed_finish_request();
+    // A notification failure must never change a successful financial acknowledgment.
+    try { $service->flushNotifications(1); }
+    catch (Throwable $e) { error_log('Abliner notification delivery deferred: ' . $e->getMessage()); }
 } catch (JsonException | InvalidArgumentException $e) {
     http_response_code(400); echo '{"error":"Invalid event"}';
 } catch (Throwable $e) {

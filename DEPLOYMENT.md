@@ -47,18 +47,24 @@ Requests also include this URL. Deposits use idempotency keys and HMAC request
 signatures. Incoming events require a valid raw-body HMAC and a timestamp within
 five minutes. Keep server time synchronized.
 
-## Reconciliation and notifications
+## Automatic verification and notifications
 
-Add this cPanel cron job every minute, adjusting the path if necessary:
+No payment cron is required. Remove any old cPanel entry for the removed payment
+reconciliation script. Save `https://earnsphere.co.tz/webhooks/abliner.php` as the
+callback in Abliner Dashboard → API Keys and use the same personal webhook signing
+secret in this application. Each outbound payment also supplies this callback URL.
 
-```bash
-php /home/atimscot/earnsphere.co.tz/cron/verify-pending-payments.php
-```
+A valid signed webhook commits the deposit activation/commissions or withdrawal
+settlement exactly once. A successful outbound HTTP response binds the provider's
+transaction ID to that specific request; generated provider references need not equal
+our customer reference. Identity binding alone does not authorize settlement.
 
-The job checks pending Abliner records by exact ID or customer reference and sends
-queued activation SMS/email. It never automatically sends another deposit push
-or payout. Timeouts retain holds until a verified final result arrives. Admins
-can also check existing payouts from the withdrawal screen.
+If the immediate payout response cannot complete settlement, one automatic status GET
+checks the existing transaction. The visible withdrawal history also performs bounded
+read-only checks. Webhooks continue to settle transfers after the user closes the page.
+Notifications are attempted after financial commit; their failure cannot reverse a
+payment. Without a background worker, notification retries occur on later events/API
+requests rather than on a guaranteed schedule.
 
 If a process stops after recording a request but before sending it, the row may
 remain pending without a provider transaction. Confirm the absence with Abliner
@@ -176,12 +182,11 @@ Run before using the updated withdrawal form:
 
 ```sh
 php database/migrate_payment_safety.php
-php cron/verify-pending-payments.php --verbose
 ```
 
 The migration adds unique withdrawal request tokens and ensures wallet ledger statuses
 can store failed/rejected events. It never alters balances or dispatches transfers.
-Keep the existing reconciliation cron running every minute.
+Verification is webhook-driven; remove any old payment cron entry.
 
 Provider-confirmed completed payouts close the held withdrawal exactly once even if
 Abliner reports a different positive TZS amount. Requested and reported amounts remain

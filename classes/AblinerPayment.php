@@ -173,6 +173,12 @@ class AblinerPayment {
             $result = ['success' => false, 'error' => 'The transfer was submitted but its response could not be verified. Your funds are reserved. Check withdrawal status; do not submit another payout.'];
         }
         $payout = Database::fetchOne('SELECT * FROM payouts WHERE id = ?', [$id]);
+        if ($payout['status'] === 'pending') {
+            try { $this->reconcile('payouts', $id); }
+            catch (Throwable $e) { error_log('Abliner immediate payout verification #' . $id . ': ' . $e->getMessage()); }
+            $payout = Database::fetchOne('SELECT * FROM payouts WHERE id = ?', [$id]);
+        }
+        if ($payout['status'] === 'completed') $result = ['success' => true];
         return ['success' => $result['success'], 'payout_id' => $id, 'status' => $payout['status'], 'reference' => $payout['reference'],
             'fees' => $payout['fees'], 'error' => $result['error'] ?? null];
     }
@@ -188,9 +194,34 @@ class AblinerPayment {
         return json_encode($provider, JSON_THROW_ON_ERROR);
     }
 
+    /** Bind only an authenticated response to the exact outbound POST (or its saved evidence).
+     * Never use this method for a webhook or arbitrary transaction search result.
+     */
+    private function bindSubmissionIdentity(string $table, int $id, array $data): void {
+        if (!in_array($table, ['payments','payouts'], true)) throw new InvalidArgumentException('Invalid transaction kind.');
+        $expectedType = $table === 'payments' ? 'deposit' : 'withdrawal';
+        if (($data['type'] ?? '') !== $expectedType || !is_string($data['id'] ?? null)
+            || $data['id'] === '' || strlen($data['id']) > 100) throw new RuntimeException('Invalid provider submission identity.');
+        Database::beginTransaction();
+        try {
+            $row = Database::fetchOne("SELECT * FROM $table WHERE id = ? FOR UPDATE", [$id]);
+            if (!$row || $row['gateway'] !== 'abliner') throw new RuntimeException('Submission record not found.');
+            $ourReference = $table === 'payments' ? $row['order_id'] : $row['idempotency_key'];
+            if (!empty($data['customer_reference']) && (!is_string($data['customer_reference']) || !hash_equals($ourReference, $data['customer_reference']))) throw new RuntimeException('Submission customer reference mismatch.');
+            if ($table === 'payouts' && !empty($data['recipient']) && AblinerClient::normalizePhone((string) $data['recipient']) !== $row['recipient_phone']) throw new RuntimeException('Submission recipient mismatch.');
+            if (!empty($row['gateway_id']) && !hash_equals($row['gateway_id'], $data['id'])) throw new RuntimeException('Submission provider ID changed.');
+            $other = Database::fetchOne("SELECT id FROM $table WHERE gateway = 'abliner' AND gateway_id = ? AND id <> ? LIMIT 1", [$data['id'], $id]);
+            if ($other) throw new RuntimeException('Submission provider ID belongs to another transaction.');
+            Database::update($table, ['gateway_id' => $data['id']], 'id = ?', [$id]);
+            Database::commit();
+        } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }
+    }
+
     private function handleSubmission(string $table, int $id, array $result): void {
         if ($result['success']) {
-            // An accepted request is never sufficient to credit the wallet. Validate all fields.
+            // Direct HTTP response is tied to this POST; provider references may be generated.
+            $this->bindSubmissionIdentity($table, $id, $result['data']);
+            // Identity binding is not payment confirmation: validate amount, currency and state.
             $this->applyTransaction($table, $id, $result['data']);
         } elseif (!empty($result['uncertain'])) {
             // A timeout, 5xx or transaction_id may mean a transfer exists. Keep the hold.
@@ -214,6 +245,14 @@ class AblinerPayment {
         $row = Database::fetchOne("SELECT * FROM $table WHERE id = ?", [$id]);
         if (!$row || ($row['gateway'] ?? '') !== 'abliner') return ['success' => false, 'error' => 'Reconcile this legacy transaction with its original provider.'];
         if ($row['status'] !== 'pending') return ['success' => true, 'status' => $row['status']];
+        if ($table === 'payouts' && empty($row['gateway_id'])) {
+            $evidence = json_decode($row['metadata'] ?? '{}', true) ?: [];
+            if (!empty($evidence['submission_response']) && is_array($evidence['submission_response'])) {
+                try { $this->bindSubmissionIdentity($table, $id, $evidence['submission_response']); }
+                catch (RuntimeException $e) { error_log('Saved payout identity could not be bound #' . $id . ': ' . $e->getMessage()); }
+                $row = Database::fetchOne("SELECT * FROM $table WHERE id = ?", [$id]);
+            }
+        }
         $filter = !empty($row['gateway_id']) ? ['id' => $row['gateway_id']] : ['customer_reference' => $table === 'payments' ? $row['order_id'] : $row['idempotency_key']];
         $result = $this->client->transactions($filter);
         if (!$result['success']) return $result;
@@ -282,7 +321,8 @@ class AblinerPayment {
             if (isset($data['amount_cents']) && (!is_numeric($data['amount_cents']) || abs((float) $data['amount_cents'] / 100 - $amount) > 0.001)) $amountValid = false;
             $amountDiffers = abs($amount - (float) $row['amount']) > 0.001;
             $completedPayout = $table === 'payouts' && ($data['status'] ?? '') === 'completed';
-            if (($data['currency'] ?? '') !== 'TZS' || !$amountValid || ($amountDiffers && !$completedPayout)) {
+            $payoutAmountMayDiffer = $table === 'payouts' && in_array($data['status'] ?? '', ['pending','processing','completed'], true);
+            if (($data['currency'] ?? '') !== 'TZS' || !$amountValid || ($amountDiffers && !$payoutAmountMayDiffer)) {
                 $comparison = ['expected_amount_tzs' => (float) $row['amount'], 'expected_currency' => 'TZS',
                     'provider_amount' => $data['amount'] ?? null, 'provider_amount_cents' => $data['amount_cents'] ?? null,
                     'provider_currency' => $data['currency'] ?? null, 'provider_status' => $data['status'] ?? null,
@@ -370,10 +410,9 @@ class AblinerPayment {
             'reference_id = ? AND reference_type = ? AND user_id = ? AND status = ?', [$wd['id'], 'withdrawal', $wd['user_id'], 'pending']);
     }
 
-    public function flushNotifications(): void {
-        // Only cron sends email/SMS: webhook acknowledgements must not wait on external services.
-        if (PHP_SAPI !== 'cli') return;
-        for ($i = 0; $i < 20; $i++) {
+    public function flushNotifications(int $limit = 1): void {
+        // Financial settlement is already committed; notifications are best effort.
+        for ($i = 0; $i < max(0, min(20, $limit)); $i++) {
             Database::beginTransaction();
             try {
                 $row = Database::fetchOne('SELECT * FROM abliner_notifications WHERE sent_at IS NULL AND (claimed_at IS NULL OR claimed_at < ?) ORDER BY payment_id LIMIT 1 FOR UPDATE', [date('Y-m-d H:i:s', time() - 600)]);
