@@ -246,7 +246,6 @@ include __DIR__ . '/includes/public_head.php';
                 </div>
                 <div class="withdrawal-history-status">
                     <?= statusBadge($wd['status']) ?>
-                    <?php if ($review = payoutReviewText($wd['payout_metadata'] ?? null)): ?><small class="d-block text-warning mt-2"><?= sanitize($review) ?></small><?php endif; ?>
                     <?php if (($wd['gateway'] ?? '') === 'abliner' && in_array($wd['status'], ['pending', 'approved', 'processing'], true)): ?>
                     <button type="button" class="btn btn-sm btn-outline-primary d-block mt-2" data-check-withdrawal="<?= (int) $wd['id'] ?>">Check status</button>
                     <small class="d-block" role="status" data-withdrawal-message="<?= (int) $wd['id'] ?>"></small>

@@ -127,7 +127,6 @@ include __DIR__ . '/includes/public_head.php';
                     </div>
                 </div>
             </div>
-        <?php if ($review = payoutReviewText($tx['payout_metadata'] ?? null)): ?><div class="alert alert-warning small"><?= sanitize($review) ?></div><?php endif; ?>
         <?php endforeach; ?>
         
         <!-- Pagination -->
