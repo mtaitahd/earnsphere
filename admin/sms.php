@@ -527,6 +527,7 @@ include __DIR__ . '/admin_header.php';
                                 <td>
                                     <?php if ($r['status'] === 'failed'): ?>
                                         <span class="badge bg-danger" style="font-size:0.65rem;">failed</span>
+                                <div class="text-danger mt-1" style="font-size:0.8rem; max-width:280px; overflow-wrap:anywhere;"><?= sanitize($log['error'] ?: 'Gateway rejected SMS; no error details recorded.') ?></div>
                                     <?php else: ?>
                                         <span class="badge bg-success" style="font-size:0.65rem;"><?= $r['status'] ?></span>
                                     <?php endif; ?>
@@ -777,6 +778,7 @@ include __DIR__ . '/admin_header.php';
                         <td>
                             <?php if ($log['status'] === 'failed'): ?>
                                 <span class="badge bg-danger" title="<?= htmlspecialchars($log['error'] ?? '', ENT_QUOTES) ?>" style="font-size:0.65rem;">failed</span>
+                                <div class="text-danger mt-1" style="font-size:0.8rem; max-width:280px; overflow-wrap:anywhere;"><?= sanitize($log['error'] ?: 'Gateway rejected SMS; no error details recorded.') ?></div>
                             <?php elseif ($log['status'] === 'queued'): ?>
                                 <span class="badge bg-warning text-dark" style="font-size:0.65rem;">queued</span>
                             <?php else: ?>
