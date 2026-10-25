@@ -12,6 +12,8 @@ require_once __DIR__ . '/includes/helpers.php';
 Auth::initSession();
 Auth::requireAuth();
 
+header('Cache-Control: no-store, private');
+
 Wallet::autoExpirePending((int) $_SESSION['user_id']);
 
 $user = Auth::getUser();
@@ -46,6 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$wallet = Wallet::getWallet($_SESSION['user_id']);
+$pendingWithdrawals = Database::fetchAll('SELECT * FROM withdrawals WHERE user_id = ? ORDER BY created_at DESC LIMIT 10', [$_SESSION['user_id']]);
 $csrf = Auth::generateCSRF();
 $pageTitle = 'Request Withdrawal';
 include __DIR__ . '/includes/public_head.php';
@@ -233,11 +237,15 @@ include __DIR__ . '/includes/public_head.php';
                     <p class="item-title"><?= formatCurrency($wd['amount']) ?></p>
                     <small>Charge: <?= formatCurrency($wd['withdrawal_charge'] ?? 0) ?> · To phone: <?= formatCurrency((float) $wd['amount'] - (float) ($wd['withdrawal_charge'] ?? 0)) ?></small>
                     <p class="item-subtitle">
-                        <?= formatPhone($wd['phone']) ?> &middot; <?= timeAgo($wd['created_at']) ?>
+                        <?= formatPhone($wd['phone']) ?> &middot; Requested: <?= sanitize($wd['created_at']) ?>
                     </p>
                 </div>
                 <div>
                     <?= statusBadge($wd['status']) ?>
+                    <?php if (($wd['gateway'] ?? '') === 'abliner' && in_array($wd['status'], ['pending', 'approved', 'processing'], true)): ?>
+                    <button type="button" class="btn btn-sm btn-outline-primary d-block mt-2" data-check-withdrawal="<?= (int) $wd['id'] ?>">Check status</button>
+                    <small class="d-block" role="status" data-withdrawal-message="<?= (int) $wd['id'] ?>"></small>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -308,4 +316,21 @@ function setMax() {
 
 <script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/recipient-lookup.js"></script>
 <script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/withdrawal-charge.js"></script>
+<script>
+document.querySelectorAll('[data-check-withdrawal]').forEach(function (button) {
+    button.addEventListener('click', async function () {
+        var message = document.querySelector('[data-withdrawal-message="' + button.dataset.checkWithdrawal + '"]');
+        button.disabled = true;
+        message.textContent = 'Checking with Abliner...';
+        try {
+            var response = await fetch(<?= json_encode(SITE_URL . '/api/check_withdrawal.php?withdrawal_id=') ?> + encodeURIComponent(button.dataset.checkWithdrawal), {cache: 'no-store', signal: AbortSignal.timeout(25000)});
+            var result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.error || 'Verification unavailable. Do not withdraw again.');
+            if (result.status === 'completed' || result.status === 'failed') { window.location.reload(); return; }
+            message.textContent = result.message || 'Awaiting confirmation. Funds remain reserved; do not submit again.';
+        } catch (error) { message.textContent = error.message || 'Verification unavailable. Try checking again.'; }
+        finally { button.disabled = false; }
+    });
+});
+</script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

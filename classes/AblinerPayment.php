@@ -107,7 +107,7 @@ class AblinerPayment {
             if (!$wallet || $amount > (float) $wallet['withdrawable_balance']) throw new RuntimeException('Insufficient available commission earnings.');
             $withdrawal = Database::insert('withdrawals', ['user_id' => $userId, 'amount' => $amount, 'phone' => $phone,
                 'payment_method' => 'mobile_money', 'status' => 'pending', 'gateway' => 'abliner',
-                'withdrawal_charge' => $quote['withdrawal_charge'], 'recipient_name' => $lookup['data']['name'], 'recipient_network' => $lookup['data']['network']]);
+                'created_at' => date('Y-m-d H:i:s'), 'withdrawal_charge' => $quote['withdrawal_charge'], 'recipient_name' => $lookup['data']['name'], 'recipient_network' => $lookup['data']['network']]);
             Database::update('wallets', ['withdrawable_balance' => (float) $wallet['withdrawable_balance'] - $amount,
                 'pending_amount' => (float) $wallet['pending_amount'] + $amount], 'id = ?', [$wallet['id']]);
             Database::insert('wallet_transactions', ['wallet_id' => $wallet['id'], 'user_id' => $userId, 'type' => 'withdrawal',
@@ -142,13 +142,21 @@ class AblinerPayment {
             $id = Database::insert('payouts', ['user_id' => $userId, 'withdrawal_id' => $withdrawalId,
                 'amount' => $netAmount, 'total' => $netAmount, 'channel' => 'mobile', 'provider' => $wd['recipient_network'],
                 'recipient_phone' => $wd['phone'], 'recipient_name' => $wd['recipient_name'], 'status' => 'pending',
-                'gateway' => 'abliner', 'idempotency_key' => $key]);
+                'gateway' => 'abliner', 'idempotency_key' => $key, 'created_at' => date('Y-m-d H:i:s')]);
             Database::update('withdrawals', ['status' => 'processing'], 'id = ?', [$withdrawalId]);
             Database::commit();
         } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }
         $result = $this->client->withdraw(['amount' => (int) $netAmount, 'method' => 'mobile', 'currency' => 'TZS',
             'recipient' => $wd['phone'], 'reference' => $key, 'callback_url' => $this->client->callbackUrl()], $key);
-        $this->handleSubmission('payouts', $id, $result);
+        try {
+            $this->handleSubmission('payouts', $id, $result);
+        } catch (RuntimeException $e) {
+            // Money may already have moved. Retain the hold and the evidence for reconciliation.
+            $row = Database::fetchOne('SELECT * FROM payouts WHERE id = ?', [$id]);
+            Database::update('payouts', ['metadata' => $this->metadata($row, ['submission_response' => $result['data'] ?? [], 'verification_error' => $e->getMessage()])], 'id = ? AND status = ?', [$id, 'pending']);
+            error_log('Abliner payout #' . $id . ' requires verification: ' . $e->getMessage());
+            $result = ['success' => false, 'error' => 'The transfer was submitted but its response could not be verified. Your funds are reserved. Check withdrawal status; do not submit another payout.'];
+        }
         $payout = Database::fetchOne('SELECT * FROM payouts WHERE id = ?', [$id]);
         return ['success' => $result['success'], 'payout_id' => $id, 'status' => $payout['status'], 'reference' => $payout['reference'],
             'fees' => $payout['fees'], 'error' => $result['error'] ?? null];
@@ -201,8 +209,9 @@ class AblinerPayment {
             $found = true;
         }
         $current = Database::fetchOne("SELECT * FROM $table WHERE id = ?", [$id]);
-        return ['success' => true, 'status' => $current['status'], 'found' => $found,
-            'message' => $found ? ($current['status'] === 'pending' ? 'Abliner still reports this request as pending. No new prompt was sent. If no prompt arrived, contact support with the order ID before paying again.' : 'Status checked with Abliner.') : 'Abliner has not returned a matching transaction yet. No new prompt was sent. Contact support with the order ID before another attempt.'];
+        $message = $found ? ($current['status'] === 'pending' ? 'Abliner still reports this request as pending. No new prompt was sent. If no prompt arrived, contact support with the order ID before paying again.' : 'Status checked with Abliner.') : 'Abliner has not returned a matching transaction yet. No new prompt was sent. Contact support with the order ID before another attempt.';
+        if ($table === 'payouts') $message = $found ? ($current['status'] === 'pending' ? 'Abliner still reports the transfer as pending. Your funds remain reserved; do not submit another payout.' : 'Transfer status verified with Abliner.') : 'No matching transfer was returned by Abliner. Funds remain reserved; contact support before another withdrawal.';
+        return ['success' => true, 'status' => $current['status'], 'found' => $found, 'message' => $message];
     }
 
     private function matches(string $table, array $row, array $data): bool {
@@ -214,6 +223,7 @@ class AblinerPayment {
         if ($table === 'payouts' && !empty($data['recipient']) && AblinerClient::normalizePhone((string) $data['recipient']) !== $row['recipient_phone']) return false;
         if (!empty($row['gateway_id'])) return hash_equals($row['gateway_id'], $data['id']);
         return (!empty($data['customer_reference']) && hash_equals($customerRef, (string) $data['customer_reference']))
+            || ($table === 'payouts' && !empty($data['reference']) && hash_equals($customerRef, (string) $data['reference']))
             || ($providerRef !== '' && !empty($data['reference']) && hash_equals($providerRef, (string) $data['reference']));
     }
 
