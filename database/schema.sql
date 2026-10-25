@@ -338,6 +338,7 @@ CREATE TABLE IF NOT EXISTS user_notifications (
     message TEXT NOT NULL,
     payload JSON DEFAULT NULL,
     read_at DATETIME DEFAULT NULL,
+    cleared_at DATETIME DEFAULT NULL,
     sms_status VARCHAR(20) NOT NULL DEFAULT 'pending',
     sms_attempted_at DATETIME DEFAULT NULL,
     sms_sent_at DATETIME DEFAULT NULL,

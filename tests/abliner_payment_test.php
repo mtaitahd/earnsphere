@@ -31,7 +31,7 @@ $schema = [
     'wallet_transactions' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, wallet_id INTEGER, user_id INTEGER, type TEXT, amount REAL, balance_before REAL, balance_after REAL, description TEXT, status TEXT, reference_id INTEGER, reference_type TEXT',
     'commissions' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, earner_id INTEGER, source_user_id INTEGER, level INTEGER, amount REAL, status TEXT, wallet_transaction_id INTEGER',
     'activity_logs' => 'id INTEGER PRIMARY KEY, user_id INTEGER, action TEXT, description TEXT, ip_address TEXT, user_agent TEXT',
-    'user_notifications' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, event_key TEXT UNIQUE, user_id INTEGER, kind TEXT, title TEXT, message TEXT, payload TEXT, read_at TEXT, sms_status TEXT, sms_attempted_at TEXT, sms_sent_at TEXT, sms_error TEXT, created_at TEXT',
+    'user_notifications' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, event_key TEXT UNIQUE, user_id INTEGER, kind TEXT, title TEXT, message TEXT, payload TEXT, read_at TEXT, cleared_at TEXT, sms_status TEXT, sms_attempted_at TEXT, sms_sent_at TEXT, sms_error TEXT, created_at TEXT',
     'abliner_webhook_events' => 'event_id TEXT PRIMARY KEY',
     'abliner_notifications' => 'payment_id INTEGER PRIMARY KEY, user_id INTEGER, amount REAL, claimed_at TEXT, sent_at TEXT',
 ];

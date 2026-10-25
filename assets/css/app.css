@@ -1909,3 +1909,6 @@ img {
 .financial-notification.is-unread { border-left:4px solid #15803d; background:#f0fdf4; }
 .financial-notification strong { color:#14532d; }
 .financial-notification p { margin:0.35rem 0; font-size:0.875rem; color:#1f2937; }
+
+#notificationNewsTab[aria-pressed="true"],
+#notificationPaymentsTab[aria-pressed="true"] { background:#72578b; border-color:#72578b; color:#fff; }

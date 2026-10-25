@@ -5,11 +5,38 @@
     var list = panel.querySelector('[data-notification-list]');
     var counter = panel.querySelector('[data-notification-count]');
     var button = panel.querySelector('[data-notification-read-all]');
+    var clearButton = panel.querySelector('[data-notification-clear-all]');
+    var financialUnread = 0;
     var latestId = 0, busy = false, polls = 0, lastSnapshot = '';
+    window.updateNotificationBell = function () {
+        var total = financialUnread + (window.announcementUnreadCount || 0);
+        var badge = document.getElementById('annBadge');
+        badge.style.display = total ? 'flex' : 'none';
+        badge.textContent = total > 99 ? '99+' : String(total);
+        document.getElementById('announcementBell').setAttribute('aria-label', 'Notifications: ' + total + ' new');
+    };
+    window.showNotificationCategory = function (category) {
+        panel.style.display = category === 'payments' ? 'block' : 'none';
+        document.getElementById('annModalBody').style.display = category === 'news' ? 'block' : 'none';
+        document.getElementById('notificationNewsTab').setAttribute('aria-pressed', String(category === 'news'));
+        document.getElementById('notificationPaymentsTab').setAttribute('aria-pressed', String(category === 'payments'));
+    };
+    window.openFinancialNotifications = function () {
+        document.getElementById('annModal').style.display = 'flex';
+        window.showNotificationCategory('payments');
+        load(null);
+    };
+    window.openNotificationCenter = function () {
+        if (financialUnread > 0 || !(window.announcementUnreadCount || 0)) window.openFinancialNotifications();
+        else window.openAnnouncements();
+    };
     function render(result) {
         latestId = result.latest_id || 0;
         counter.textContent = result.unread ? result.unread + ' unread' : 'All read';
         button.disabled = !result.unread;
+        clearButton.disabled = !result.items.length;
+        financialUnread = result.unread;
+        window.updateNotificationBell();
         var snapshot = JSON.stringify({items:result.items, unread:result.unread});
         if (snapshot === lastSnapshot) return;
         lastSnapshot = snapshot;
@@ -34,15 +61,15 @@
             list.appendChild(article);
         });
     }
-    async function load(markRead) {
+    async function load(action) {
         if (busy) return;
-        busy = true; button.disabled = true;
+        busy = true; button.disabled = true; clearButton.disabled = true;
         try {
             var options = {cache:'no-store', signal:AbortSignal.timeout(25000)};
-            if (markRead) {
+            if (action) {
                 options.method = 'POST';
                 var form = new URLSearchParams();
-                form.set('action','mark_all_read'); form.set('through_id',String(latestId));
+                form.set('action',action); form.set('through_id',String(latestId));
                 form.set(panel.dataset.csrfName,panel.dataset.csrf);
                 options.body = form;
             }
@@ -50,13 +77,14 @@
             var result = await response.json();
             if (!response.ok || !result.success) throw new Error('Notifications unavailable');
             render(result);
-        } catch (error) { counter.textContent = 'Unable to refresh. Try again.'; button.disabled = false; }
+        } catch (error) { counter.textContent = 'Unable to refresh. Try again.'; button.disabled = false; clearButton.disabled = false; }
         finally { busy = false; }
     }
-    button.addEventListener('click', function () { load(true); });
-    load(false);
+    button.addEventListener('click', function () { load('mark_all_read'); });
+    clearButton.addEventListener('click', function () { load('clear_all'); });
+    load(null);
     var timer = setInterval(function () {
         if (++polls > 60) { clearInterval(timer); return; }
-        if (!document.hidden) load(false);
+        if (!document.hidden) load(null);
     },15000);
 }());

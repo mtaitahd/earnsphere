@@ -46,14 +46,20 @@ class PaymentNotifications {
     }
 
     public static function listForUser(int $userId): array {
-        $items = Database::fetchAll('SELECT id, kind, title, message, created_at, read_at FROM user_notifications WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 20', [$userId]);
-        $unread = Database::count('user_notifications', 'user_id = ? AND read_at IS NULL', [$userId]);
+        $items = Database::fetchAll('SELECT id, kind, title, message, created_at, read_at FROM user_notifications WHERE user_id = ? AND cleared_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 20', [$userId]);
+        $unread = Database::count('user_notifications', 'user_id = ? AND read_at IS NULL AND cleared_at IS NULL', [$userId]);
         return ['items' => $items, 'unread' => $unread, 'latest_id' => (int) (Database::fetchOne('SELECT COALESCE(MAX(id),0) AS latest_id FROM user_notifications WHERE user_id = ?', [$userId])['latest_id'] ?? 0)];
     }
 
     public static function markAllRead(int $userId, int $throughId): void {
         if ($throughId <= 0) return;
         Database::query('UPDATE user_notifications SET read_at = ? WHERE user_id = ? AND id <= ? AND read_at IS NULL', [gmdate('Y-m-d H:i:s'), $userId, $throughId]);
+    }
+
+    public static function clearAll(int $userId, int $throughId): void {
+        if ($throughId <= 0) return;
+        $now = gmdate('Y-m-d H:i:s');
+        Database::query('UPDATE user_notifications SET cleared_at = ?, read_at = COALESCE(read_at, ?) WHERE user_id = ? AND id <= ? AND cleared_at IS NULL', [$now, $now, $userId, $throughId]);
     }
 
     public static function dispatch(int $limit = 1, ?callable $sender = null): void {

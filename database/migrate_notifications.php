@@ -10,6 +10,7 @@ Database::query("CREATE TABLE IF NOT EXISTS user_notifications (
     message TEXT NOT NULL,
     payload JSON DEFAULT NULL,
     read_at DATETIME DEFAULT NULL,
+    cleared_at DATETIME DEFAULT NULL,
     sms_status VARCHAR(20) NOT NULL DEFAULT 'pending',
     sms_attempted_at DATETIME DEFAULT NULL,
     sms_sent_at DATETIME DEFAULT NULL,
@@ -19,4 +20,7 @@ Database::query("CREATE TABLE IF NOT EXISTS user_notifications (
     KEY idx_notification_user (user_id, id),
     KEY idx_notification_sms (sms_status, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+$clearedColumn = Database::fetchOne("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_notifications' AND COLUMN_NAME = 'cleared_at'");
+if (!$clearedColumn) Database::query('ALTER TABLE user_notifications ADD COLUMN cleared_at DATETIME DEFAULT NULL');
+
 echo "Notification migration complete. No SMS sent and no balances changed.\n";

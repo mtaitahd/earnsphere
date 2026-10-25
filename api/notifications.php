@@ -7,10 +7,11 @@ if (!$user || $user['role'] !== 'user' || !in_array($user['status'], ['active','
 try {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         paymentApiPost();
-        if (($_POST['action'] ?? '') !== 'mark_all_read') paymentApiReply(['success' => false, 'error' => 'Unknown notification action.'], 422);
+        if (!in_array($_POST['action'] ?? '', ['mark_all_read','clear_all'], true)) paymentApiReply(['success' => false, 'error' => 'Unknown notification action.'], 422);
         $throughId = filter_var($_POST['through_id'] ?? '', FILTER_VALIDATE_INT);
         if ($throughId === false || $throughId < 0) paymentApiReply(['success' => false, 'error' => 'Invalid notification ID.'], 422);
-        PaymentNotifications::markAllRead($userId, $throughId);
+        if ($_POST['action'] === 'clear_all') PaymentNotifications::clearAll($userId, $throughId);
+        else PaymentNotifications::markAllRead($userId, $throughId);
     } elseif (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') paymentApiReply(['success' => false, 'error' => 'Method not allowed.'], 405);
     if (empty($_SESSION['notifications_backfilled'][$userId])) {
         PaymentNotifications::backfillForUser($userId);

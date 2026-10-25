@@ -234,3 +234,9 @@ review. SMS outages never reverse settlement or erase the dashboard notification
 
 Mark all as read requires an authenticated, CSRF-validated POST and only affects that
 user's notifications up to the latest fetched ID. New notifications remain unread.
+
+Notifications are accessed from the existing dashboard bell popup, with separate News
+and Payments categories and a combined unread badge. Clear all hides the user's items
+without deleting event/outbox records, so history backfill and duplicate callbacks do
+not recreate them or resend SMS. Re-run `php database/migrate_notifications.php` once
+for the added `cleared_at` column; the migration is repeatable and sends no messages.

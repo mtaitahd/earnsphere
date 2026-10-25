@@ -37,6 +37,13 @@ PaymentNotifications::backfillForUser(202); PaymentNotifications::backfillForUse
 $history=Database::fetchOne('SELECT * FROM user_notifications WHERE user_id=202');
 expect($history['sms_status']==='skipped' && $history['created_at']==='2026-10-25 08:15:00','History backfill queued old SMS or showed the wrong time');
 expect(Database::count('user_notifications','user_id=?',[202])===1,'History backfill duplicated messages');
+$beforeClear = PaymentNotifications::listForUser(200)['latest_id'];
+PaymentNotifications::clearAll(200, $beforeClear);
+expect(PaymentNotifications::listForUser(200)['items'] === [], 'Clear all did not hide own notifications');
+expect(PaymentNotifications::listForUser(201)['unread'] === 1, 'Clear all affected another user');
+PaymentNotifications::withdrawal($wd,960);
+expect(PaymentNotifications::listForUser(200)['items'] === [], 'Cleared event returned or was requeued');
+expect(Database::count('user_notifications', 'event_key=?', ['withdrawal:902']) === 1, 'Clear deleted the event deduplication record');
 $db->exec("INSERT INTO settings(setting_key,setting_value) VALUES ('meseji_sender_id','EARNSPHERE'),('meseji_enabled','1')");
 require_once __DIR__.'/../classes/MesejiSms.php';
 expect((new MesejiSms())->getSenderId()==='EARNSPHERE','Configured database sender ID was not used');

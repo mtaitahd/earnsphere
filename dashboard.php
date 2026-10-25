@@ -97,7 +97,7 @@ include __DIR__ . '/includes/public_head.php';
                 <i class="fas fa-wand-magic-sparkles" style="color:#D4A843;"></i>
                 <span style="position:absolute;top:-4px;right:-6px;width:10px;height:10px;background:#D4A843;border-radius:50%;border:2px solid #72578B;"></span>
             </a>
-            <a href="javascript:void(0)" class="notification-btn" style="text-decoration:none;position:relative;" onclick="openAnnouncements()" title="Announcements" id="announcementBell">
+            <a href="javascript:void(0)" class="notification-btn" style="text-decoration:none;position:relative;" onclick="openNotificationCenter()" title="Notifications" id="announcementBell" aria-haspopup="dialog" aria-controls="annModal">
                 <i class="fas fa-bell"></i>
                 <span id="annBadge" class="ann-badge"></span>
             </a>
@@ -241,15 +241,7 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Dashboard Content -->
 <div class="dash-content mb-safe">
-    <section class="card mb-3" id="financial-notifications" data-endpoint="<?= sanitize(SITE_URL) ?>/api/notifications.php" data-csrf-name="<?= CSRF_TOKEN_NAME ?>" data-csrf="<?= sanitize($csrf) ?>">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                <div><h6 class="mb-1"><i class="fas fa-bell me-1"></i> Your notifications</h6><small data-notification-count role="status">Loading...</small></div>
-                <button type="button" class="btn btn-sm btn-outline-success" data-notification-read-all disabled>Mark all as read</button>
-            </div>
-            <div data-notification-list aria-live="polite"></div>
-        </div>
-    </section>
+
 
     
     <!-- Weekly Referral Contest -->
@@ -497,14 +489,28 @@ include __DIR__ . '/includes/public_head.php';
 </nav>
 
 <!-- Announcement Modal -->
-<div id="annModal" class="ann-modal" style="display:none;">
+<div id="annModal" class="ann-modal" role="dialog" aria-modal="true" aria-label="Notifications" style="display:none;">
     <div class="ann-modal-overlay" onclick="closeAnnModal()"></div>
     <div class="ann-modal-content">
         <div class="ann-modal-header">
             <div class="ann-modal-header-icon"><i class="fas fa-bullhorn"></i></div>
-            <h5>Announcements</h5>
+            <h5>Notifications</h5>
             <button class="ann-modal-close" onclick="closeAnnModal()"><i class="fas fa-times"></i></button>
         </div>
+        <div class="d-flex gap-2 px-3 pt-3 pb-2" role="group" aria-label="Notification categories">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAnnouncements()" id="notificationNewsTab">News</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openFinancialNotifications()" id="notificationPaymentsTab">Payments</button>
+        </div>
+    <section class="ann-modal-body" style="display:none;" id="financial-notifications" data-endpoint="<?= sanitize(SITE_URL) ?>/api/notifications.php" data-csrf-name="<?= CSRF_TOKEN_NAME ?>" data-csrf="<?= sanitize($csrf) ?>">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div><h6 class="mb-1"><i class="fas fa-bell me-1"></i> Your notifications</h6><small data-notification-count role="status">Loading...</small></div>
+                <button type="button" class="btn btn-sm btn-outline-success" data-notification-read-all disabled>Mark all as read</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-notification-clear-all disabled>Clear all</button>
+            </div>
+            <div data-notification-list aria-live="polite"></div>
+        </div>
+    </section>
         <div class="ann-modal-body" id="annModalBody">
             <div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
         </div>
@@ -1166,6 +1172,7 @@ function openAnnouncements() {
     const modal = document.getElementById('annModal');
     const body = document.getElementById('annModalBody');
     modal.style.display = 'flex';
+    if (window.showNotificationCategory) window.showNotificationCategory('news');
     body.innerHTML = '<div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
     fetch('api/announcements.php?action=fetch', {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -1223,6 +1230,8 @@ function closeAnnModal() {
 }
 
 function updateAnnBadge(count) {
+    window.announcementUnreadCount = count;
+    if (window.updateNotificationBell) { window.updateNotificationBell(); return; }
     const badge = document.getElementById('annBadge');
     if (count > 0) {
         badge.style.display = 'flex';
