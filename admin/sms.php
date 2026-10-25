@@ -327,7 +327,7 @@ include __DIR__ . '/admin_header.php';
         <div class="text-end">
             <?php if ($accountStats): ?>
                 <div class="small text-muted">
-                    <strong style="color:#10b981;"><?= number_format($accountStats['balance'] ?? 0) ?> SMS credits</strong>
+                    <strong style="color:#10b981;"><?= isset($accountStats['balance']) && is_numeric($accountStats['balance']) ? number_format((float) $accountStats['balance']) : 'Unavailable' ?> SMS credits</strong>
                     &middot; <?= number_format($accountStats['total_messages_sent'] ?? 0) ?> sent
                     &middot; <?= number_format($accountStats['success_rate'] ?? 0, 1) ?>% success
                 </div>
@@ -486,7 +486,7 @@ include __DIR__ . '/admin_header.php';
                             <div class="text-muted small">Success rate</div>
                         </div>
                         <div class="col-6">
-                            <div style="font-size:1.6rem;font-weight:800;color:#f59e0b;"><?= number_format($accountStats['balance'] ?? 0) ?></div>
+                            <div style="font-size:1.6rem;font-weight:800;color:#f59e0b;"><?= isset($accountStats['balance']) && is_numeric($accountStats['balance']) ? number_format((float) $accountStats['balance']) : 'Unavailable' ?></div>
                             <div class="text-muted small">SMS credits</div>
                         </div>
                         <div class="col-6">

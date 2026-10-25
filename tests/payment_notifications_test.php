@@ -57,3 +57,9 @@ expect(count($scopedCalls)===1 && (int)$scopedCalls[0]['user_id']===200,'Another
 expect($scopedCalls[0]['message']===Database::fetchOne('SELECT message FROM user_notifications WHERE event_key=?',['payment:911'])['message'],'SMS differs from bell message');
 expect(Database::fetchOne('SELECT sms_status FROM user_notifications WHERE event_key=?',['payment:910'])['sms_status']==='pending','Scoped delivery consumed another user SMS');
 echo "Scoped SMS delivery and identical bell message checks passed.\n";
+
+expect(MesejiSms::normalizeAccountStats(['status'=>'success','data'=>['balance'=>419]])['balance']===419,'Nested gateway credits were not read');
+expect(MesejiSms::normalizeAccountStats(['balance'=>0])['balance']===0,'Real zero balance was lost');
+expect(!array_key_exists('balance',MesejiSms::normalizeAccountStats(['data'=>['total_messages_sent'=>5]])),'Missing credits invented a zero balance');
+expect(MesejiSms::normalizeAccountStats(null)===[],'Invalid gateway response was treated as account data');
+echo "Gateway account stats envelope and missing-balance checks passed.\n";

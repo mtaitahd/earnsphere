@@ -392,7 +392,16 @@ class MesejiSms {
     }
 
     public function getAccountStats(): array {
-        return $this->request('GET', '/sms/user-stats');
+        $result = $this->request('GET', '/sms/user-stats');
+        if (!empty($result['success'])) $result['data'] = self::normalizeAccountStats($result['data'] ?? []);
+        return $result;
+    }
+
+    public static function normalizeAccountStats($body): array {
+        if (!is_array($body)) return [];
+        // Support JSON envelopes without treating missing balances as zero.
+        if (isset($body['data']) && is_array($body['data'])) return $body['data'];
+        return $body;
     }
 
     public function getHistory(): array {
