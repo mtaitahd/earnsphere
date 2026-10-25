@@ -229,7 +229,7 @@ include __DIR__ . '/includes/public_head.php';
         <h6 class="section-title"><i class="fas fa-history me-1"></i> Withdrawal History</h6>
         
         <?php foreach ($pendingWithdrawals as $wd): ?>
-            <div class="list-item">
+            <div class="list-item withdrawal-history-item">
                 <div class="item-icon" style="background:<?= $wd['status'] === 'failed' || $wd['status'] === 'rejected' ? '#fef2f2' : ($wd['status'] === 'completed' ? '#ecfdf5' : '#fffbeb') ?>;color:<?= $wd['status'] === 'failed' || $wd['status'] === 'rejected' ? 'var(--danger)' : ($wd['status'] === 'completed' ? 'var(--secondary)' : 'var(--accent)') ?>;">
                     <i class="fas fa-<?= $wd['status'] === 'failed' || $wd['status'] === 'rejected' ? 'times-circle' : ($wd['status'] === 'completed' ? 'check-circle' : 'spinner fa-spin') ?>"></i>
                 </div>
@@ -237,10 +237,10 @@ include __DIR__ . '/includes/public_head.php';
                     <p class="item-title"><?= formatCurrency($wd['amount']) ?></p>
                     <small>Charge: <?= formatCurrency($wd['withdrawal_charge'] ?? 0) ?> · To phone: <?= formatCurrency((float) $wd['amount'] - (float) ($wd['withdrawal_charge'] ?? 0)) ?></small>
                     <p class="item-subtitle">
-                        <?= formatPhone($wd['phone']) ?> &middot; Requested: <?= sanitize($wd['created_at']) ?>
+                        <?= formatPhone($wd['phone']) ?><br>Requested: <?= sanitize($wd['created_at']) ?>
                     </p>
                 </div>
-                <div>
+                <div class="withdrawal-history-status">
                     <?= statusBadge($wd['status']) ?>
                     <?php if (($wd['gateway'] ?? '') === 'abliner' && in_array($wd['status'], ['pending', 'approved', 'processing'], true)): ?>
                     <button type="button" class="btn btn-sm btn-outline-primary d-block mt-2" data-check-withdrawal="<?= (int) $wd['id'] ?>">Check status</button>

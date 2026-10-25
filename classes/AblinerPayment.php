@@ -260,7 +260,13 @@ class AblinerPayment {
             $row = Database::fetchOne("SELECT * FROM $table WHERE id = ? FOR UPDATE", [$id]);
             if (!$row || $row['gateway'] !== 'abliner' || !$this->matches($table, $row, $data)) throw new RuntimeException('Transaction identity mismatch.');
             $amount = isset($data['amount']) ? (float) $data['amount'] : (isset($data['amount_cents']) ? (float) $data['amount_cents'] / 100 : -1);
-            if (($data['currency'] ?? '') !== 'TZS' || !is_finite($amount) || abs($amount - (float) $row['amount']) > 0.001) throw new RuntimeException('Transaction amount or currency mismatch.');
+            if (($data['currency'] ?? '') !== 'TZS' || !is_finite($amount) || abs($amount - (float) $row['amount']) > 0.001) {
+                $comparison = ['expected_amount_tzs' => (float) $row['amount'], 'expected_currency' => 'TZS',
+                    'provider_amount' => $data['amount'] ?? null, 'provider_amount_cents' => $data['amount_cents'] ?? null,
+                    'provider_currency' => $data['currency'] ?? null, 'provider_status' => $data['status'] ?? null,
+                    'provider_fee_tzs' => $data['fee_tzs'] ?? null, 'provider_total_debited_tzs' => $data['total_debited_tzs'] ?? null];
+                throw new RuntimeException('Transaction amount or currency mismatch: ' . json_encode($comparison, JSON_INVALID_UTF8_SUBSTITUTE));
+            }
             $status = $data['status'] ?? '';
             if (!in_array($status, ['pending', 'processing', 'completed', 'failed'], true)) throw new RuntimeException('Unknown Abliner status; manual reconciliation required.');
             $status = $status === 'processing' ? 'pending' : $status;
