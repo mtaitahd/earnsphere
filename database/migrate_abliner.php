@@ -40,4 +40,5 @@ foreach (['abliner_api_key' => 'Abliner API key', 'abliner_webhook_secret' => 'A
     Database::query("INSERT IGNORE INTO settings (setting_key, setting_value, setting_type, description) VALUES (?, '', 'text', ?)", [$key, $label]);
 }
 require __DIR__ . '/migrate_withdrawal_charge.php';
+require __DIR__ . '/migrate_payment_safety.php';
 echo "Abliner migration complete. Existing transactions retain their original gateway.\n";

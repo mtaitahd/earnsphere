@@ -311,3 +311,13 @@ function notifyAccountActivated(int $userId, float $amount = 0): void {
         error_log("Account activation email error: " . $e->getMessage());
     }
 }
+
+/** Human-readable evidence, never a guessed provider fee. */
+function payoutReviewText(?string $metadata): string {
+    $data = json_decode($metadata ?? '{}', true);
+    $review = is_array($data) ? ($data['settlement_review'] ?? null) : null;
+    if (!is_array($review) || empty($review['requires_review'])) return '';
+    return 'Transfer completed. Requested: ' . formatCurrency((float) $review['requested_tzs'])
+        . '; provider reports: ' . formatCurrency((float) $review['provider_reported_tzs'])
+        . '. Amount difference is under review; it is not a confirmed fee. Do not repeat this transfer.';
+}

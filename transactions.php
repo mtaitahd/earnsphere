@@ -11,6 +11,7 @@ require_once __DIR__ . '/includes/helpers.php';
 
 Auth::initSession();
 Auth::requireAuth();
+header('Cache-Control: no-store, private');
 
 $page = getCurrentPage();
 $filter = $_GET['filter'] ?? 'all';
@@ -30,7 +31,7 @@ if ($filter === 'credit') {
 $total = Database::count('wallet_transactions', $whereClause, $params);
 
 $transactions = Database::fetchAll(
-    "SELECT * FROM wallet_transactions WHERE {$whereClause} ORDER BY created_at DESC LIMIT 20 OFFSET " . (($page - 1) * 20),
+    "SELECT wallet_transactions.*, (SELECT p.metadata FROM payouts p WHERE p.withdrawal_id = wallet_transactions.reference_id AND wallet_transactions.reference_type = 'withdrawal' ORDER BY p.id DESC LIMIT 1) AS payout_metadata FROM wallet_transactions WHERE {$whereClause} ORDER BY created_at DESC LIMIT 20 OFFSET " . (($page - 1) * 20),
     $params
 );
 
@@ -110,6 +111,8 @@ include __DIR__ . '/includes/public_head.php';
                         <?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
                         <?php if ($isPendingWithdrawal): ?>
                             <span class="badge bg-warning text-dark" style="font-size:0.6rem;">Processing</span>
+                        <?php elseif ($tx['type'] === 'withdrawal' && $txStatus === 'completed'): ?>
+                            <span class="badge bg-success" style="font-size:0.6rem;">Completed</span>
                         <?php elseif ($txStatus !== 'completed'): ?>
                             <span class="badge <?= $badgeClass ?>" style="font-size:0.6rem;"><?= ucfirst($txStatus) ?></span>
                         <?php endif; ?>
@@ -120,10 +123,11 @@ include __DIR__ . '/includes/public_head.php';
                         <?= $isCredit ? '+' : '' ?><?= formatCurrency(abs($tx['amount'])) ?>
                     </div>
                     <div style="font-size:0.7rem;color:var(--gray-400);">
-                        Balance: <?= formatCurrency($tx['balance_after']) ?>
+                        <?= $isPendingWithdrawal || in_array($txStatus, ['failed','rejected'], true) ? 'Wallet at request' : 'Balance after' ?>: <?= formatCurrency($tx['balance_after']) ?>
                     </div>
                 </div>
             </div>
+        <?php if ($review = payoutReviewText($tx['payout_metadata'] ?? null)): ?><div class="alert alert-warning small"><?= sanitize($review) ?></div><?php endif; ?>
         <?php endforeach; ?>
         
         <!-- Pagination -->

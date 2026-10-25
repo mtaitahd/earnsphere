@@ -49,7 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $wallet = Wallet::getWallet($_SESSION['user_id']);
-$pendingWithdrawals = Database::fetchAll('SELECT * FROM withdrawals WHERE user_id = ? ORDER BY created_at DESC LIMIT 10', [$_SESSION['user_id']]);
+$pendingWithdrawals = Database::fetchAll("SELECT w.*, (SELECT p.metadata FROM payouts p WHERE p.withdrawal_id = w.id ORDER BY p.id DESC LIMIT 1) AS payout_metadata FROM withdrawals w WHERE w.user_id = ? ORDER BY w.created_at DESC LIMIT 10", [$_SESSION['user_id']]);
+$requestKey = bin2hex(random_bytes(32));
+$_SESSION['withdrawal_request_keys'] = array_slice($_SESSION['withdrawal_request_keys'] ?? [], -19, null, true);
+$_SESSION['withdrawal_request_keys'][$requestKey] = time();
 $csrf = Auth::generateCSRF();
 $pageTitle = 'Request Withdrawal';
 include __DIR__ . '/includes/public_head.php';
@@ -123,7 +126,7 @@ include __DIR__ . '/includes/public_head.php';
                     <span style="font-weight:700;color:var(--gray-800);"><?= formatCurrency($payoutResult['amount']) ?></span>
                 </div>
                 <div class="d-flex justify-content-between py-2"><span>Withdrawal charge</span><strong><?= formatCurrency($payoutResult['withdrawal_charge'] ?? 0) ?></strong></div>
-                <div class="d-flex justify-content-between py-2"><span>Amount to phone</span><strong><?= formatCurrency($payoutResult['net_amount'] ?? $payoutResult['amount']) ?></strong></div>
+                <div class="d-flex justify-content-between py-2"><span>Requested payout</span><strong><?= formatCurrency($payoutResult['net_amount'] ?? $payoutResult['amount']) ?></strong></div>
                 <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--gray-100);">
                     <span style="color:var(--gray-500);font-size:0.85rem;">Phone</span>
                     <span style="font-weight:700;color:var(--gray-800);"><?= formatPhone($payoutResult['phone']) ?></span>
@@ -173,6 +176,7 @@ include __DIR__ . '/includes/public_head.php';
         
         <form method="POST" action="">
             <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+            <input type="hidden" name="withdrawal_request_key" value="<?= $requestKey ?>">
             <input type="hidden" name="withdrawal_charge_quote" value="<?= $withdrawalCharge ?>">
             
             <div class="form-floating mb-3">
@@ -202,7 +206,7 @@ include __DIR__ . '/includes/public_head.php';
             
             <p class="text-muted small">Confirm the registered name and network before withdrawing.</p>
             <p id="withdrawal-quote" class="alert alert-info small" data-charge="<?= $withdrawalCharge ?>" aria-live="polite">Withdrawal charge: <?= formatCurrency($withdrawalCharge) ?>, deducted from the requested amount.</p>
-            <label class="d-block mb-3"><input type="checkbox" id="confirm-withdrawal-terms" name="confirm_withdrawal_terms" value="1" required> I agree to the withdrawal charge and the amount I will receive.</label>
+            <label class="d-block mb-3"><input type="checkbox" id="confirm-withdrawal-terms" name="confirm_withdrawal_terms" value="1" required> I agree to the wallet debit and withdrawal charge. I understand provider charges may affect the amount received.</label>
             <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn" <?= ($wallet['withdrawable_balance'] ?? 0) < app_setting('min_withdrawal', MIN_WITHDRAWAL) ? 'disabled' : '' ?>>
                 <i class="fas fa-paper-plane me-1"></i> Submit Request
             </button>
@@ -235,13 +239,14 @@ include __DIR__ . '/includes/public_head.php';
                 </div>
                 <div class="item-info">
                     <p class="item-title"><?= formatCurrency($wd['amount']) ?></p>
-                    <small>Charge: <?= formatCurrency($wd['withdrawal_charge'] ?? 0) ?> · To phone: <?= formatCurrency((float) $wd['amount'] - (float) ($wd['withdrawal_charge'] ?? 0)) ?></small>
+                    <small>Charge: <?= formatCurrency($wd['withdrawal_charge'] ?? 0) ?> · Requested payout: <?= formatCurrency((float) $wd['amount'] - (float) ($wd['withdrawal_charge'] ?? 0)) ?></small>
                     <p class="item-subtitle">
                         <?= formatPhone($wd['phone']) ?><br>Requested: <?= sanitize($wd['created_at']) ?>
                     </p>
                 </div>
                 <div class="withdrawal-history-status">
                     <?= statusBadge($wd['status']) ?>
+                    <?php if ($review = payoutReviewText($wd['payout_metadata'] ?? null)): ?><small class="d-block text-warning mt-2"><?= sanitize($review) ?></small><?php endif; ?>
                     <?php if (($wd['gateway'] ?? '') === 'abliner' && in_array($wd['status'], ['pending', 'approved', 'processing'], true)): ?>
                     <button type="button" class="btn btn-sm btn-outline-primary d-block mt-2" data-check-withdrawal="<?= (int) $wd['id'] ?>">Check status</button>
                     <small class="d-block" role="status" data-withdrawal-message="<?= (int) $wd['id'] ?>"></small>
@@ -264,13 +269,15 @@ function toggleSubmit() {
     submitBtn.disabled = !val || val < minWithdrawal || val > maxBalance;
 }
 
+if (amountInput && submitBtn) {
 amountInput.addEventListener('input', toggleSubmit);
 toggleSubmit();
 
-document.querySelector('form').addEventListener('submit', function() {
+amountInput.closest('form').addEventListener('submit', function() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
 });
+}
 
 function setAmount(amount) {
     if (amount > maxBalance) amount = maxBalance;
@@ -315,7 +322,7 @@ function setMax() {
 </nav>
 
 <script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/recipient-lookup.js"></script>
-<script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/withdrawal-charge.js"></script>
+<script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/withdrawal-charge.js?v=<?= filemtime(__DIR__ . '/assets/js/withdrawal-charge.js') ?>"></script>
 <script>
 document.querySelectorAll('[data-check-withdrawal]').forEach(function (button) {
     button.addEventListener('click', async function () {
@@ -326,11 +333,18 @@ document.querySelectorAll('[data-check-withdrawal]').forEach(function (button) {
             var response = await fetch(<?= json_encode(SITE_URL . '/api/check_withdrawal.php?withdrawal_id=') ?> + encodeURIComponent(button.dataset.checkWithdrawal), {cache: 'no-store', signal: AbortSignal.timeout(25000)});
             var result = await response.json();
             if (!response.ok || !result.success) throw new Error(result.error || 'Verification unavailable. Do not withdraw again.');
-            if (result.status === 'completed' || result.status === 'failed') { window.location.reload(); return; }
+            if (result.status === 'completed' || result.status === 'failed') { window.location.replace(<?= json_encode(SITE_URL . '/withdrawal') ?>); return; }
             message.textContent = result.message || 'Awaiting confirmation. Funds remain reserved; do not submit again.';
         } catch (error) { message.textContent = error.message || 'Verification unavailable. Try checking again.'; }
         finally { button.disabled = false; }
     });
 });
+var checksRemaining = 12;
+var historyPoll = setInterval(function () {
+    if (--checksRemaining < 0) { clearInterval(historyPoll); return; }
+    if (document.hidden) return;
+    var pending = document.querySelector('[data-check-withdrawal]:not(:disabled)');
+    if (pending) pending.click();
+}, 10000);
 </script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

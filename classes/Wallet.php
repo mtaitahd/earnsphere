@@ -280,7 +280,9 @@ class Wallet {
                 || ($_POST['confirm_recipient'] ?? '') !== '1' || ($_POST['confirm_withdrawal_terms'] ?? '') !== '1') {
                 return ['success' => false, 'errors' => ['Verify and confirm the recipient name before withdrawing.']];
             }
-            return (new AblinerPayment())->requestWithdrawal($userId, $amount, $normalized, $verified['name'], WithdrawalCharge::validate($_POST['withdrawal_charge_quote'] ?? ''));
+            $requestKey = (string) ($_POST['withdrawal_request_key'] ?? '');
+            if (!isset($_SESSION['withdrawal_request_keys'][$requestKey])) return ['success' => false, 'errors' => ['Reload the withdrawal form before submitting.']];
+            return (new AblinerPayment())->requestWithdrawal($userId, $amount, $normalized, $verified['name'], WithdrawalCharge::validate($_POST['withdrawal_charge_quote'] ?? ''), (string) ($_POST['withdrawal_request_key'] ?? ''));
         } catch (InvalidArgumentException | RuntimeException $e) {
             return ['success' => false, 'errors' => [$e->getMessage()]];
         } catch (Throwable $e) {

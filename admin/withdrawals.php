@@ -103,7 +103,7 @@ $total = Database::count('withdrawals w', $where, $params);
 $withdrawals = Database::fetchAll(
     "SELECT w.*, u.full_name, u.phone as user_phone, u.email,
             p.full_name as processor_name,
-            pay.id as payout_id, pay.status as payout_status, pay.reference as payout_reference,
+            pay.id as payout_id, pay.status as payout_status, pay.reference as payout_reference, pay.metadata as payout_metadata,
             pay.fees as payout_fees, pay.provider as payout_provider, pay.error_message as payout_error
      FROM withdrawals w
      JOIN users u ON w.user_id = u.id
@@ -195,6 +195,7 @@ include __DIR__ . '/admin_header.php';
                         <?php endif; ?>
                     </div>
 
+                    <?php if ($review = payoutReviewText($wd['payout_metadata'] ?? null)): ?><div class="alert alert-warning mt-2"><?= sanitize($review) ?></div><?php endif; ?>
                     <!-- Payout info (if payout was sent) -->
                     <?php if ($wd['payout_id']): ?>
                         <div class="mt-2 p-2" style="background:#f0fdf4;border-radius:8px;font-size:0.8rem;">

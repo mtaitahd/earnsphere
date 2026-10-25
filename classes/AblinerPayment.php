@@ -84,10 +84,11 @@ class AblinerPayment {
             'reference' => $p['gateway_reference'] ?? null, 'status' => $p['status'], 'message' => $message];
     }
 
-    public function requestWithdrawal(int $userId, float $amount, string $phone, string $expectedName = '', ?int $expectedCharge = null): array {
+    public function requestWithdrawal(int $userId, float $amount, string $phone, string $expectedName = '', ?int $expectedCharge = null, ?string $requestKey = null): array {
         if (!$this->client->ready()) throw new RuntimeException('Abliner withdrawals are not configured yet.');
         if (!is_finite($amount) || floor($amount) !== $amount || $amount < (float) app_setting('min_withdrawal', MIN_WITHDRAWAL)
             || $amount > (float) app_setting('max_withdrawal', MAX_WITHDRAWAL)) throw new InvalidArgumentException('Enter a whole TZS amount within the withdrawal limits.');
+        if ($requestKey !== null && !preg_match('/^[a-f0-9]{64}$/D', $requestKey)) throw new InvalidArgumentException('Invalid withdrawal request token.');
         $quote = WithdrawalCharge::quote($amount);
         if ($expectedCharge !== null && $expectedCharge !== $quote['withdrawal_charge']) throw new RuntimeException('The withdrawal charge has changed. Reload the page and confirm the new amount.');
         $phone = AblinerClient::normalizePhone($phone);
@@ -103,11 +104,25 @@ class AblinerPayment {
             $user = Database::fetchOne('SELECT status, role FROM users WHERE id = ? FOR UPDATE', [$userId]);
             if (!$user || $user['status'] !== 'active' || $user['role'] !== 'user') throw new RuntimeException('An active user account is required.');
             $wallet = Database::fetchOne('SELECT * FROM wallets WHERE user_id = ? FOR UPDATE', [$userId]);
+            if ($requestKey !== null) {
+                $prior = Database::fetchOne('SELECT * FROM withdrawals WHERE user_id = ? AND request_key = ?', [$userId, $requestKey]);
+                if ($prior) {
+                    if ((float) $prior['amount'] !== $amount || $prior['phone'] !== $phone) throw new RuntimeException('This withdrawal token was already used with different details. Reload the form.');
+                    Database::commit();
+                    return ['success' => true, 'withdrawal_id' => $prior['id'], 'payout_status' => $prior['status'] === 'processing' ? 'pending' : $prior['status'],
+                        'amount' => (float) $prior['amount'], 'withdrawal_charge' => (float) $prior['withdrawal_charge'],
+                        'net_amount' => (float) $prior['amount'] - (float) $prior['withdrawal_charge'], 'phone' => $prior['phone'],
+                        'message' => 'Existing withdrawal retained. No second transfer was sent.'];
+                }
+            }
+            if ($requestKey !== null && Database::fetchOne("SELECT id FROM withdrawals WHERE user_id = ? AND gateway = 'abliner' AND status IN ('pending','approved','processing') LIMIT 1", [$userId])) {
+                throw new RuntimeException('An earlier withdrawal is still being verified. Check its status before submitting another withdrawal.');
+            }
             // withdrawable_balance already excludes held withdrawals: do not subtract pending twice.
             if (!$wallet || $amount > (float) $wallet['withdrawable_balance']) throw new RuntimeException('Insufficient available commission earnings.');
             $withdrawal = Database::insert('withdrawals', ['user_id' => $userId, 'amount' => $amount, 'phone' => $phone,
                 'payment_method' => 'mobile_money', 'status' => 'pending', 'gateway' => 'abliner',
-                'created_at' => date('Y-m-d H:i:s'), 'withdrawal_charge' => $quote['withdrawal_charge'], 'recipient_name' => $lookup['data']['name'], 'recipient_network' => $lookup['data']['network']]);
+                'request_key' => $requestKey, 'created_at' => date('Y-m-d H:i:s'), 'withdrawal_charge' => $quote['withdrawal_charge'], 'recipient_name' => $lookup['data']['name'], 'recipient_network' => $lookup['data']['network']]);
             Database::update('wallets', ['withdrawable_balance' => (float) $wallet['withdrawable_balance'] - $amount,
                 'pending_amount' => (float) $wallet['pending_amount'] + $amount], 'id = ?', [$wallet['id']]);
             Database::insert('wallet_transactions', ['wallet_id' => $wallet['id'], 'user_id' => $userId, 'type' => 'withdrawal',
@@ -211,7 +226,7 @@ class AblinerPayment {
         $current = Database::fetchOne("SELECT * FROM $table WHERE id = ?", [$id]);
         $message = $found ? ($current['status'] === 'pending' ? 'Abliner still reports this request as pending. No new prompt was sent. If no prompt arrived, contact support with the order ID before paying again.' : 'Status checked with Abliner.') : 'Abliner has not returned a matching transaction yet. No new prompt was sent. Contact support with the order ID before another attempt.';
         if ($table === 'payouts') $message = $found ? ($current['status'] === 'pending' ? 'Abliner still reports the transfer as pending. Your funds remain reserved; do not submit another payout.' : 'Transfer status verified with Abliner.') : 'No matching transfer was returned by Abliner. Funds remain reserved; contact support before another withdrawal.';
-        return ['success' => true, 'status' => $current['status'], 'found' => $found, 'message' => $message];
+        return ['success' => true, 'status' => $current['status'], 'found' => $found, 'message' => $message, 'settlement_review' => (json_decode($current['metadata'] ?? '{}', true) ?: [])['settlement_review'] ?? null];
     }
 
     private function matches(string $table, array $row, array $data): bool {
@@ -243,8 +258,10 @@ class AblinerPayment {
             }
             // Bind only to exact provider IDs or our unique per-transaction reference.
             $refColumn = $table === 'payments' ? 'order_id' : 'idempotency_key';
-            $row = Database::fetchOne("SELECT * FROM $table WHERE gateway = 'abliner' AND (gateway_id = ? OR $refColumn = ?) FOR UPDATE",
-                [(string) ($data['id'] ?? ''), (string) ($data['customer_reference'] ?? '')]);
+            $lookup = [ (string) ($data['id'] ?? ''), (string) ($data['customer_reference'] ?? '') ];
+            $extra = '';
+            if ($table === 'payouts') { $extra = ' OR idempotency_key = ?'; $lookup[] = (string) ($data['reference'] ?? ''); }
+            $row = Database::fetchOne("SELECT * FROM $table WHERE gateway = 'abliner' AND (gateway_id = ? OR $refColumn = ?$extra) FOR UPDATE", $lookup);
             if (!$row || !$this->matches($table, $row, $data)) throw new RuntimeException('Matching Abliner transaction not found.');
             $this->applyTransaction($table, (int) $row['id'], $data, true);
             Database::insert('abliner_webhook_events', ['event_id' => $eventId]);
@@ -259,8 +276,13 @@ class AblinerPayment {
         try {
             $row = Database::fetchOne("SELECT * FROM $table WHERE id = ? FOR UPDATE", [$id]);
             if (!$row || $row['gateway'] !== 'abliner' || !$this->matches($table, $row, $data)) throw new RuntimeException('Transaction identity mismatch.');
-            $amount = isset($data['amount']) ? (float) $data['amount'] : (isset($data['amount_cents']) ? (float) $data['amount_cents'] / 100 : -1);
-            if (($data['currency'] ?? '') !== 'TZS' || !is_finite($amount) || abs($amount - (float) $row['amount']) > 0.001) {
+            $rawAmount = $data['amount'] ?? (isset($data['amount_cents']) && is_numeric($data['amount_cents']) ? (float) $data['amount_cents'] / 100 : null);
+            $amount = is_numeric($rawAmount) ? (float) $rawAmount : -1;
+            $amountValid = is_finite($amount) && $amount > 0;
+            if (isset($data['amount_cents']) && (!is_numeric($data['amount_cents']) || abs((float) $data['amount_cents'] / 100 - $amount) > 0.001)) $amountValid = false;
+            $amountDiffers = abs($amount - (float) $row['amount']) > 0.001;
+            $completedPayout = $table === 'payouts' && ($data['status'] ?? '') === 'completed';
+            if (($data['currency'] ?? '') !== 'TZS' || !$amountValid || ($amountDiffers && !$completedPayout)) {
                 $comparison = ['expected_amount_tzs' => (float) $row['amount'], 'expected_currency' => 'TZS',
                     'provider_amount' => $data['amount'] ?? null, 'provider_amount_cents' => $data['amount_cents'] ?? null,
                     'provider_currency' => $data['currency'] ?? null, 'provider_status' => $data['status'] ?? null,
@@ -279,6 +301,12 @@ class AblinerPayment {
                     if (!$nested) Database::commit();
                     return; // Ignore duplicate terminal events; retain late money on replaced requests.
                 }
+            }
+            if ($completedPayout) {
+                // A verified completed transfer must never remain available for retry merely
+                // because the provider reports a different amount. Do not invent a fee.
+                $data['settlement_review'] = ['requested_tzs' => (float) $row['amount'], 'provider_reported_tzs' => $amount,
+                    'difference_tzs' => (float) $row['amount'] - $amount, 'requires_review' => $amountDiffers];
             }
             $changes = ['gateway_id' => $data['id'], 'status' => $status, 'metadata' => $this->metadata($row, $data)];
             if ($table === 'payments') {

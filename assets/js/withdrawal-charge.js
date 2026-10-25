@@ -15,7 +15,7 @@
             return;
         }
         amount.setCustomValidity('');
-        output.textContent = 'From your wallet: TZS ' + gross.toLocaleString() + ' · Withdrawal charge: TZS ' + charge.toLocaleString() + ' · You receive: TZS ' + net.toLocaleString() + '.';
+        output.textContent = 'From your wallet: TZS ' + gross.toLocaleString() + ' · Withdrawal charge: TZS ' + charge.toLocaleString() + ' · Requested payout: TZS ' + net.toLocaleString() + '. Provider charges may affect the amount received; differences are shown after settlement.';
     }
     amount.addEventListener('input', update);
     update();

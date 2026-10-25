@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `wallet_transactions` (
     `description` VARCHAR(255) DEFAULT NULL,
     `reference_id` INT UNSIGNED DEFAULT NULL COMMENT 'Related commission/withdrawal ID',
     `reference_type` VARCHAR(50) DEFAULT NULL COMMENT 'commission, withdrawal, etc',
-    `status` ENUM('completed','pending','cancelled') NOT NULL DEFAULT 'completed',
+    `status` ENUM('completed','pending','cancelled','failed','rejected') NOT NULL DEFAULT 'completed',
     `created_by` INT UNSIGNED DEFAULT NULL COMMENT 'Admin who made adjustment',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -191,6 +191,7 @@ CREATE TABLE IF NOT EXISTS `commissions` (
 CREATE TABLE IF NOT EXISTS `withdrawals` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id` INT UNSIGNED NOT NULL,
+    `request_key` VARCHAR(64) DEFAULT NULL,
     `amount` DECIMAL(12,2) NOT NULL,
     `phone` VARCHAR(20) NOT NULL COMMENT 'Mobile money number for payout',
     `payment_method` VARCHAR(50) NOT NULL DEFAULT 'mobile_money',
@@ -201,6 +202,7 @@ CREATE TABLE IF NOT EXISTS `withdrawals` (
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_withdrawal_request` (`request_key`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_status` (`status`),
     CONSTRAINT `fk_wd_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE

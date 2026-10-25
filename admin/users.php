@@ -262,6 +262,12 @@ function deleteUsersAndData(array $ids): int {
     try {
         Database::beginTransaction();
 
+        // Retain the provider references and wallet holds needed to prevent duplicate transfers.
+        Database::fetchAll("SELECT id FROM users WHERE id IN ({$placeholders}) FOR UPDATE", $params);
+        $financial = Database::fetchOne("SELECT id FROM payments WHERE user_id IN ({$placeholders}) AND gateway = 'abliner' LIMIT 1", $params)
+            ?: Database::fetchOne("SELECT id FROM payouts WHERE user_id IN ({$placeholders}) AND gateway = 'abliner' LIMIT 1", $params);
+        if ($financial) throw new RuntimeException('Accounts with Abliner transactions must be suspended rather than deleted; financial records are retained.');
+
         // Wallet transactions for these users' wallets (subquery targets a different table)
         safeUserDelete('wallet_transactions', "wallet_id IN (SELECT id FROM wallets WHERE user_id IN ({$placeholders}))", $params);
         // Payouts for these users' withdrawals

@@ -67,7 +67,7 @@ class AblinerClient {
         return ['success' => false, 'code' => $json['code'] ?? 'provider_error',
             'error' => (string) ($json['message'] ?? 'Abliner request failed.'),
             'retryable' => (bool) ($json['retryable'] ?? false), 'transaction_id' => $json['transaction_id'] ?? null,
-            'uncertain' => $response['http_code'] >= 500 || in_array($json['code'] ?? '', ['request_in_progress', 'idempotency_conflict']) || !empty($json['transaction_id']),
+            'uncertain' => $response['http_code'] >= 500 || $response['http_code'] === 408 || !empty($json['retryable']) || in_array($json['code'] ?? '', ['request_in_progress', 'idempotency_conflict']) || !empty($json['transaction_id']),
             'http_code' => $response['http_code']];
     }
 

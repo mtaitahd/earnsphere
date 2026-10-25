@@ -14,7 +14,7 @@ foreach (['payments', 'payouts'] as $table) {
             if ($verbose) {
                 $detail = ['kind' => $table, 'local_id' => (int) $row['id'],
                     'verified' => (bool) $result['success'], 'status' => $result['status'] ?? 'unverified',
-                    'matched' => $result['found'] ?? null, 'code' => $result['code'] ?? null,
+                    'matched' => $result['found'] ?? null, 'settlement_review' => $result['settlement_review'] ?? null, 'code' => $result['code'] ?? null,
                     'message' => $result['error'] ?? $result['message'] ?? null];
                 echo json_encode($detail, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) . PHP_EOL;
             }

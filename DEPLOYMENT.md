@@ -169,3 +169,33 @@ The route tests use an isolated SQLite fixture and do not access the real databa
 or payment provider. After migration, create a support-only test agent on the live
 server and confirm the assigned links and ticket replies before distributing
 staff credentials.
+
+## Payment lifecycle safety update (25 October 2026)
+
+Run before using the updated withdrawal form:
+
+```sh
+php database/migrate_payment_safety.php
+php cron/verify-pending-payments.php --verbose
+```
+
+The migration adds unique withdrawal request tokens and ensures wallet ledger statuses
+can store failed/rejected events. It never alters balances or dispatches transfers.
+Keep the existing reconciliation cron running every minute.
+
+Provider-confirmed completed payouts close the held withdrawal exactly once even if
+Abliner reports a different positive TZS amount. Requested and reported amounts remain
+separate in `payouts.metadata.settlement_review`; a difference is flagged for manual
+review and is never silently classified as a fee. The reserved gross wallet debit is
+settled once. No additional transfer, refund or fee adjustment is issued automatically.
+Deposits still require an exact amount/currency match before activation or commissions.
+Malformed amounts, inconsistent cents and wrong currencies remain unverified.
+
+Browser retries reuse a database-unique request token. A new public withdrawal is blocked
+while another is unresolved. Existing payout dispatch returns the old payout, and status
+checks only query Abliner. Signed duplicate callbacks do not debit wallets again.
+Accounts with Abliner financial records cannot be deleted through Users management.
+
+Launch verification still requires production webhook delivery and a real provider
+transaction showing requested, received and provider-debited amounts. Offline tests do
+not establish provider fee semantics or prove production MySQL concurrency behavior.
