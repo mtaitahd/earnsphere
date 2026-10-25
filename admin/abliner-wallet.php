@@ -9,12 +9,13 @@ $service = new AblinerPayment();
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (!Auth::validateCSRF()) { http_response_code(403); exit('Invalid security token.'); }
     try {
-        $result = $service->initiateFunding((int) $_SESSION['user_id'], (string) ($_POST['phone'] ?? ''), (float) ($_POST['amount'] ?? 0));
+        $result = $service->initiateFunding((int) $_SESSION['user_id'], (string) ($_POST['phone'] ?? ''), (float) ($_POST['amount'] ?? 0), ($_POST['confirm_number_change'] ?? '') === '1', (string) ($_POST['previous_order'] ?? ''));
         if ($result['success']) $message = $result['message'];
         else $error = $result['error'];
     } catch (Throwable $e) { error_log('Abliner wallet deposit failed: ' . $e->getMessage()); $error = 'Deposit could not be confirmed. Check its status before another attempt.'; }
 }
 $deposits = Database::fetchAll("SELECT * FROM payments WHERE gateway = 'abliner' AND purpose = 'admin_funding' AND user_id = ? ORDER BY id DESC LIMIT 20", [$_SESSION['user_id']]);
+$pendingFunding = Database::fetchOne("SELECT * FROM payments WHERE gateway = 'abliner' AND purpose = 'admin_funding' AND user_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", [$_SESSION['user_id']]);
 $csrf = Auth::generateCSRF();
 $pageTitle = 'Abliner Wallet';
 include __DIR__ . '/admin_header.php';
@@ -38,6 +39,13 @@ include __DIR__ . '/admin_header.php';
         <div class="mb-3"><label for="funding-phone" class="form-label">Phone number to charge</label>
             <input id="funding-phone" type="tel" name="phone" class="form-control" required data-recipient-lookup
                 data-lookup-url="<?= sanitize(SITE_URL) ?>/api/lookup_phone.php" data-csrf="<?= $csrf ?>" data-csrf-name="<?= CSRF_TOKEN_NAME ?>"></div>
+        <?php if ($pendingFunding): ?>
+        <input type="hidden" name="previous_order" value="<?= sanitize($pendingFunding['order_id']) ?>">
+        <div class="alert alert-warning">
+            Pending company deposit: <?= formatCurrency((float) $pendingFunding['amount']) ?> from <?= sanitize($pendingFunding['phone']) ?>.
+            <label class="d-block mt-2"><input type="checkbox" name="confirm_number_change" value="1"> I have not paid the earlier request. Send a new deposit request to the different number entered above; I will not approve the old prompt.</label>
+        </div>
+        <?php endif; ?>
         <p class="text-muted">Approve the prompt on your phone. This deposit funds the company wallet and does not award referral commissions.</p>
         <button class="btn btn-primary" type="submit">Request deposit</button>
     </form>

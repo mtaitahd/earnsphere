@@ -20,8 +20,8 @@ class AblinerPayment {
         return $this->startDeposit($userId, $phone, (float) app_setting('registration_fee', REGISTRATION_FEE), 'registration', $confirmNumberChange, $previousOrder);
     }
 
-    public function initiateFunding(int $adminId, string $phone, float $amount): array {
-        return $this->startDeposit($adminId, $phone, $amount, 'admin_funding');
+    public function initiateFunding(int $adminId, string $phone, float $amount, bool $confirmNumberChange = false, string $previousOrder = ''): array {
+        return $this->startDeposit($adminId, $phone, $amount, 'admin_funding', $confirmNumberChange, $previousOrder);
     }
 
     private function startDeposit(int $userId, string $phone, float $amount, string $purpose, bool $confirmNumberChange = false, string $previousOrder = ''): array {
@@ -49,11 +49,14 @@ class AblinerPayment {
                     Database::commit();
                     return ['success' => false, 'error' => 'An earlier payment needs reconciliation by support before starting an Abliner payment.'];
                 }
-                $switch = $purpose === 'registration' && $existing['phone'] !== $phone
+                $switch = in_array($purpose, ['registration', 'admin_funding'], true) && $existing['phone'] !== $phone
                     && $confirmNumberChange && hash_equals($existing['order_id'], $previousOrder);
                 if (!$switch) {
                     Database::commit();
-                    if ($existing['phone'] !== $phone) return ['success' => false, 'error' => 'To use another number, confirm below that you have not paid and will not approve the old prompt. Then submit again.'];
+                    if ($existing['phone'] !== $phone) return ['success' => false, 'error' => $purpose === 'admin_funding'
+                        ? 'Your earlier company deposit is still pending. Tick the confirmation in the deposit form to use a different number.'
+                        : 'To use another number, confirm below that you have not paid and will not approve the old prompt. Then submit again.'];
+                    if ($purpose === 'admin_funding' && abs((float) $existing['amount'] - $amount) > 0.001) return ['success' => false, 'error' => 'This number already has a pending deposit of TZS ' . number_format((float) $existing['amount']) . '. Check that request before changing the amount. No new prompt was sent.'];
                     return $this->paymentResult($existing, 'Your earlier request is still pending. No new prompt was sent.');
                 }
                 // A deliberate switch keeps the previous request available for late callbacks.
