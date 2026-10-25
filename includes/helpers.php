@@ -321,3 +321,9 @@ function payoutReviewText(?string $metadata): string {
         . '; provider reports: ' . formatCurrency((float) $review['provider_reported_tzs'])
         . '. Amount difference is under review; it is not a confirmed fee. Do not repeat this transfer.';
 }
+
+/** Ledger created_at values use the database's UTC clock; render Tanzania time. */
+function formatLedgerTime(string $datetime): string {
+    return (new DateTimeImmutable($datetime, new DateTimeZone('UTC')))
+        ->setTimezone(new DateTimeZone('Africa/Dar_es_Salaam'))->format('d M Y, H:i');
+}

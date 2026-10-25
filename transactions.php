@@ -74,6 +74,7 @@ include __DIR__ . '/includes/public_head.php';
                 $isCredit = $tx['amount'] > 0;
                 $txStatus = $tx['status'] ?? 'completed';
                 $isPendingWithdrawal = ($tx['type'] === 'withdrawal' && $txStatus === 'pending');
+                $isCompletedWithdrawal = ($tx['type'] === 'withdrawal' && $txStatus === 'completed');
 
                 if ($txStatus === 'failed' || $txStatus === 'rejected') {
                     $iconBg = '#fef2f2';
@@ -88,8 +89,8 @@ include __DIR__ . '/includes/public_head.php';
                     $iconColor = 'var(--accent)';
                     $badgeClass = 'bg-warning text-dark';
                 } else {
-                    $iconBg = $isCredit ? '#ecfdf5' : '#f3f4f6';
-                    $iconColor = $isCredit ? 'var(--secondary)' : 'var(--gray-500)';
+                    $iconBg = ($isCredit || $isCompletedWithdrawal) ? '#ecfdf5' : '#f3f4f6';
+                    $iconColor = ($isCredit || $isCompletedWithdrawal) ? '#15803d' : 'var(--gray-500)';
                     $badgeClass = 'bg-success';
                 }
             ?>
@@ -108,7 +109,7 @@ include __DIR__ . '/includes/public_head.php';
                 <div class="item-info">
                     <p class="item-title"><?= $isPendingWithdrawal ? 'Withdrawal Request' : sanitize($tx['description'] ?: ucfirst(str_replace('_', ' ', $tx['type']))) ?></p>
                     <p class="item-subtitle">
-                        <?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
+                        <?= formatLedgerTime($tx['created_at']) ?> EAT
                         <?php if ($isPendingWithdrawal): ?>
                             <span class="badge bg-warning text-dark" style="font-size:0.6rem;">Processing</span>
                         <?php elseif ($tx['type'] === 'withdrawal' && $txStatus === 'completed'): ?>
@@ -119,7 +120,7 @@ include __DIR__ . '/includes/public_head.php';
                     </p>
                 </div>
                 <div style="text-align:right;">
-                    <div class="item-amount <?= $isPendingWithdrawal ? 'debit' : ($isCredit ? 'credit' : 'debit') ?>" style="<?= $isPendingWithdrawal ? 'color:var(--accent)' : '' ?>">
+                    <div class="item-amount <?= $isPendingWithdrawal ? 'debit' : (($isCredit || $isCompletedWithdrawal) ? 'credit' : 'debit') ?>" style="<?= $isPendingWithdrawal ? 'color:var(--accent)' : ($isCompletedWithdrawal ? 'color:#15803d' : '') ?>">
                         <?= $isCredit ? '+' : '' ?><?= formatCurrency(abs($tx['amount'])) ?>
                     </div>
                     <div style="font-size:0.7rem;color:var(--gray-400);">
