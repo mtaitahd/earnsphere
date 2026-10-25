@@ -23,7 +23,7 @@ try {
     echo json_encode($body, JSON_UNESCAPED_UNICODE);
     if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
     elseif (function_exists('litespeed_finish_request')) litespeed_finish_request();
-    try { PaymentNotifications::dispatch(1); } catch (Throwable $e) { error_log('Notification dispatch: ' . $e->getMessage()); }
+    try { PaymentNotifications::dispatch(1, null, $userId); } catch (Throwable $e) { error_log('Notification dispatch: ' . $e->getMessage()); }
 } catch (Throwable $e) {
     error_log('User notifications failed: ' . $e->getMessage());
     paymentApiReply(['success' => false, 'error' => 'Notifications are temporarily unavailable.'], 503);

@@ -48,3 +48,12 @@ $db->exec("INSERT INTO settings(setting_key,setting_value) VALUES ('meseji_sende
 require_once __DIR__.'/../classes/MesejiSms.php';
 expect((new MesejiSms())->getSenderId()==='EARNSPHERE','Configured database sender ID was not used');
 echo "Notifications: fee breakdown, owner scoping, read-all, duplicate events/SMS, ambiguous failures, history and configured sender checks passed. No real SMS sent.\n";
+
+PaymentNotifications::payment(['id'=>910,'user_id'=>201,'amount'=>16000]);
+PaymentNotifications::payment(['id'=>911,'user_id'=>200,'amount'=>16000]);
+$scopedCalls=[];
+PaymentNotifications::dispatch(1,function($notification,$phone)use(&$scopedCalls){$scopedCalls[]=$notification;return ['success'=>true];},200);
+expect(count($scopedCalls)===1 && (int)$scopedCalls[0]['user_id']===200,'Another user backlog delayed current user SMS');
+expect($scopedCalls[0]['message']===Database::fetchOne('SELECT message FROM user_notifications WHERE event_key=?',['payment:911'])['message'],'SMS differs from bell message');
+expect(Database::fetchOne('SELECT sms_status FROM user_notifications WHERE event_key=?',['payment:910'])['sms_status']==='pending','Scoped delivery consumed another user SMS');
+echo "Scoped SMS delivery and identical bell message checks passed.\n";

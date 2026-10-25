@@ -62,16 +62,19 @@ class PaymentNotifications {
         Database::query('UPDATE user_notifications SET cleared_at = ?, read_at = COALESCE(read_at, ?) WHERE user_id = ? AND id <= ? AND cleared_at IS NULL', [$now, $now, $userId, $throughId]);
     }
 
-    public static function dispatch(int $limit = 1, ?callable $sender = null): void {
+    public static function dispatch(int $limit = 1, ?callable $sender = null, ?int $userId = null): void {
         for ($i = 0; $i < max(0, min(5, $limit)); $i++) {
             Database::beginTransaction();
             try {
-                $row = Database::fetchOne("SELECT * FROM user_notifications WHERE sms_status = 'pending' ORDER BY id LIMIT 1 FOR UPDATE");
+                $scope = $userId === null ? "" : " AND user_id = ?";
+                $row = Database::fetchOne("SELECT * FROM user_notifications WHERE sms_status = 'pending'" . $scope . " ORDER BY id LIMIT 1 FOR UPDATE", $userId === null ? [] : [$userId]);
                 if (!$row) { Database::commit(); return; }
                 Database::update('user_notifications', ['sms_status' => 'sending', 'sms_attempted_at' => gmdate('Y-m-d H:i:s')], 'id = ? AND sms_status = ?', [$row['id'], 'pending']);
                 Database::commit();
             } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }
             try {
+                // Continue the claimed gateway request if the browser disconnects.
+                ignore_user_abort(true);
                 $user = Database::fetchOne('SELECT phone FROM users WHERE id = ?', [$row['user_id']]);
                 if (!$user) throw new RuntimeException('Notification user not found.');
                 if ($sender) $result = $sender($row, $user['phone']);
@@ -85,6 +88,7 @@ class PaymentNotifications {
                 Database::update('user_notifications', ['sms_status' => !empty($result['success']) ? 'sent' : 'failed',
                     'sms_sent_at' => !empty($result['success']) ? gmdate('Y-m-d H:i:s') : null,
                     'sms_error' => !empty($result['success']) ? null : substr((string) ($result['error'] ?? 'SMS was not accepted.'), 0, 500)], 'id = ?', [$row['id']]);
+                if (empty($result['success'])) error_log('Payment notification SMS #' . $row['id'] . ' rejected: ' . ($result['error'] ?? 'Gateway did not accept SMS.'));
             } catch (Throwable $e) {
                 Database::update('user_notifications', ['sms_status' => 'unknown', 'sms_error' => substr($e->getMessage(), 0, 500)], 'id = ?', [$row['id']]);
                 error_log('Payment notification SMS #' . $row['id'] . ' needs review: ' . $e->getMessage());

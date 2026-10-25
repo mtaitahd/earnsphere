@@ -417,7 +417,9 @@ class AblinerPayment {
     }
 
     public function flushNotifications(int $limit = 1): void {
-        // Financial settlement is already committed; notifications are best effort.
+        // Financial settlement is already committed. SMS must not wait for email delivery.
+        ignore_user_abort(true);
+        PaymentNotifications::dispatch($limit);
         for ($i = 0; $i < max(0, min(20, $limit)); $i++) {
             Database::beginTransaction();
             try {
@@ -431,6 +433,5 @@ class AblinerPayment {
                 Database::update('abliner_notifications', ['sent_at' => date('Y-m-d H:i:s')], 'payment_id = ?', [$row['payment_id']]);
             } catch (Throwable $e) { error_log('Abliner activation notification failed'); }
         }
-        PaymentNotifications::dispatch($limit);
     }
 }
