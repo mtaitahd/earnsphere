@@ -103,6 +103,9 @@ class MesejiSms {
         }
 
         $error = $response['error'] ?? 'Unknown SMS error';
+        // Keep the HTTP result visible when the provider returns a generic message.
+        if (!empty($response['http_code'])) $error = 'HTTP ' . (int) $response['http_code'] . ': ' . $error;
+        if (!empty($response['error_code']) && is_scalar($response['error_code'])) $error .= ' (code: ' . $response['error_code'] . ')';
         $this->log($message, $phones, $type, $templateKey, null, 0, 'failed', $error, $sentBy, $userId);
         ErrorLogger::log('sms', 'Meseji SMS send failed', [
             'endpoint' => '/sms/send',
