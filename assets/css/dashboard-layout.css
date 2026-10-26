@@ -5,22 +5,22 @@
 .account-menu-toggle { width: 38px; height: 42px; border: 0; background: transparent; color: #604577; font-size: 1.3rem; }
 .account-toolbar .notification-btn { width: 36px; height: 36px; border-radius: 50%; background: #f2edf7; color: #72578b; font-size: 1rem; }
 .account-toolbar .avatar { width: 36px; height: 36px; background: #72578b !important; font-size: .9rem; border: 0; }
-.dash-header.account-overview { margin: 1rem; padding: 1.25rem; border-radius: 18px; background: linear-gradient(120deg,#72578b,#4e3568); color: #fff; }
-.account-greeting p { margin: 0 0 .15rem; color: #e6dced; font-size: .8rem; }
-.account-greeting h1 { margin: 0; font-size: 1.35rem; line-height: 1.4; font-weight: 800; overflow-wrap: anywhere; }
-.account-primary-actions { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .5rem; margin: 1.2rem 0; }
-.account-primary-actions a { display: flex; align-items: center; flex-direction: column; gap: .45rem; text-decoration: none; color: #fff; text-align: center; font-size: .7rem; font-weight: 700; }
-.account-primary-actions i { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #ffffff1c; color: #fff; font-size: 1.1rem; }
-.account-totals { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin: .8rem 0 1rem; }
+.dash-header.account-overview { margin: .65rem .4rem 1rem; padding: .85rem .8rem; border-radius: 20px; background: linear-gradient(135deg,#72578b,#4e3568); color: #fff; box-shadow: 0 7px 14px #44315330; }
+.account-greeting p { display: inline; margin: 0; color: #f3edf7; font-size: 1.15rem; }
+.account-greeting h1 { display: inline; margin: 0 0 0 .3rem; font-size: 1.15rem; line-height: 1.4; font-weight: 800; overflow-wrap: anywhere; }
+.account-primary-actions { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .5rem; margin: 1rem 0 .75rem; }
+.account-primary-actions a { display: flex; align-items: center; justify-content: space-between; flex-direction: column; gap: .25rem; min-height: 70px; padding: .35rem .15rem; text-decoration: none; background: #fff; border: 1px solid #e4dbe9; border-bottom: 3px solid #c3aecf; border-radius: 10px; color: #4e3568; text-align: center; font-size: .65rem; font-weight: 800; box-shadow: 0 3px 0 #30263825; }
+.account-primary-actions i { display: grid; place-items: center; width: 36px; height: 36px; background: transparent; color: #72578b; font-size: 1.75rem; }
+.account-totals { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin: .65rem 0; text-align: center; }
 .account-totals span,.account-balance span { display: block; font-size: .72rem; color: #e6dced; margin-bottom: .3rem; }
 .account-totals strong { font-size: .95rem; font-weight: 700; }
-.account-balance { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: 1rem; background: #ffffff14; border: 1px solid #ffffff25; border-radius: 12px; }
-.account-balance strong { display: block; font-size: 1.6rem; line-height: 1.25; font-weight: 800; overflow-wrap: anywhere; }
+.account-balance { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .75rem 1rem; background: #876a9e; border: 1px solid #aa8cbe; border-radius: 16px; box-shadow: 0 3px 8px #30263822; }
+.account-balance strong { display: block; font-size: 1.3rem; line-height: 1.25; font-weight: 800; overflow-wrap: anywhere; }
 .account-balance [hidden] { display: none; }
 .account-balance button { width: 44px; height: 44px; flex-shrink: 0; background: transparent; color: #fff; border: 0; font-size: 1.15rem; }
-.dashboard-stats .stat-card { flex-direction: row-reverse; justify-content: space-between; min-height: 100px; padding: 1rem 1.2rem; box-shadow: 0 2px 10px #30263808; border: 1px solid #eee9f2; border-radius: 12px; }
-.dashboard-stats .stat-info { flex: 1; }
-.dashboard-stats .stat-value { font-size: 1.25rem; }
+.dashboard-stats .stat-card { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); grid-template-rows: auto auto; column-gap: .75rem; row-gap: .45rem; min-height: 125px; padding: 1.2rem 1.4rem; background: linear-gradient(#fff,#f1edf5); box-shadow: 0 4px 8px #72578b25; border: 1px solid #e1d5e9; border-bottom: 3px solid #a78ab9; border-radius: 12px; }
+.dashboard-stats .stat-info { display: contents; }
+.dashboard-stats .stat-value { grid-column: 1; grid-row: 1; align-self: end; color: #72578b; font-size: 1.2rem; }
 .account-share-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .5rem; margin: 0 0 1rem; }
 .account-share-links a { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .6rem; border: 1px solid #e2dce8; border-radius: 8px; text-decoration: none; color: #604577; font-size: .85rem; font-weight: 700; }
 .account-drawer { position: fixed; inset: 0 auto 0 0; margin: 0; padding: 0; width: min(340px,86vw); height: 100dvh; max-height: 100dvh; max-width: 100%; background: #fff; border: 0; color: #443153; overflow-y: auto; overscroll-behavior: contain; }
@@ -37,3 +37,13 @@
 .account-toolbar button:focus-visible,.account-drawer button:focus-visible,.account-drawer a:focus-visible,.account-balance button:focus-visible { outline: 2px solid #b89bce; outline-offset: 2px; }
 html:has(.account-drawer[open]) { overflow: hidden; }
 @media(min-width:768px) { .account-toolbar { padding-inline: max(1rem,calc((100% - 1100px)/2)); } .dash-header.account-overview { max-width: 1100px; margin: 1.25rem auto; padding: 1.75rem; } .account-primary-actions { max-width: 450px; } .account-balance strong { font-size: 2rem; } }
+
+.account-greeting { text-align: center; }
+.account-primary-actions span { order: -1; }
+.account-primary-actions a:hover { background: #f5eff9; }
+.account-paid-status { margin: 0 1rem 1rem; }
+.account-paid-status:empty { display: none; }
+.dashboard-stats .stat-icon { grid-column: 1; grid-row: 2; width: 34px; height: 34px; border-radius: 6px; font-size: 1.2rem; background: transparent; color: #a48db5; }
+.dashboard-stats .stat-label { grid-column: 2; grid-row: 1 / span 2; align-self: center; justify-self: end; text-align: right; font-size: .95rem; color: #443153; }
+@media(min-width:768px) { .account-paid-status { max-width:1100px; margin:0 auto 1rem; } .account-primary-actions { margin-inline:auto; max-width:500px; } .dash-header.account-overview { padding:1.2rem; } }
+@media(max-width:350px) { .account-primary-actions { gap:.3rem; } .account-primary-actions a { font-size:.58rem; } }

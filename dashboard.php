@@ -108,6 +108,7 @@ include __DIR__ . '/includes/public_head.php';
         <a href="withdrawal"><i class="fas fa-arrow-up" aria-hidden="true"></i><span>Withdraw</span></a>
         <?php if ($user['status'] === 'active'): ?><a href="quizzes"><i class="fas fa-gift" aria-hidden="true"></i><span>Quiz</span></a><?php endif; ?>
         <a href="marketplace"><i class="fas fa-bag-shopping" aria-hidden="true"></i><span>Buy Goods</span></a>
+        <a href="referrals"><i class="fas fa-users" aria-hidden="true"></i><span>Referrals</span></a>
         <a href="profile"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>
     </nav>
     <div class="account-totals"><div><span>Total earned</span><strong><?= formatCurrency($wallet['total_earned'] ?? 0) ?></strong></div><div><span>Total withdrawn</span><strong><?= formatCurrency($wallet['total_withdrawn'] ?? 0) ?></strong></div></div>
@@ -133,6 +134,10 @@ include __DIR__ . '/includes/public_head.php';
     </div>
     <?php endif; ?>
 
+
+</div>
+
+<section class="account-paid-status" aria-label="Registration payment">
     <?php if ($registrationPayment && $user['status'] === 'active' && $registrationPayment['status'] === 'completed'): ?>
     <div style="background:#15803d;border:1px solid #22c55e;border-radius:12px;padding:1rem;margin-top:0.5rem;color:#fff;">
         <div class="d-flex align-items-center justify-content-between">
@@ -147,7 +152,7 @@ include __DIR__ . '/includes/public_head.php';
         </div>
     </div>
     <?php endif; ?>
-</div>
+</section>
 
 <?php include __DIR__ . '/includes/welcome_media.php'; ?>
 
