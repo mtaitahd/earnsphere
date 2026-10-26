@@ -1928,3 +1928,13 @@ img {
 
 /* Dashboard stats follow service links in normal flow instead of overlapping them. */
 .stat-cards.dashboard-stats { margin-top:0; }
+
+/* Account instructions opened from Quick Actions. */
+.welcome-media-dialog { width: calc(100% - 2rem); max-width: 620px; max-height: 85vh; overflow: auto; padding: 1.25rem; border: 0; border-radius: 12px; background: #fff; color: #302638; box-shadow: 0 16px 60px #24143140; }
+.welcome-media-dialog::backdrop { background: #20172999; }
+.welcome-media-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+.welcome-media-header h2 { margin: 0; font-size: 1.1rem; line-height: 1.4; }
+.welcome-media-close { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border: 1px solid #e2dce8; border-radius: 6px; background: #fff; color: #604577; font-size: 1.6rem; cursor: pointer; }
+.welcome-media-dialog p { color: #706878; font-size: 0.9rem; }
+.welcome-media-dialog audio { width: 100%; }
+.welcome-media-dialog iframe { display: block; width: 100%; aspect-ratio: 16/9; border: 0; }
