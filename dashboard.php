@@ -737,25 +737,16 @@ include __DIR__ . '/includes/public_head.php';
 }
 .sp-clear-btn:hover { background: #059669; }
 .mission-card {
-    background: linear-gradient(135deg, #72578B, #5a3f72);
-    border-radius: var(--radius-lg);
-    padding: 1.25rem;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(114, 87, 139, 0.3);
-    margin-bottom: 1rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    color: #332b3e;
+    box-shadow: none;
+    margin-bottom: 1.5rem;
     position: relative;
-    overflow: hidden;
 }
-.mission-card::before {
-    content: '';
-    position: absolute;
-    top: -30%;
-    right: -20%;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: rgba(212, 168, 67, 0.1);
-}
+.mission-card::before { content: none; }
 .mission-header {
     display: flex;
     align-items: flex-start;
@@ -770,7 +761,7 @@ include __DIR__ . '/includes/public_head.php';
     align-items: center;
     justify-content: center;
     font-size: 1.25rem;
-    color: #D4A843;
+    color: #886316;
     flex-shrink: 0;
 }
 .mission-info {
@@ -800,12 +791,12 @@ include __DIR__ . '/includes/public_head.php';
 .reward-amount {
     font-size: 1rem;
     font-weight: 800;
-    color: #D4A843;
+    color: #886316;
 }
 .mission-progress {
     margin-top: 1rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba(255,255,255,0.15);
+    border-top: 1px solid #e2dce8;
 }
 .progress-header {
     display: flex;
@@ -816,13 +807,13 @@ include __DIR__ . '/includes/public_head.php';
 }
 .progress-track {
     height: 6px;
-    background: rgba(255,255,255,0.15);
+    background: #e2dce8;
     border-radius: 3px;
     overflow: hidden;
 }
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #D4A843, #F5D77B);
+    background: #72578B;
     border-radius: 3px;
     transition: width 0.5s ease;
 }
@@ -836,7 +827,7 @@ include __DIR__ . '/includes/public_head.php';
 .mission-completed {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba(255,255,255,0.15);
+    border-top: 1px solid #e2dce8;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -884,24 +875,16 @@ include __DIR__ . '/includes/public_head.php';
 }
 /* --- Weekly Contest Card --- */
 .contest-card {
-    background: linear-gradient(135deg, #72578B, #4a2f63);
-    border-radius: var(--radius-lg);
-    padding: 1.25rem;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(114, 87, 139, 0.3);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    color: #332b3e;
+    box-shadow: none;
+    margin-bottom: 1.5rem;
     position: relative;
-    overflow: hidden;
 }
-.contest-card::before {
-    content: '';
-    position: absolute;
-    top: -30%;
-    right: -20%;
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: rgba(212, 168, 67, 0.12);
-}
+.contest-card::before { content: none; }
 .contest-header {
     display: flex;
     align-items: flex-start;
@@ -916,7 +899,7 @@ include __DIR__ . '/includes/public_head.php';
     align-items: center;
     justify-content: center;
     font-size: 1.25rem;
-    color: #D4A843;
+    color: #886316;
     flex-shrink: 0;
 }
 .contest-info {
@@ -927,7 +910,7 @@ include __DIR__ . '/includes/public_head.php';
     font-size: 0.6rem;
     letter-spacing: 1.5px;
     font-weight: 800;
-    color: #D4A843;
+    color: #886316;
     margin-bottom: 0.15rem;
 }
 .contest-title {
@@ -957,7 +940,7 @@ include __DIR__ . '/includes/public_head.php';
 .ends-date {
     font-size: 1rem;
     font-weight: 800;
-    color: #D4A843;
+    color: #886316;
 }
 .prize-row {
     display: grid;
@@ -966,7 +949,7 @@ include __DIR__ . '/includes/public_head.php';
     margin: 1rem 0;
 }
 .prize-item {
-    background: rgba(255,255,255,0.08);
+    background: transparent;
     border-radius: var(--radius-md);
     padding: 0.6rem 0.4rem;
     text-align: center;
@@ -975,14 +958,14 @@ include __DIR__ . '/includes/public_head.php';
 .prize-item.silver { border-top: 3px solid #c0c4cc; }
 .prize-item.bronze { border-top: 3px solid #cd7f32; }
 .prize-icon { font-size: 1.1rem; }
-.prize-val { font-size: 0.85rem; font-weight: 800; margin-top: 0.2rem; }
+.prize-val { font-size: clamp(0.7rem, 3vw, 0.85rem); font-weight: 800; margin-top: 0.2rem; }
 .prize-label { font-size: 0.65rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
 .lb-title {
     font-size: 0.7rem;
     font-weight: 800;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: #D4A843;
+    color: #886316;
     margin-bottom: 0.5rem;
 }
 .lb-list { display: flex; flex-direction: column; gap: 0.35rem; }
@@ -990,7 +973,7 @@ include __DIR__ . '/includes/public_head.php';
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    background: rgba(255,255,255,0.07);
+    background: transparent;
     border-radius: 10px;
     padding: 0.45rem 0.6rem;
     font-size: 0.8rem;
@@ -1004,7 +987,7 @@ include __DIR__ . '/includes/public_head.php';
     height: 22px;
     border-radius: 50%;
     background: rgba(212, 168, 67, 0.25);
-    color: #D4A843;
+    color: #886316;
     font-weight: 800;
     font-size: 0.7rem;
     display: flex;
@@ -1015,7 +998,7 @@ include __DIR__ . '/includes/public_head.php';
 .lb-name { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lb-count { font-size: 0.7rem; opacity: 0.85; flex-shrink: 0; }
 .lb-empty {
-    background: rgba(255,255,255,0.07);
+    background: transparent;
     border-radius: 10px;
     padding: 0.6rem;
     font-size: 0.75rem;
@@ -1025,14 +1008,14 @@ include __DIR__ . '/includes/public_head.php';
 .contest-cta {
     margin-top: 0.9rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba(255,255,255,0.15);
+    border-top: 1px solid #e2dce8;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
 }
 .user-rank { font-size: 0.8rem; text-align: center; }
 .user-rank.muted { opacity: 0.85; }
-.user-rank strong { color: #D4A843; }
+.user-rank strong { color: #886316; }
 /* --- Live Proof --- */
 .live-dot {
     display: inline-flex;
