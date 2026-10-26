@@ -195,7 +195,7 @@ include __DIR__ . '/includes/public_head.php';
 
 <!-- Daily Mission -->
 <?php if ($user['status'] === 'active' && $missionStatus && $missionStatus['has_mission']): ?>
-<div class="dash-section px-3" style="margin-top:1rem;">
+<div class="dash-section referral-mission-section">
     <div class="mission-card" id="missionCard" data-completed="<?= $missionStatus['completed'] ? '1' : '0' ?>">
         <div class="mission-header">
             <div class="mission-icon">
@@ -246,12 +246,12 @@ include __DIR__ . '/includes/public_head.php';
     
     <!-- Weekly Referral Contest -->
     <?php if ($contest): ?>
-    <div class="dash-section px-3" style="margin-top:1rem;">
+    <div class="dash-section referral-contest-section">
         <div class="contest-card">
             <div class="contest-header">
                 <div class="contest-trophy"><i class="fas fa-trophy"></i></div>
                 <div class="contest-info">
-                    <div class="contest-badge">WEEKLY CONTEST</div>
+                    <div class="contest-badge">SHINDANO LA WIKI</div>
                     <h6 class="contest-title"><?= sanitize($contest['title']) ?></h6>
                     <p class="contest-desc"><?= sanitize($contest['description']) ?></p>
                 </div>
@@ -263,17 +263,17 @@ include __DIR__ . '/includes/public_head.php';
 
             <div class="prize-row">
                 <div class="prize-item gold">
-                    <span class="prize-icon">🥇</span>
+                    <span class="prize-icon">01</span>
                     <div class="prize-val"><?= formatCurrency($contest['prize1']) ?></div>
                     <div class="prize-label">1st</div>
                 </div>
                 <div class="prize-item silver">
-                    <span class="prize-icon">🥈</span>
+                    <span class="prize-icon">02</span>
                     <div class="prize-val"><?= formatCurrency($contest['prize2']) ?></div>
                     <div class="prize-label">2nd</div>
                 </div>
                 <div class="prize-item bronze">
-                    <span class="prize-icon">🥉</span>
+                    <span class="prize-icon">03</span>
                     <div class="prize-val"><?= formatCurrency($contest['prize3']) ?></div>
                     <div class="prize-label">3rd</div>
                 </div>
@@ -300,8 +300,8 @@ include __DIR__ . '/includes/public_head.php';
                 <?php else: ?>
                     <div class="user-rank muted"><i class="fas fa-rocket me-1"></i> Leta wateja <?= (int) $contest['min_referrals'] ?>+ waliolipa na ushinde zawadi!</div>
                 <?php endif; ?>
-                <a href="referrals" class="btn btn-light btn-sm w-100" style="background:#fff;color:#72578B;font-weight:800;border-radius:10px;">
-                    <i class="fas fa-share me-1"></i> Share Link na Kushindana
+                <a href="referrals" class="contest-share">
+                    <i class="fas fa-share me-1"></i> Shiriki link yako
                 </a>
             </div>
         </div>
@@ -707,41 +707,35 @@ include __DIR__ . '/includes/public_head.php';
     border: 0;
     border-radius: 0;
     padding: 0;
-    color: #332b3e;
+    color: #302638;
     box-shadow: none;
-    margin-bottom: 1.5rem;
+    margin: 0;
     position: relative;
 }
 .mission-card::before { content: none; }
 .mission-header {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 .mission-icon {
-    width: 44px;
-    height: 44px;
-    background: rgba(212, 168, 67, 0.2);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    color: #886316;
-    flex-shrink: 0;
+    display: none;
 }
 .mission-info {
     flex: 1;
     min-width: 0;
 }
 .mission-title {
-    font-weight: 800;
-    font-size: 0.95rem;
-    margin: 0 0 0.15rem;
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.4;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.2px;
 }
 .mission-desc {
-    font-size: 0.75rem;
-    opacity: 0.85;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: #706878;
     margin: 0;
 }
 .mission-reward {
@@ -749,27 +743,28 @@ include __DIR__ . '/includes/public_head.php';
     flex-shrink: 0;
 }
 .reward-label {
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.7;
+    font-size: 0.65rem;
+    color: #706878;
+    margin-bottom: 0.25rem;
 }
 .reward-amount {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 800;
-    color: #886316;
+    color: #23754e;
+    white-space: nowrap;
 }
 .mission-progress {
     margin-top: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #e2dce8;
+    padding-top: 0;
+    border: 0;
 }
 .progress-header {
     display: flex;
     justify-content: space-between;
     font-size: 0.75rem;
-    margin-bottom: 0.4rem;
-    opacity: 0.9;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #51465d;
 }
 .progress-track {
     height: 6px;
@@ -786,9 +781,10 @@ include __DIR__ . '/includes/public_head.php';
 .progress-footer {
     display: flex;
     justify-content: space-between;
+    gap: 0.5rem;
     font-size: 0.7rem;
-    margin-top: 0.4rem;
-    opacity: 0.7;
+    margin-top: 0.5rem;
+    color: #706878;
 }
 .mission-completed {
     margin-top: 0.75rem;
@@ -845,94 +841,102 @@ include __DIR__ . '/includes/public_head.php';
     border: 0;
     border-radius: 0;
     padding: 0;
-    color: #332b3e;
+    color: #302638;
     box-shadow: none;
-    margin-bottom: 1.5rem;
+    margin: 0;
     position: relative;
 }
 .contest-card::before { content: none; }
 .contest-header {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 .contest-trophy {
-    width: 44px;
-    height: 44px;
-    background: rgba(212, 168, 67, 0.2);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    color: #886316;
-    flex-shrink: 0;
+    display: none;
 }
 .contest-info {
     flex: 1;
     min-width: 0;
 }
 .contest-badge {
-    font-size: 0.6rem;
-    letter-spacing: 1.5px;
-    font-weight: 800;
-    color: #886316;
-    margin-bottom: 0.15rem;
+    font-size: 0.62rem;
+    letter-spacing: 1px;
+    font-weight: 700;
+    color: #72578B;
+    margin-bottom: 0.45rem;
 }
 .contest-title {
-    font-weight: 800;
-    font-size: 0.95rem;
-    margin: 0 0 0.15rem;
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.4;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.2px;
 }
 .contest-desc {
-    font-size: 0.75rem;
-    opacity: 0.85;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: #706878;
     margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
 }
 .contest-ends {
     text-align: right;
     flex-shrink: 0;
 }
 .ends-label {
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.7;
+    font-size: 0.65rem;
+    color: #706878;
+    margin-bottom: 0.25rem;
 }
 .ends-date {
-    font-size: 1rem;
-    font-weight: 800;
-    color: #886316;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #443153;
+    white-space: nowrap;
 }
 .prize-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 1rem 0;
     margin: 1rem 0;
+    border-top: 1px solid #e2dce8;
+    border-bottom: 1px solid #e2dce8;
 }
 .prize-item {
     background: transparent;
-    border-radius: var(--radius-md);
-    padding: 0.6rem 0.4rem;
-    text-align: center;
+    border-radius: 0;
+    padding: 0 0.5rem;
+    text-align: left;
 }
-.prize-item.gold { border-top: 3px solid #D4A843; }
-.prize-item.silver { border-top: 3px solid #c0c4cc; }
-.prize-item.bronze { border-top: 3px solid #cd7f32; }
-.prize-icon { font-size: 1.1rem; }
-.prize-val { font-size: clamp(0.7rem, 3vw, 0.85rem); font-weight: 800; margin-top: 0.2rem; }
-.prize-label { font-size: 0.65rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+.prize-item.gold {
+    border-top: 0;
+}
+.prize-item.silver {
+    border-top: 0;
+}
+.prize-item.bronze {
+    border-top: 0;
+}
+.prize-icon {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #8a7d96;
+}
+.prize-val {
+    font-size: clamp(0.75rem, 3vw, 0.95rem);
+    font-weight: 700;
+    margin-top: 0.35rem;
+    white-space: nowrap;
+}
+.prize-label {
+    display: none;
+}
 .lb-title {
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: #886316;
-    margin-bottom: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #443153;
+    margin-bottom: 0.6rem;
 }
 .lb-list { display: flex; flex-direction: column; gap: 0.35rem; }
 .lb-row {
@@ -965,23 +969,37 @@ include __DIR__ . '/includes/public_head.php';
 .lb-count { font-size: 0.7rem; opacity: 0.85; flex-shrink: 0; }
 .lb-empty {
     background: transparent;
-    border-radius: 10px;
-    padding: 0.6rem;
-    font-size: 0.75rem;
-    opacity: 0.85;
-    text-align: center;
+    border-radius: 0;
+    padding: 0;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: #706878;
+    text-align: left;
 }
 .contest-cta {
-    margin-top: 0.9rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #e2dce8;
+    margin-top: 1rem;
+    padding-top: 0;
+    border: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.8rem;
 }
-.user-rank { font-size: 0.8rem; text-align: center; }
+.user-rank {
+    font-size: 0.75rem;
+    line-height: 1.6;
+    text-align: left;
+    color: #706878;
+}
 .user-rank.muted { opacity: 0.85; }
 .user-rank strong { color: #886316; }
+
+.referral-mission-section { margin: 1.25rem 1rem 0; padding-bottom: 1.5rem; border-bottom: 1px solid #e2dce8; }
+.referral-contest-section { margin-top: 0.25rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e2dce8; }
+.contest-card .prize-item + .prize-item { border-left: 1px solid #e2dce8; }
+.contest-card .prize-item:first-child { padding-left: 0; }
+.contest-share { display: flex; justify-content: center; align-items: center; gap: 0.5rem; min-height: 44px; padding: 0.65rem 1rem; border: 1px solid #72578B; border-radius: 6px; color: #604577; background: transparent; font-size: 0.85rem; font-weight: 700; text-decoration: none; }
+.contest-share:hover { background: #eee8f3; color: #443153; }
+.contest-share:focus-visible { outline: 2px solid #72578B; outline-offset: 3px; }
 /* --- Live Proof --- */
 .live-dot {
     display: inline-flex;
