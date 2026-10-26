@@ -43,7 +43,7 @@ function showMissionConfetti() {
     }, 3000);
 }
 
-<?php if ($missionStatus && !$missionStatus['completed'] && $missionStatus['has_mission']): ?>
+<?php if (!empty($missionStatus['has_mission']) && empty($missionStatus['completed'])): ?>
 function checkMissionProgress() {
     fetch('api/missions.php?action=status', {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
