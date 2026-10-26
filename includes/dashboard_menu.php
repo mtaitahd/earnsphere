@@ -13,6 +13,8 @@
         <a href="quizzes"><i class="fas fa-question-circle" aria-hidden="true"></i> Quiz</a>
         <a href="social-tasks"><i class="fas fa-tasks" aria-hidden="true"></i> Social Media Tasks</a>
         <a href="promote"><i class="fas fa-bullhorn" aria-hidden="true"></i> Promote Account</a>
+        <a href="daily-mission"><i class="fas fa-calendar-day" aria-hidden="true"></i> Daily Mission</a>
+        <a href="weekly-contest"><i class="fas fa-trophy" aria-hidden="true"></i> Weekly Contest</a>
         <a href="ai-assistant"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> AI Assistant</a>
         <?php endif; ?>
         <p>SOKO</p>
