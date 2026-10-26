@@ -28,13 +28,15 @@ def run(endpoint,user=200,method='GET',post=None):
     body,state=p.stdout.rsplit('ROUTE_STATE:',1)
     assert 'Fatal error' not in body and 'Warning:' not in body,(endpoint,body[-1500:])
     return body,json.loads(state)
-for endpoint in ['social-tasks.php','promote.php','loans.php']:
+for endpoint in ['social-tasks.php','promote.php']:
     body,state=run(endpoint)
     assert state['http'] in (False,200) and '<form' in body and 'route-csrf' in body,(endpoint,state)
     assert 'PRIVATE_USER_201' not in body,'Another user records leaked'
     assert '<script>alert(999)</script>' not in body,'Task answer allowed HTML injection'
     assert run(endpoint,method='POST')[1]['http']==403,'Missing CSRF was accepted'
     assert run(endpoint,user=203)[1]['http']==302,'Suspended user opened feature'
+assert run('loans.php')[1]['http']==302,'Removed loan page did not redirect'
+assert run('loans.php',method='POST')[1]['http']==302,'Removed loan form still accepts submissions'
 for endpoint in ['admin/social.php','admin/loans.php']:
     assert run(endpoint,user=200)[1]['http']==403,'User opened admin feature'
     assert run(endpoint,user=204)[1]['http']==403,'Support-only agent opened feature'

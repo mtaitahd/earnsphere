@@ -10,7 +10,7 @@ function featureStatus(string $status): string {
 
 function featureNavigation(string $active): void { ?>
 <nav class="feature-nav" aria-label="Account services">
-<?php foreach(['marketplace'=>'Soko / Buy Goods','my-products'=>'Sell products','quizzes'=>'Maswali ya uelewa','social-tasks'=>'Social tasks','promote'=>'Promote account','loans'=>'Loan applications','dashboard'=>'Dashboard'] as $url=>$label): ?>
+<?php foreach(['marketplace'=>'Soko / Buy Goods','my-products'=>'Sell products','quizzes'=>'Quiz','social-tasks'=>'Social Media Tasks','promote'=>'Promote Account','dashboard'=>'Dashboard'] as $url=>$label): ?>
 <a class="btn <?= $active===$url?'btn-primary':'btn-outline-primary' ?>" href="<?= sanitize(SITE_URL.'/'.$url) ?>"><?= $label ?></a>
 <?php endforeach; ?></nav>
 <?php }

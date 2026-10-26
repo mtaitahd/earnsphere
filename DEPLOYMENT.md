@@ -294,3 +294,8 @@ The migration creates listing, report and moderation-event tables and adds fee/r
 6. **Agents & Permissions → Marketplace ads** permits reviewing paid advertisements, rejecting/refunding unpublished ads and resolving reports. A separate **Marketplace fee settings** checkbox permits changing global advertising fees, duration and rules. Unauthorized direct routes and writes are blocked. Moderators cannot approve their own former user listings.
 
 Tests: `php tests/marketplace_test.php`, `python tests/check_marketplace_routes.py /path/to/php`, and `python tests/check_marketplace_upload.py /path/to/php`. They use isolated databases/local multipart requests, remove generated test photos, and never move real money. Financial checks include fee idempotence, protected withdrawal holds, refund idempotence, visibility and ledger-failure rollback.
+
+
+### Compact dashboard links and removed member loans
+
+The dashboard now uses short, responsive icon links (Quiz, Social Media Tasks, Promote Account) and a compact Soko row. The old long descriptions and platform-link row are removed. Loan links and the member loan form are removed; old `/loans` GET/POST requests redirect to the dashboard. Existing administrative records are retained. No migration is required for this interface update. The dashboard link component was visually checked at 320, 360 and 430 px widths.
