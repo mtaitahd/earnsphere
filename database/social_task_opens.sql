@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS social_task_opens (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ campaign_id INT UNSIGNED NOT NULL,
+ user_id INT UNSIGNED NOT NULL,
+ opened_at DATETIME NOT NULL,
+ UNIQUE KEY uk_task_open (campaign_id,user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

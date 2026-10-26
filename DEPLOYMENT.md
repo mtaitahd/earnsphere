@@ -299,3 +299,6 @@ Tests: `php tests/marketplace_test.php`, `python tests/check_marketplace_routes.
 ### Compact dashboard links and removed member loans
 
 The dashboard now uses short, responsive icon links (Quiz, Social Media Tasks, Promote Account) and a compact Soko row. The old long descriptions and platform-link row are removed. Loan links and the member loan form are removed; old `/loans` GET/POST requests redirect to the dashboard. Existing administrative records are retained. No migration is required for this interface update. The dashboard link component was visually checked at 320, 360 and 430 px widths.
+
+### One-time social task links
+After pulling this update, run `php database/migrate_social_task_opens.php` once before using Social Tasks. This adds per-user opened tracking and does not change balances. The first successful open records the task before returning its approved platform URL; repeat requests are blocked server-side. Refreshing or switching devices preserves Opened. Existing submissions also show Opened; earlier clicks without a submission were not tracked. Feedback and admin reward approval remain unchanged.

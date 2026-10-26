@@ -45,6 +45,20 @@ class SocialHub {
         if (($in['budget_confirmed']??'')!=='1') throw new InvalidArgumentException('Confirm that the full reward budget is funded before publishing.');
         return Database::insert('social_campaigns',['platform'=>$in['platform'],'url'=>$url,'title'=>$title,'instructions'=>$instructions,'reward'=>$reward,'slots'=>$slots,'created_by'=>$admin,'created_at'=>gmdate('Y-m-d H:i:s')]);
     }
+    public static function openTask(int $userId, int $campaignId): string {
+        Database::beginTransaction();
+        try {
+            self::activeUser($userId);
+            $campaign = Database::fetchOne('SELECT * FROM social_campaigns WHERE id = ? FOR UPDATE', [$campaignId]);
+            if (!$campaign || $campaign['status'] !== 'active' || $campaign['approved_count'] >= $campaign['slots']) throw new InvalidArgumentException('This task is closed or full.');
+            if ((int)($campaign['owner_id'] ?? 0) === $userId) throw new InvalidArgumentException('You cannot open your own promotion as a task.');
+            if (Database::fetchOne('SELECT id FROM social_task_opens WHERE campaign_id = ? AND user_id = ?', [$campaignId, $userId]) || Database::fetchOne('SELECT id FROM social_submissions WHERE campaign_id = ? AND user_id = ?', [$campaignId, $userId])) throw new InvalidArgumentException('Opened: you already opened this task.');
+            $url = self::url($campaign['platform'], $campaign['url']);
+            Database::insert('social_task_opens', ['campaign_id'=>$campaignId, 'user_id'=>$userId, 'opened_at'=>gmdate('Y-m-d H:i:s')]);
+            Database::commit();
+            return $url;
+        } catch (Throwable $e) { Database::rollBack(); throw $e; }
+    }
     public static function submit(int $userId,int $campaignId,$answer): void {
         $answer=self::text($answer,4000,'Your feedback / evidence');
         Database::beginTransaction();

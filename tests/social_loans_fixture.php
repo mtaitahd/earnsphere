@@ -7,7 +7,7 @@ $db->exec("ALTER TABLE users ADD COLUMN created_at TEXT DEFAULT '2020-01-01 00:0
 $db->exec("ALTER TABLE users ADD COLUMN full_name TEXT DEFAULT 'Test User'");
 foreach (['email','referral_code','avatar'] as $column) $db->exec('ALTER TABLE users ADD COLUMN '.$column.' TEXT');
 $db->exec("CREATE TABLE support_tickets(id INTEGER PRIMARY KEY,status TEXT)");
-foreach(explode(';',file_get_contents(__DIR__.'/../database/social_loans.sql')) as $statement){
+foreach(explode(';',file_get_contents(__DIR__.'/../database/social_loans.sql').file_get_contents(__DIR__.'/../database/social_task_opens.sql')) as $statement){
     if(!trim($statement))continue;
     $statement=str_replace('INT UNSIGNED AUTO_INCREMENT PRIMARY KEY','INTEGER PRIMARY KEY AUTOINCREMENT',$statement);
     $statement=preg_replace('/UNIQUE KEY [a-z_]+ \(/i','UNIQUE (',$statement);
