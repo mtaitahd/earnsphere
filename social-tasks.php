@@ -21,6 +21,7 @@ $pageTitle='Social tasks';include __DIR__.'/includes/public_head.php'; ?>
 <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/member-services.css">
 <main class="services-page"><h1>Social tasks</h1><p>Fungua maudhui, fuata maelekezo na tuma jibu lako kwa ukaguzi.</p>
 <?php featureNavigation('social-tasks'); displayFlash(); ?>
+<p><a class="btn btn-primary" href="quizzes">Maswali ya uelewa — jibu yote sahihi ulipwe automatic</a></p>
 <div class="service-notice">Reward hulipwa baada ya admin kukagua na kukubali kazi. Kufungua link pekee hakuthibitishi subscribe, like au follow. Ushiriki wa mitandaoni ni wa hiari; reward ni kwa jibu/kazi iliyokubaliwa, si ununuzi wa followers.</div>
 <form method="GET" class="service-card"><label for="platform">Platform</label><select id="platform" name="platform"><option value="">All platforms</option><?php foreach(SocialHub::PLATFORMS as $key=>$label): ?><option value="<?= $key ?>" <?= $platform===$key?'selected':'' ?>><?= $label ?></option><?php endforeach; ?></select><button class="btn btn-outline-primary">Filter</button></form>
 <?php if(!$available): ?><p class="service-empty">Tasks are temporarily unavailable. Please try again later.</p><?php elseif(!$tasks): ?><p class="service-empty">Hakuna kazi mpya kwa sasa. Tafadhali rudi baadaye.</p><?php endif; ?>

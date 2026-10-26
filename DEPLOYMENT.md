@@ -263,3 +263,14 @@ The migration adds campaigns, one submission per user/task, promotion quotations
 - **Agents & Permissions:** Social campaigns and Loan applications are separate checkbox permissions, reflected in the sidebar and enforced on direct routes and writes.
 
 Offline checks: `php tests/social_loans_test.php`, `python tests/check_social_routes.py /path/to/php`, plus existing staff access and payment lifecycle checks. Production migration and external platform account verification are not exercised by the SQLite test fixture.
+
+
+### Comprehension quizzes with automatic wallet rewards
+
+After pulling this release, run `php database/migrate_quizzes.php` once. It is repeatable and includes the social/reward and notification prerequisites; it sends no money. Include both `database/quizzes.sql` and `database/social_loans.sql` when deploying manually.
+
+Admin → Comprehension quizzes publishes 1–10 questions, four choices per question, one private correct choice, reward amount and maximum paid-user count. An optional HTTPS lesson link supports the six existing social platforms. Confirm the full budget before publishing. Admin → Agents & Permissions → **Comprehension quizzes** grants an agent permission to publish and pause quizzes, including setting rewards and correct answers. It does not grant promotion management or payout permissions.
+
+Users open **Maswali ya uelewa** from their dashboard or account service navigation. Each quiz allows one complete attempt per user. Missing or invalid answers do not consume an attempt. An incorrect complete attempt records the score without payment or retry. A perfect score atomically credits withdrawable `social_reward` earnings, inserts a ledger transaction, increments the paid-user counter and posts a bell notification. The correct-answer key is never sent to the user page. Repeated POSTs return the same result without another credit. When the paid-user cap is reached, the quiz closes; a later first-time submission receives no reward. Pausing blocks new attempts; published questions/answers cannot be edited, so publish a new quiz for corrections.
+
+Offline validation: `php tests/quizzes_test.php` and `python tests/check_quiz_routes.py /path/to/php`. Tests include incorrect/partial answers, repeat submissions, caps, publisher permissions and full rollback after an injected ledger failure. Existing manual-feedback campaigns remain manually reviewed.

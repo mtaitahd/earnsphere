@@ -156,6 +156,7 @@ include __DIR__ . '/includes/public_head.php';
 <section class="dash-section" style="margin:1rem 0">
     <h2 style="font-size:1.15rem">Earn & grow with EarnSphere</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.65rem">
+        <a href="quizzes" class="btn btn-primary" style="padding:1rem"><i class="fas fa-question-circle me-1"></i> Maswali ya uelewa<br><small>All correct · Earn rewards</small></a>
         <a href="social-tasks" class="btn btn-primary" style="padding:1rem"><i class="fas fa-tasks me-1"></i> Social tasks<br><small>Complete tasks · Earn rewards</small></a>
         <a href="promote" class="btn btn-outline-primary" style="padding:1rem"><i class="fas fa-bullhorn me-1"></i> Promote account<br><small>Request a price from admin</small></a>
         <a href="loans" class="btn btn-outline-primary" style="padding:1rem"><i class="fas fa-hand-holding-usd me-1"></i> Loan applications<br><small>Read terms · Apply for review</small></a>
