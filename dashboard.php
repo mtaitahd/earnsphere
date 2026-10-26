@@ -155,7 +155,7 @@ include __DIR__ . '/includes/public_head.php';
 <?php include __DIR__ . '/includes/dashboard_shortcuts.php'; ?>
 
 <!-- Stats Cards -->
-<div class="stat-cards">
+<div class="stat-cards dashboard-stats">
     <div class="stat-card">
         <div class="stat-icon purple">
             <i class="fas fa-wallet"></i>

@@ -1925,3 +1925,6 @@ img {
 .dashboard-shortcut:focus-visible { outline:3px solid #72578b;outline-offset:3px; }
 .dashboard-shortcut--wide { grid-column:1 / -1; }
 @media(min-width:600px) { .dashboard-shortcut { min-height:96px;flex-direction:row;padding:1rem; }.dashboard-shortcut span { font-size:.95rem;text-align:left; } }
+
+/* Dashboard stats follow service links in normal flow instead of overlapping them. */
+.stat-cards.dashboard-stats { margin-top:0; }
