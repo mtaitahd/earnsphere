@@ -39,8 +39,10 @@ $liveProof = Database::fetchAll(
      FROM withdrawals w
      INNER JOIN users u ON u.id = w.user_id
      WHERE w.status = 'completed'
+       AND COALESCE(w.processed_at, w.created_at) > ?
      ORDER BY COALESCE(w.processed_at, w.created_at) DESC
-     LIMIT 5"
+     LIMIT 5",
+    [date('Y-m-d H:i:s', time() - 5 * 60 * 60)]
 );
 
 // Recent transactions

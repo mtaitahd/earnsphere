@@ -10,6 +10,7 @@ require_once dirname(__DIR__) . '/classes/Contest.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 
 $enabled = app_setting('live_proof_enabled', '1');
 if ($enabled === '0') {
@@ -23,9 +24,10 @@ $rows = Database::fetchAll(
      FROM withdrawals w
      INNER JOIN users u ON u.id = w.user_id
      WHERE w.status = 'completed'
+       AND COALESCE(w.processed_at, w.created_at) > ?
      ORDER BY COALESCE(w.processed_at, w.created_at) DESC
      LIMIT ?",
-    [$limit]
+    [date('Y-m-d H:i:s', time() - 5 * 60 * 60), $limit]
 );
 
 $data = [];
