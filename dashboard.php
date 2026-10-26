@@ -45,12 +45,6 @@ $liveProof = Database::fetchAll(
     [date('Y-m-d H:i:s', time() - 5 * 60 * 60)]
 );
 
-// Recent transactions
-$recentTransactions = Database::fetchAll(
-    "SELECT * FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
-    [$_SESSION['user_id']]
-);
-
 // Registration payment info
 $registrationPayment = Database::fetchOne(
     "SELECT amount, status, completed_at, metadata FROM payments WHERE user_id = ? AND payment_type = 'registration' ORDER BY id DESC LIMIT 1",
@@ -438,36 +432,6 @@ include __DIR__ . '/includes/public_head.php';
     
 
 
-    <!-- Recent Transactions -->
-    <div class="dash-section">
-        <div class="section-header">
-            <h6><i class="fas fa-history me-1"></i> Transactions</h6>
-            <a href="transactions">View all</a>
-        </div>
-        
-        <?php if (empty($recentTransactions)): ?>
-            <div class="empty-state">
-                <i class="fas fa-receipt"></i>
-                <h5>No transactions</h5>
-                <p>Your earnings will appear here.</p>
-            </div>
-        <?php else: ?>
-            <?php foreach ($recentTransactions as $tx): ?>
-                <div class="list-item">
-                    <div class="item-icon" style="background:<?= $tx['amount'] > 0 ? '#ecfdf5' : '#fef2f2' ?>; color:<?= $tx['amount'] > 0 ? 'var(--secondary)' : 'var(--danger)' ?>;">
-                        <i class="fas fa-<?= $tx['amount'] > 0 ? 'arrow-down' : 'arrow-up' ?>"></i>
-                    </div>
-                    <div class="item-info">
-                        <p class="item-title"><?= sanitize(truncate($tx['description'] ?: ucfirst($tx['type']), 40)) ?></p>
-                        <p class="item-subtitle"><?= timeAgo($tx['created_at']) ?></p>
-                    </div>
-                    <div class="item-amount <?= $tx['amount'] > 0 ? 'credit' : 'debit' ?>">
-                        <?= $tx['amount'] > 0 ? '+' : '' ?><?= formatCurrency(abs($tx['amount'])) ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
 </div>
 
 <!-- Bottom Navigation -->
