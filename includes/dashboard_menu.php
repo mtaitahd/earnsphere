@@ -7,6 +7,7 @@
         <a href="wallet"><i class="fas fa-wallet" aria-hidden="true"></i> Wallet</a>
         <a href="withdrawal"><i class="fas fa-money-bill-transfer" aria-hidden="true"></i> Withdraw</a>
         <a href="transactions"><i class="fas fa-receipt" aria-hidden="true"></i> History</a>
+        <a href="referrals#referral-share"><i class="fas fa-link" aria-hidden="true"></i> Referral Link</a>
         <a href="referrals"><i class="fas fa-users" aria-hidden="true"></i> My Referrals</a>
         <?php if ($user['status'] === 'active'): ?>
         <p>EXPLORE</p>

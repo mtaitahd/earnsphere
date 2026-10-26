@@ -21,8 +21,6 @@
 .dashboard-stats .stat-card { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); grid-template-rows: auto auto; column-gap: .75rem; row-gap: .45rem; min-height: 125px; padding: 1.2rem 1.4rem; background: linear-gradient(#fff,#f1edf5); box-shadow: 0 4px 8px #72578b25; border: 1px solid #e1d5e9; border-bottom: 3px solid #a78ab9; border-radius: 12px; }
 .dashboard-stats .stat-info { display: contents; }
 .dashboard-stats .stat-value { grid-column: 1; grid-row: 1; align-self: end; color: #72578b; font-size: 1.2rem; }
-.account-share-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .5rem; margin: 0 0 1rem; }
-.account-share-links a { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .6rem; border: 1px solid #e2dce8; border-radius: 8px; text-decoration: none; color: #604577; font-size: .85rem; font-weight: 700; }
 .account-drawer { position: fixed; inset: 0 auto 0 0; margin: 0; padding: 0; width: min(265px,82vw); height: 100dvh; max-height: 100dvh; max-width: 100%; background: #fff; border: 0; color: #443153; overflow-y: auto; overscroll-behavior: contain; }
 .account-drawer::backdrop { background: #20172999; }
 .account-drawer-heading { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem; background: #fff; border-bottom: 1px solid #eee9f2; }

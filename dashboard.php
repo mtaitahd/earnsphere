@@ -218,52 +218,6 @@ include __DIR__ . '/includes/public_head.php';
     </div>
     <?php endif; ?>
     
-    <!-- Referral Link & Share -->
-    <div class="referral-link-card">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="mb-0"><i class="fas fa-link me-1 text-primary"></i> Referral Link</h6>
-        </div>
-        
-        <p style="font-size:0.8rem;color:var(--gray-500);margin-bottom:0.75rem;">
-            Copy this link and share with friends. You earn money for every person who joins.
-        </p>
-        
-        <div class="referral-link-box mb-3">
-            <input type="text" id="referral-link-input" value="<?= $referralLink ?>" readonly>
-            <button class="btn-copy" onclick="App.copyToClipboard('<?= $referralLink ?>').then(()=>App.showToast('Link copied!','success'))">
-                <i class="fas fa-copy"></i>
-            </button>
-        </div>
-        
-        <nav class="account-share-links" aria-label="Share referral link">
-            <a href="https://wa.me/?text=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook" aria-hidden="true"></i> Facebook</a>
-            <a href="https://t.me/share/url?url=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram" aria-hidden="true"></i> Telegram</a>
-            <a href="https://twitter.com/intent/tweet?url=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-x-twitter" aria-hidden="true"></i> X</a>
-        </nav>
-        <!-- Commission Earnings per Level -->
-        <div style="background:var(--primary-bg);border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
-            <h6 style="font-weight:700;font-size:0.8rem;color:var(--gray-600);margin-bottom:0.5rem;">
-                <i class="fas fa-coins me-1"></i> Earnings Per Referral
-            </h6>
-            <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem;">
-                <span style="color:var(--gray-600);"><i class="fas fa-user-plus me-1" style="color:var(--primary);"></i> Level 1 (Direct)</span>
-                <strong style="color:var(--primary);">TZS <?= number_format((int) app_setting('commission_l1', COMMISSION_L1)) ?></strong>
-            </div>
-            <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem;">
-                <span style="color:var(--gray-600);"><i class="fas fa-user-group me-1" style="color:var(--secondary);"></i> Level 2 (Grand)</span>
-                <strong style="color:var(--secondary);">TZS <?= number_format((int) app_setting('commission_l2', COMMISSION_L2)) ?></strong>
-            </div>
-
-        </div>
-        
-        <!-- QR Code -->
-        <div class="qr-container">
-            <img src="<?= generateQRCodeUrl($referralLink, 180) ?>" alt="QR Code" width="180" height="180">
-            <p>Scan QR code to join</p>
-        </div>
-    </div>
-    
     <!-- Referral Stats -->
     <div class="dash-section">
         <div class="section-header">

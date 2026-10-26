@@ -43,31 +43,53 @@ include __DIR__ . '/includes/public_head.php';
 </div>
 
 <div class="dash-content mb-safe">
-    
-    <!-- Referral Link Card -->
-    <div class="referral-link-card" style="margin-top:-1rem;">
-        <h6><i class="fas fa-share-alt me-1"></i> Share Your Link</h6>
-        
-        <div class="referral-code-display">
-            <span class="code"><?= $user['referral_code'] ?></span>
-            <button class="btn btn-sm btn-primary" onclick="App.copyToClipboard('<?= $referralLink ?>').then(()=>App.showToast('Copied!','success'))">
-                <i class="fas fa-copy me-1"></i> Copy
-            </button>
+
+    <!-- Referral Link & Share -->
+    <div class="referral-link-card" id="referral-share">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="mb-0"><i class="fas fa-link me-1 text-primary"></i> Referral Link</h6>
         </div>
-        
+
+        <p style="font-size:0.8rem;color:var(--gray-500);margin-bottom:0.75rem;">
+            Copy this link and share with friends. You earn money for every person who joins.
+        </p>
+
         <div class="referral-link-box mb-3">
-            <input type="text" value="<?= $referralLink ?>" readonly>
+            <input type="text" id="referral-link-input" value="<?= $referralLink ?>" readonly>
             <button class="btn-copy" onclick="App.copyToClipboard('<?= $referralLink ?>').then(()=>App.showToast('Link copied!','success'))">
                 <i class="fas fa-copy"></i>
             </button>
         </div>
-        
+
+        <nav class="account-share-links" aria-label="Share referral link">
+            <a href="https://wa.me/?text=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook" aria-hidden="true"></i> Facebook</a>
+            <a href="https://t.me/share/url?url=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram" aria-hidden="true"></i> Telegram</a>
+            <a href="https://twitter.com/intent/tweet?url=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-x-twitter" aria-hidden="true"></i> X</a>
+        </nav>
+        <!-- Commission Earnings per Level -->
+        <div style="background:var(--primary-bg);border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
+            <h6 style="font-weight:700;font-size:0.8rem;color:var(--gray-600);margin-bottom:0.5rem;">
+                <i class="fas fa-coins me-1"></i> Earnings Per Referral
+            </h6>
+            <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem;">
+                <span style="color:var(--gray-600);"><i class="fas fa-user-plus me-1" style="color:var(--primary);"></i> Level 1 (Direct)</span>
+                <strong style="color:var(--primary);">TZS <?= number_format((int) app_setting('commission_l1', COMMISSION_L1)) ?></strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem;">
+                <span style="color:var(--gray-600);"><i class="fas fa-user-group me-1" style="color:var(--secondary);"></i> Level 2 (Grand)</span>
+                <strong style="color:var(--secondary);">TZS <?= number_format((int) app_setting('commission_l2', COMMISSION_L2)) ?></strong>
+            </div>
+
+        </div>
+
+        <!-- QR Code -->
         <div class="qr-container">
             <img src="<?= generateQRCodeUrl($referralLink, 180) ?>" alt="QR Code" width="180" height="180">
             <p>Scan QR code to join</p>
         </div>
     </div>
-    
+
     <!-- Stats -->
     <div class="stat-grid mb-3">
         <div class="stat-box">
@@ -84,7 +106,7 @@ include __DIR__ . '/includes/public_head.php';
             <div class="stat-label">Total</div>
         </div>
     </div>
-    
+
     <!-- Level Filter Tabs -->
     <div class="d-flex gap-2 mb-3" style="overflow-x:auto;">
         <a href="?level=1" class="btn <?= $level == 1 ? 'btn-primary' : 'btn-outline-primary' ?> btn-sm">
@@ -94,14 +116,14 @@ include __DIR__ . '/includes/public_head.php';
             Level 2 (<?= $stats['level_2'] ?>)
         </a>
     </div>
-    
+
     <!-- Users List -->
     <div class="dash-section">
         <h6 class="section-title">Connected People</h6>
-        
-        <?php 
+
+        <?php
         $filteredUsers = array_filter($users, fn($u) => $u['ref_level'] == $level);
-        
+
         if (empty($filteredUsers)): ?>
             <div class="empty-state">
                 <i class="fas fa-user-friends"></i>
