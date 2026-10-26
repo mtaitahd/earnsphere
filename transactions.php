@@ -103,6 +103,9 @@ include __DIR__ . '/includes/public_head.php';
                         'admin_adjustment' => 'tools',
                         'registration_bonus' => 'gift',
                         'daily_mission_bonus' => 'trophy',
+                        'social_reward' => 'tasks',
+                        'promotion_payment' => 'bullhorn',
+                        'promotion_refund' => 'rotate-left',
                         default => 'exchange-alt'
                     } ?>"></i>
                 </div>

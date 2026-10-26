@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS `wallet_transactions` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `wallet_id` INT UNSIGNED NOT NULL,
     `user_id` INT UNSIGNED NOT NULL,
-    `type` ENUM('commission','referral_bonus','withdrawal','admin_adjustment','registration_bonus') NOT NULL,
+    `type` ENUM('commission','referral_bonus','withdrawal','admin_adjustment','registration_bonus','social_reward','promotion_payment','promotion_refund') NOT NULL,
     `amount` DECIMAL(12,2) NOT NULL,
     `balance_before` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     `balance_after` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
@@ -348,5 +348,34 @@ CREATE TABLE IF NOT EXISTS user_notifications (
     KEY idx_notification_user (user_id, id),
     KEY idx_notification_sms (sms_status, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Social campaigns, promotion quotations and loan applications
+CREATE TABLE IF NOT EXISTS social_campaigns (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, platform VARCHAR(20) NOT NULL, title VARCHAR(150) NOT NULL, url VARCHAR(600) NOT NULL,
+ instructions TEXT NOT NULL, reward INT UNSIGNED NOT NULL, slots INT UNSIGNED NOT NULL, approved_count INT UNSIGNED NOT NULL DEFAULT 0,
+ status VARCHAR(20) NOT NULL DEFAULT 'active', promotion_id INT UNSIGNED DEFAULT NULL, owner_id INT UNSIGNED DEFAULT NULL,
+ created_by INT UNSIGNED NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE KEY uk_promotion_campaign (promotion_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS social_submissions (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, campaign_id INT UNSIGNED NOT NULL, user_id INT UNSIGNED NOT NULL,
+ answer TEXT NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'pending', review_note VARCHAR(1000) NOT NULL DEFAULT '',
+ reviewed_by INT UNSIGNED DEFAULT NULL, reviewed_at DATETIME DEFAULT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE KEY uk_social_user (campaign_id,user_id), KEY idx_social_pending (status,id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS social_promotions (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, request_key VARCHAR(64) NOT NULL,
+ platform VARCHAR(20) NOT NULL, url VARCHAR(600) NOT NULL, title VARCHAR(150) NOT NULL, brief TEXT NOT NULL, requested_slots INT UNSIGNED NOT NULL,
+ status VARCHAR(20) NOT NULL DEFAULT 'requested', quote_price INT UNSIGNED DEFAULT NULL, quote_reward INT UNSIGNED DEFAULT NULL,
+ quote_slots INT UNSIGNED DEFAULT NULL, quote_terms TEXT, quote_version INT UNSIGNED NOT NULL DEFAULT 0, reviewed_by INT UNSIGNED DEFAULT NULL,
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, paid_at DATETIME DEFAULT NULL,
+ UNIQUE KEY uk_promotion_request (request_key), KEY idx_promotion_user (user_id,id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS loan_applications (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, request_key VARCHAR(64) NOT NULL,
+ amount INT UNSIGNED NOT NULL, purpose VARCHAR(1500) NOT NULL, terms_snapshot TEXT NOT NULL, terms_hash VARCHAR(64) NOT NULL,
+ status VARCHAR(20) NOT NULL DEFAULT 'pending', review_note VARCHAR(1000) NOT NULL DEFAULT '', reviewed_by INT UNSIGNED DEFAULT NULL,
+ reviewed_at DATETIME DEFAULT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE KEY uk_loan_request (request_key), KEY idx_loan_user (user_id,id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 COMMIT;

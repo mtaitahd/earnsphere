@@ -44,7 +44,7 @@
         if (!result.items.length) {
             var empty = document.createElement('p');
             empty.className = 'text-muted mb-0';
-            empty.textContent = 'Payment and withdrawal notifications will appear here.';
+            empty.textContent = 'Account updates, rewards and payment notifications will appear here.';
             list.appendChild(empty);
         }
         result.items.forEach(function (item) {

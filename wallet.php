@@ -46,9 +46,9 @@ include __DIR__ . '/includes/public_head.php';
     
     <!-- Balance Card -->
     <div class="balance-card" style="margin-top:-1rem;">
-        <div class="balance-label">Commission Earnings</div>
+        <div class="balance-label">Available Earnings</div>
         <div class="balance-amount"><?= formatCurrency($wallet['withdrawable_balance'] ?? 0) ?></div>
-        <div class="balance-sublabel">Referral earnings only · Withdrawable</div>
+        <div class="balance-sublabel">Referral earnings and approved rewards · Withdrawable</div>
         <div class="balance-actions">
             <a href="withdrawal" class="btn btn-light btn-sm" <?= ($wallet['withdrawable_balance'] ?? 0) < app_setting('min_withdrawal', MIN_WITHDRAWAL) ? 'disabled' : '' ?>>
                 <i class="fas fa-money-bill-wave me-1"></i> Withdraw
@@ -93,8 +93,8 @@ include __DIR__ . '/includes/public_head.php';
                 <i class="fas fa-plus-circle"></i>
             </div>
             <div class="item-info">
-                <p class="item-title">Commission Earnings</p>
-                <small class="text-muted">From referrals · withdrawable</small>
+                <p class="item-title">Available Earnings</p>
+                <small class="text-muted">Referrals and approved rewards · withdrawable</small>
             </div>
             <div class="item-amount credit"><?= formatCurrency($wallet['withdrawable_balance'] ?? 0) ?></div>
         </div>

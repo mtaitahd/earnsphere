@@ -31,7 +31,7 @@ class Wallet {
     
     /**
      * Credit user wallet (add money)
-     * Only 'commission' type credits are withdrawable.
+     * Referral commissions and approved mission, contest and social rewards are withdrawable.
      * Registration fees and admin adjustments are NOT withdrawable.
      */
     public static function credit(
@@ -51,7 +51,7 @@ class Wallet {
             $wallet = self::getWallet($userId);
             $balanceBefore = (float) $wallet['balance'];
             $balanceAfter = $balanceBefore + $amount;
-            $isWithdrawable = in_array($type, ['commission', 'daily_mission_bonus', 'contest_bonus']);
+            $isWithdrawable = in_array($type, ['commission', 'daily_mission_bonus', 'contest_bonus', 'social_reward']);
             $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
             $withdrawableAfter = $isWithdrawable ? $withdrawableBefore + $amount : $withdrawableBefore;
             $updateData = [

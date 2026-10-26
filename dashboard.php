@@ -152,6 +152,22 @@ include __DIR__ . '/includes/public_head.php';
 
 <?php include __DIR__ . '/includes/welcome_media.php'; ?>
 
+<?php if ($user['status'] === 'active'): ?>
+<section class="dash-section" style="margin:1rem 0">
+    <h2 style="font-size:1.15rem">Earn & grow with EarnSphere</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.65rem">
+        <a href="social-tasks" class="btn btn-primary" style="padding:1rem"><i class="fas fa-tasks me-1"></i> Social tasks<br><small>Complete tasks · Earn rewards</small></a>
+        <a href="promote" class="btn btn-outline-primary" style="padding:1rem"><i class="fas fa-bullhorn me-1"></i> Promote account<br><small>Request a price from admin</small></a>
+        <a href="loans" class="btn btn-outline-primary" style="padding:1rem"><i class="fas fa-hand-holding-usd me-1"></i> Loan applications<br><small>Read terms · Apply for review</small></a>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.75rem">
+        <?php foreach (['youtube'=>'YouTube','tiktok'=>'TikTok','facebook'=>'Facebook','instagram'=>'Instagram','x'=>'X','linkedin'=>'LinkedIn'] as $platformKey=>$platformName): ?>
+        <a href="social-tasks?platform=<?= $platformKey ?>" style="font-size:.85rem"><?= $platformName ?></a>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
+
 <!-- Stats Cards -->
 <div class="stat-cards">
     <div class="stat-card">
@@ -501,7 +517,7 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         <div class="d-flex gap-2 px-3 pt-3 pb-2" role="group" aria-label="Notification categories">
             <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAnnouncements()" id="notificationNewsTab">News</button>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openFinancialNotifications()" id="notificationPaymentsTab">Payments</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openFinancialNotifications()" id="notificationPaymentsTab">Account updates</button>
         </div>
     <section class="ann-modal-body" style="display:none;" id="financial-notifications" data-endpoint="<?= sanitize(SITE_URL) ?>/api/notifications.php" data-csrf-name="<?= CSRF_TOKEN_NAME ?>" data-csrf="<?= sanitize($csrf) ?>">
         <div class="card-body">

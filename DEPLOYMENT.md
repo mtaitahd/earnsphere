@@ -245,3 +245,21 @@ for the added `cleared_at` column; the migration is repeatable and sends no mess
 ### Welcome audio and YouTube video
 
 In Admin → Settings → Welcome audio / YouTube video, choose Hidden, Uploaded audio, or YouTube video and save. Users see a player on their dashboard and press Play. No database migration is required; settings are created on save. YouTube videos must allow embedding. Audio supports MP3, WAV, OGG and M4A up to 20 MB, subject to PHP upload_max_filesize and post_max_size. The web server must be able to create/write uploads/welcome. Replacing audio uses a new random URL; previous files are retained. Browser sound autoplay is intentionally avoided.
+
+
+### Social tasks, promotion quotations and loan applications
+
+After pulling this release, run once (repeatable):
+
+```sh
+php database/migrate_social_loans.php
+```
+
+The migration adds campaigns, one submission per user/task, promotion quotations and loan applications. It extends wallet ledger types and creates notification storage if necessary. It does not send SMS, alter balances, initiate provider payments or issue loans. Upload `database/social_loans.sql` together with the PHP migration.
+
+- **Admin → Social campaigns:** publish an HTTPS YouTube, TikTok, Facebook, Instagram, X or LinkedIn link, a feedback/research question, reward (default TZS 100) and participant cap. Confirm the entire budget is funded. The cap includes approved submissions; unreviewed submissions are not guaranteed a reward. Review answers under Review submissions. Approval credits withdrawable earnings exactly once and notifies the user in the bell. Closed/full tasks cannot issue additional rewards. Tasks use manual review; no platform account verification or automatic subscription/like verification is claimed. Campaigns must comply with each platform's engagement policies.
+- **User → Promote account:** request a quotation. Admin chooses price, reward, slots and scope. Price must cover slots × reward: 100 people at TZS 100 requires at least TZS 10,000 before margin. Customer explicitly accepts the latest terms and pays from available wallet earnings; held withdrawals and registration balances cannot fund a promotion. This release does not send a separate mobile-money push for promotion payments. Admin publishes only after payment. Owners cannot reward themselves. Customers can cancel/refund an unpublished paid campaign once; published cancellations require support review. At the last approved slot the promotion is completed. No subscriber, follower or like count is guaranteed.
+- **Admin → Loan applications:** publish terms (including costs, repayment period and review steps), min/max amounts, minimum account age and paid direct referrals. Loans are disabled until explicitly enabled. Active users who meet criteria may apply and accept a snapshot of those terms. Only one pending/approved application at a time; staff review and close follow-ups. Approval is a decision only: this module does not disburse loans, calculate interest, collect repayments or change wallet balances. Lending operations require a separate agreed process before money is sent.
+- **Agents & Permissions:** Social campaigns and Loan applications are separate checkbox permissions, reflected in the sidebar and enforced on direct routes and writes.
+
+Offline checks: `php tests/social_loans_test.php`, `python tests/check_social_routes.py /path/to/php`, plus existing staff access and payment lifecycle checks. Production migration and external platform account verification are not exercised by the SQLite test fixture.

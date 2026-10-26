@@ -22,6 +22,8 @@ class StaffAccess {
             'announcements' => ['label' => 'Manage announcements', 'description' => 'Create and update announcements.', 'page' => 'announcements', 'icon' => 'bullhorn'],
             'contests' => ['label' => 'Manage contests', 'description' => 'Manage competitions and prize awards.', 'page' => 'contests', 'icon' => 'trophy'],
             'sms' => ['label' => 'Manage SMS', 'description' => 'Send broadcasts and manage SMS templates.', 'page' => 'sms', 'icon' => 'sms'],
+            'social' => ['label' => 'Social campaigns', 'description' => 'Publish campaigns, review rewards and quote promotion requests.', 'page' => 'social', 'icon' => 'bullhorn'],
+            'loans' => ['label' => 'Loan applications', 'description' => 'Publish eligibility terms and review loan applications. Does not send money.', 'page' => 'loans', 'icon' => 'hand-holding-usd'],
             'support' => ['label' => 'Support tickets', 'description' => 'Read, reply to and close support tickets.', 'page' => 'support', 'icon' => 'life-ring'],
             'logs' => ['label' => 'View activity logs', 'description' => 'Inspect recorded account and staff activity.', 'page' => 'logs', 'icon' => 'list-alt'],
             'logs_manage' => ['label' => 'Manage activity logs', 'description' => 'Delete activity log records.', 'requires' => 'logs'],

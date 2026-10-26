@@ -76,7 +76,7 @@ include __DIR__ . '/includes/public_head.php';
         <div class="amount"><?= formatCurrency($wallet['withdrawable_balance'] ?? 0) ?></div>
         <small class="text-muted">Min: <?= formatCurrency(app_setting('min_withdrawal', MIN_WITHDRAWAL)) ?> | Max: <?= formatCurrency(app_setting('max_withdrawal', MAX_WITHDRAWAL)) ?></small>
         <small class="d-block mt-1" style="font-size:0.75rem;color:#9ca3af;">
-            <i class="fas fa-info-circle me-1"></i> Only referral commission earnings can be withdrawn. Registration fees are not included.
+            <i class="fas fa-info-circle me-1"></i> Referral earnings and approved task rewards can be withdrawn. Registration fees are not included.
         </small>
     </div>
     
