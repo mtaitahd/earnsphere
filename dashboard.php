@@ -150,6 +150,8 @@ include __DIR__ . '/includes/public_head.php';
     <?php endif; ?>
 </div>
 
+<?php include __DIR__ . '/includes/welcome_media.php'; ?>
+
 <!-- Stats Cards -->
 <div class="stat-cards">
     <div class="stat-card">

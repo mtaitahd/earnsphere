@@ -240,3 +240,8 @@ and Payments categories and a combined unread badge. Clear all hides the user's 
 without deleting event/outbox records, so history backfill and duplicate callbacks do
 not recreate them or resend SMS. Re-run `php database/migrate_notifications.php` once
 for the added `cleared_at` column; the migration is repeatable and sends no messages.
+
+
+### Welcome audio and YouTube video
+
+In Admin → Settings → Welcome audio / YouTube video, choose Hidden, Uploaded audio, or YouTube video and save. Users see a player on their dashboard and press Play. No database migration is required; settings are created on save. YouTube videos must allow embedding. Audio supports MP3, WAV, OGG and M4A up to 20 MB, subject to PHP upload_max_filesize and post_max_size. The web server must be able to create/write uploads/welcome. Replacing audio uses a new random URL; previous files are retained. Browser sound autoplay is intentionally avoided.

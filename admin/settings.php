@@ -17,11 +17,25 @@ StaffAccess::requirePage('settings');
 $success = getFlash('success') ?? '';
 $error = '';
 
+require_once dirname(__DIR__) . '/classes/WelcomeMedia.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'welcome_media') {
+    if (!Auth::validateCSRF()) { http_response_code(403); exit('Invalid security token.'); }
+    try {
+        WelcomeMedia::save($_POST, $_FILES['welcome_audio'] ?? null);
+        setFlash('success', 'Welcome audio/video updated.');
+    } catch (InvalidArgumentException $e) { setFlash('error', $e->getMessage()); }
+    catch (Throwable $e) { error_log('Welcome media save: ' . $e->getMessage()); setFlash('error', 'Welcome media could not be saved. Please try again.'); }
+    header('Location: ' . SITE_URL . '/admin/settings#welcome-media');
+    exit;
+}
+$error = getFlash('error') ?? '';
+
 // Handle settings update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF()) { http_response_code(403); exit('Invalid security token.'); }
     $settings = $_POST['settings'] ?? [];
     if (!is_array($settings)) { http_response_code(422); exit('Invalid settings.'); }
+    foreach (array_keys($settings) as $settingKey) if (str_starts_with($settingKey, 'welcome_media_')) unset($settings[$settingKey]);
     unset($settings['snippe_api_key'], $settings['snippe_webhook_secret'], $settings['snippe_api_url'], $settings['snippe_api_version']);
     foreach (['abliner_api_key', 'abliner_webhook_secret'] as $secret) {
         if (isset($settings[$secret]) && trim((string) $settings[$secret]) === '') unset($settings[$secret]);
@@ -291,6 +305,8 @@ include __DIR__ . '/admin_header.php';
         </button>
     </div>
 </form>
+
+<?php include __DIR__ . '/welcome_media_form.php'; ?>
 
 <script src="<?= sanitize(SITE_URL) ?>/assets/js/commission-settings.js"></script>
 
