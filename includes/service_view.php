@@ -8,9 +8,17 @@ function featureStatus(string $status): string {
     return '<span style="color:'.$color.';font-weight:700">'.sanitize(ucfirst(str_replace('_',' ',$status))).'</span>';
 }
 
-function featureNavigation(string $active): void { ?>
-<nav class="feature-nav" aria-label="Account services">
-<?php foreach(['marketplace'=>'Soko / Buy Goods','my-products'=>'Sell products','quizzes'=>'Quiz','social-tasks'=>'Social Media Tasks','promote'=>'Promote Account','dashboard'=>'Dashboard'] as $url=>$label): ?>
+function featureNavigation(string $active): void {
+    $links = match ($active) {
+        'marketplace', 'my-products', 'product' => ['marketplace'=>'Buy Goods', 'my-products'=>'Sell Products'],
+        'social-tasks', 'promote' => ['social-tasks'=>'Social Media Tasks', 'promote'=>'Promote Account'],
+        'quizzes' => ['quizzes'=>'Quiz'],
+        default => [],
+    };
+    $links['dashboard'] = 'Dashboard';
+?>
+<nav class="feature-nav" aria-label="Section navigation">
+<?php foreach($links as $url=>$label): ?>
 <a class="btn <?= $active===$url?'btn-primary':'btn-outline-primary' ?>" href="<?= sanitize(SITE_URL.'/'.$url) ?>"><?= $label ?></a>
 <?php endforeach; ?></nav>
 <?php }

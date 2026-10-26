@@ -21,8 +21,8 @@ function productField(array $draft,string $key,string $default=''):string{return
 $policy=Marketplace::policy();$available=true;$listings=[];$page=max(1,min(100000,(int)($_GET['page']??1)));$offset=($page-1)*20;
 try{$listings=Database::fetchAll("SELECT * FROM marketplace_listings WHERE user_id=? ORDER BY id DESC LIMIT 21 OFFSET $offset",[$user['id']]);}catch(Throwable $e){$available=false;error_log('Seller listings: '.$e->getMessage());ErrorLogger::logException($e,'marketplace',(int)$user['id'],'marketplace.seller.list');}
 $more=count($listings)>20;$listings=array_slice($listings,0,20);$wallet=Wallet::getWallet((int)$user['id']);$pageTitle='Sell products';include __DIR__.'/includes/public_head.php'; ?>
-<link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/member-services.css"><main class="services-page"><h1>My products / Sell a product</h1><?php featureNavigation('my-products');displayFlash(); ?>
-<p><a class="btn btn-outline-primary" href="marketplace">Browse Soko / Buy Goods</a></p><p>Available wallet earnings: <strong><?= formatCurrency($wallet['withdrawable_balance']) ?></strong></p>
+<link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/member-services.css"><main class="services-page"><h1>Sell Products</h1><?php featureNavigation('my-products');displayFlash(); ?>
+<p>Available wallet earnings: <strong><?= formatCurrency($wallet['withdrawable_balance']) ?></strong></p>
 <div class="service-notice">Tangazo linahitaji malipo na approval kabla ya kuonekana kwa umma. Ada ni <?= formatCurrency($policy['fee']) ?> kwa siku <?= (int)$policy['days'] ?> kuanzia approval. Malipo yanatumia available earnings za wallet. Tangazo likikataliwa kabla ya kuchapishwa, ada inarudishwa. Ununuzi wa bidhaa unakamilishwa kati yako na mnunuzi kupitia WhatsApp.</div>
 <?php if(!$available): ?><p class="service-empty">Product advertising is temporarily unavailable.</p><?php elseif(!$policy['enabled']): ?><p class="service-empty">Admin has not enabled new advertising requests yet.</p><?php else: ?>
 <details class="service-card" open><summary>Post bidhaa yako</summary><p class="service-note"><?= sanitize($policy['rules']) ?></p>
