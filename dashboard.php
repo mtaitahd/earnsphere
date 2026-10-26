@@ -169,6 +169,11 @@ include __DIR__ . '/includes/public_head.php';
 </section>
 <?php endif; ?>
 
+<section class="dash-section" style="margin:1rem 0">
+    <h2 style="font-size:1.15rem">Soko / Buy Goods</h2><p>Angalia bidhaa na wasiliana na wauzaji kupitia WhatsApp.</p>
+    <div style="display:flex;gap:.65rem;flex-wrap:wrap"><a class="btn btn-primary" href="marketplace"><i class="fas fa-store me-1"></i> Buy Goods</a><?php if($user['status']==='active'): ?><a class="btn btn-outline-primary" href="my-products">Sell a product</a><?php endif; ?></div>
+</section>
+
 <!-- Stats Cards -->
 <div class="stat-cards">
     <div class="stat-card">

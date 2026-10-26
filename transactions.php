@@ -105,6 +105,8 @@ include __DIR__ . '/includes/public_head.php';
                         'daily_mission_bonus' => 'trophy',
                         'social_reward' => 'tasks',
                         'promotion_payment' => 'bullhorn',
+                        'marketplace_fee' => 'store',
+                        'marketplace_refund' => 'rotate-left',
                         'promotion_refund' => 'rotate-left',
                         default => 'exchange-alt'
                     } ?>"></i>

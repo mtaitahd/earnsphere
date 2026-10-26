@@ -22,6 +22,8 @@ class StaffAccess {
             'announcements' => ['label' => 'Manage announcements', 'description' => 'Create and update announcements.', 'page' => 'announcements', 'icon' => 'bullhorn'],
             'contests' => ['label' => 'Manage contests', 'description' => 'Manage competitions and prize awards.', 'page' => 'contests', 'icon' => 'trophy'],
             'sms' => ['label' => 'Manage SMS', 'description' => 'Send broadcasts and manage SMS templates.', 'page' => 'sms', 'icon' => 'sms'],
+            'marketplace' => ['label' => 'Marketplace ads', 'description' => 'Approve paid ads, reject and refund unpublished ads, and handle product reports.', 'page' => 'marketplace', 'icon' => 'store'],
+            'marketplace_settings' => ['label' => 'Marketplace fee settings', 'description' => 'Set the advertising fee, duration and seller rules.', 'requires' => 'marketplace'],
             'quizzes' => ['label' => 'Comprehension quizzes', 'description' => 'Publish and pause quizzes, set correct answers, rewards and funded participant limits. Perfect scores automatically earn rewards.', 'page' => 'quizzes', 'icon' => 'question-circle'],
             'social' => ['label' => 'Social campaigns', 'description' => 'Publish campaigns, review rewards and quote promotion requests.', 'page' => 'social', 'icon' => 'bullhorn'],
             'loans' => ['label' => 'Loan applications', 'description' => 'Publish eligibility terms and review loan applications. Does not send money.', 'page' => 'loans', 'icon' => 'hand-holding-usd'],

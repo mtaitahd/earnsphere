@@ -274,3 +274,23 @@ Admin → Comprehension quizzes publishes 1–10 questions, four choices per que
 Users open **Maswali ya uelewa** from their dashboard or account service navigation. Each quiz allows one complete attempt per user. Missing or invalid answers do not consume an attempt. An incorrect complete attempt records the score without payment or retry. A perfect score atomically credits withdrawable `social_reward` earnings, inserts a ledger transaction, increments the paid-user counter and posts a bell notification. The correct-answer key is never sent to the user page. Repeated POSTs return the same result without another credit. When the paid-user cap is reached, the quiz closes; a later first-time submission receives no reward. Pausing blocks new attempts; published questions/answers cannot be edited, so publish a new quiz for corrections.
 
 Offline validation: `php tests/quizzes_test.php` and `python tests/check_quiz_routes.py /path/to/php`. Tests include incorrect/partial answers, repeat submissions, caps, publisher permissions and full rollback after an injected ledger failure. Existing manual-feedback campaigns remain manually reviewed.
+
+
+### Soko / Buy Goods: paid, moderated product advertising
+
+Run once after pulling the release (repeatable):
+
+```sh
+php database/migrate_marketplace.php
+```
+
+The migration creates listing, report and moderation-event tables and adds fee/refund ledger types. It includes reward/notification prerequisites but changes no wallet balances and sends no provider requests. Deploy `database/marketplace.sql` and its PHP migration together. The web server must be able to create/write `uploads/marketplace`.
+
+1. **Admin → Marketplace ads → Fees & rules:** set the advertising fee, duration (1–90 days), seller rules, and enable new advertisements. New advertising is disabled by default; the suggested initial values are TZS 1,500 and seven days. Existing drafts retain the fee and duration accepted when created.
+2. **User → Sell products:** create a product name, category, whole-TZS price, description/condition, location, Tanzanian WhatsApp contact and 1–4 JPG/PNG/WebP photos. Photos are verified by MIME and dimensions, up to 5 MB each and 6000 × 6000 pixels; PHP hosting upload/post limits also apply. Original client filenames are discarded. Seller accepts publication of the contact and the current rules. The draft remains private. Limit: five unpublished ads and ten new ads per user/day.
+3. User explicitly pays the snapshotted advertising fee from available wallet earnings. Registration balances and withdrawal holds are unavailable for this payment. This release does not request a separate mobile-money push for advertising. The fee is debited once, appears in transaction history, and moves the ad to Pending review; it does not publish the product.
+4. A moderator reviews photos and full listing details. Approval requires the confirmed fee ledger record and an active seller; it starts the advertising period and makes the ad public. Repeated approval does not extend the duration. Rejection before publication refunds the full fee exactly once. Seller can also cancel an unpublished ad for the same refund. Published ads cannot be edited or automatically refunded; mark sold or contact support for moderation. Published removals keep the original advertising fee.
+5. **Soko / Buy Goods** (`/marketplace`) and approved product detail pages (`/product?id=...`) are public. They provide category/search filters, photos, price/location and an encoded WhatsApp chat link. Unpaid, pending, rejected, sold, removed and expired ads are hidden; expiry is checked on every public read without cron. Suspended sellers are hidden automatically. Active users can report another seller's ad; moderators resolve reports or remove published ads. Product price/payment/delivery are agreed directly between buyer and seller; EarnSphere only collects the advertising fee.
+6. **Agents & Permissions → Marketplace ads** permits reviewing paid advertisements, rejecting/refunding unpublished ads and resolving reports. A separate **Marketplace fee settings** checkbox permits changing global advertising fees, duration and rules. Unauthorized direct routes and writes are blocked. Moderators cannot approve their own former user listings.
+
+Tests: `php tests/marketplace_test.php`, `python tests/check_marketplace_routes.py /path/to/php`, and `python tests/check_marketplace_upload.py /path/to/php`. They use isolated databases/local multipart requests, remove generated test photos, and never move real money. Financial checks include fee idempotence, protected withdrawal holds, refund idempotence, visibility and ledger-failure rollback.
