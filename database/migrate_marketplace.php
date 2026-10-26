@@ -9,3 +9,4 @@ if ($column && str_starts_with($column['COLUMN_TYPE'],'enum(')) {
     if ($type!==$column['COLUMN_TYPE']) Database::query("ALTER TABLE wallet_transactions MODIFY type $type NOT NULL");
 }
 echo "Marketplace ready. No fees charged and no balances changed.\n";
+echo "Next: Admin > Marketplace ads > Fees & rules, set the fee and rules, then enable advertising.\n";

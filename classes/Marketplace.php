@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__.'/SocialHub.php';
 require_once __DIR__.'/MarketplaceImages.php';
+require_once __DIR__.'/ErrorLogger.php';
 class Marketplace {
     public const CATEGORIES=['electronics'=>'Electronics','fashion'=>'Fashion & beauty','home'=>'Home & furniture','vehicles'=>'Vehicles & parts','food'=>'Food & agriculture','services'=>'Services','other'=>'Other goods'];
     private static function staff(int $actor): void {

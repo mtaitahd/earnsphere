@@ -35,6 +35,7 @@ body,state=run('product.php',query={'id':1})
 assert 'https://wa.me/255712345678?text=' in body and '<script>alert(555)</script>' not in body
 body,state=run('my-products.php',user=200)
 assert 'PRIVATE_PENDING_200' in body and 'PRIVATE_DRAFT_201' not in body,'Seller view leaked another account'
+assert '<details class="service-card" open><summary>Post bidhaa yako</summary>' in body,'Seller posting form was hidden'
 assert run('my-products.php',user=200,method='POST',post={'action':'pay','id':3})[1]['http']==403
 state=run('my-products.php',user=200,method='POST',post={'csrf_token':'market-csrf','action':'pay','accepted':'1','id':3})[1]
 assert state['http']==302 and state['fees']==3,'Repeated ad payment charged twice'
@@ -51,3 +52,13 @@ state=run('product.php',user=201,method='POST',query={'id':1},post={'csrf_token'
 assert state['http']==302 and state['reports']==1,'Buyer report not recorded'
 assert run('my-products.php',user=203)[1]['http']==302,'Suspended user opened seller forms'
 print('Marketplace routes: public paid-and-approved ads only, privacy/XSS, seller ownership, CSRF, reports and agent moderation passed.')
+
+# A read failure must not be misreported as a command the operator has not run.
+code='ob_start();require '+json.dumps(str(root/'tests/marketplace_fixture.php'))+';ob_end_clean();'
+code+='Auth::initSession();$_SESSION=["user_id"=>3,"user_role"=>"admin"];$_SERVER["REQUEST_METHOD"]="GET";$_SERVER["PHP_SELF"]="/admin/marketplace.php";$_SERVER["REQUEST_URI"]="/admin/marketplace";Database::query("DROP TABLE marketplace_listings");'
+code+='require '+json.dumps(str(root/'admin/marketplace.php'))+';'
+result=subprocess.run([php,'-r',code],capture_output=True,text=True,timeout=20)
+assert result.returncode==0 and 'migrate_marketplace.php' not in result.stdout,'Admin still exposes migration command'
+assert 'Hatukuweza kufungua matangazo' in result.stdout,'Failed reads have no honest service message'
+assert 'SQLSTATE' not in result.stdout,'Database details exposed in admin product flow'
+print('Seller form is open and admin read errors no longer imply a missing migration.')
