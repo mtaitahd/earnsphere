@@ -81,18 +81,10 @@ if (isAjax() && isset($_GET['action']) && $_GET['action'] === 'track_copy') {
 include __DIR__ . '/includes/public_head.php';
 ?>
 
-<!-- Dashboard Header -->
-<div class="dash-header">
-    <div class="top-bar">
-        <div>
-            <p class="greeting mb-0">Hello, 👋</p>
-            <h4 class="user-name"><?= sanitize($user['full_name']) ?></h4>
-        </div>
+<link rel="stylesheet" href="<?= sanitize(SITE_URL) ?>/assets/css/dashboard-layout.css?v=<?= filemtime(__DIR__.'/assets/css/dashboard-layout.css') ?>">
+<header class="account-toolbar">
+    <div class="account-brand"><button type="button" class="account-menu-toggle" data-account-menu aria-label="Open account menu" aria-haspopup="dialog" aria-controls="accountMenu"><i class="fas fa-bars" aria-hidden="true"></i></button><a href="dashboard">EarnSphere<span>My account</span></a></div>
         <div class="d-flex align-items-center gap-2">
-            <a href="ai-assistant" class="notification-btn" style="text-decoration:none;position:relative;" title="AI Share Assistant">
-                <i class="fas fa-wand-magic-sparkles" style="color:#D4A843;"></i>
-                <span style="position:absolute;top:-4px;right:-6px;width:10px;height:10px;background:#D4A843;border-radius:50%;border:2px solid #72578B;"></span>
-            </a>
             <a href="javascript:void(0)" class="notification-btn" style="text-decoration:none;position:relative;" onclick="openNotificationCenter()" title="Notifications" id="announcementBell" aria-haspopup="dialog" aria-controls="annModal">
                 <i class="fas fa-bell"></i>
                 <span id="annBadge" class="ann-badge"></span>
@@ -107,8 +99,19 @@ include __DIR__ . '/includes/public_head.php';
                 </div>
             </a>
         </div>
-    </div>
-    
+</header>
+<?php include __DIR__.'/includes/dashboard_menu.php'; ?>
+<!-- Dashboard Header -->
+<div class="dash-header account-overview">
+    <div class="account-greeting"><p>Hello,</p><h1><?= sanitize($user['full_name']) ?></h1></div>
+    <nav class="account-primary-actions" aria-label="Main account actions">
+        <a href="withdrawal"><i class="fas fa-arrow-up" aria-hidden="true"></i><span>Withdraw</span></a>
+        <?php if ($user['status'] === 'active'): ?><a href="quizzes"><i class="fas fa-gift" aria-hidden="true"></i><span>Quiz</span></a><?php endif; ?>
+        <a href="marketplace"><i class="fas fa-bag-shopping" aria-hidden="true"></i><span>Buy Goods</span></a>
+        <a href="profile"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>
+    </nav>
+    <div class="account-totals"><div><span>Total earned</span><strong><?= formatCurrency($wallet['total_earned'] ?? 0) ?></strong></div><div><span>Total withdrawn</span><strong><?= formatCurrency($wallet['total_withdrawn'] ?? 0) ?></strong></div></div>
+    <div class="account-balance"><div><span>Withdrawable balance</span><strong data-account-balance><?= formatCurrency($wallet['withdrawable_balance'] ?? 0) ?></strong><strong data-account-masked hidden>••••••</strong></div><button type="button" data-balance-toggle aria-label="Hide balance" aria-pressed="false"><i class="fas fa-eye-slash" aria-hidden="true"></i></button></div>
     <!-- Account Status -->
     <?php if ($user['status'] !== 'active'): ?>
     <div style="background:linear-gradient(135deg,<?= $paymentFailed ? '#ef4444,#dc2626' : '#f59e0b,#ef4444' ?>);border-radius:12px;padding:1rem;margin-top:0.5rem;color:white;">
@@ -148,20 +151,9 @@ include __DIR__ . '/includes/public_head.php';
 
 <?php include __DIR__ . '/includes/welcome_media.php'; ?>
 
-<?php include __DIR__ . '/includes/dashboard_shortcuts.php'; ?>
 
 <!-- Stats Cards -->
 <div class="stat-cards dashboard-stats">
-    <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-wallet"></i>
-        </div>
-        <div class="stat-info">
-            <div class="stat-value"><?= formatCurrency($wallet['withdrawable_balance'] ?? 0) ?></div>
-            <div class="stat-label">Withdrawable Balance</div>
-        </div>
-    </div>
-    
     <div class="stat-card">
         <div class="stat-icon green">
             <i class="fas fa-users"></i>
@@ -192,6 +184,8 @@ include __DIR__ . '/includes/public_head.php';
         </div>
     </div>
 </div>
+
+<?php include __DIR__ . '/includes/dashboard_shortcuts.php'; ?>
 
 <!-- Daily Mission -->
 <?php if ($user['status'] === 'active' && $missionStatus && $missionStatus['has_mission']): ?>
@@ -357,6 +351,12 @@ include __DIR__ . '/includes/public_head.php';
             </button>
         </div>
         
+        <nav class="account-share-links" aria-label="Share referral link">
+            <a href="https://wa.me/?text=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook" aria-hidden="true"></i> Facebook</a>
+            <a href="https://t.me/share/url?url=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram" aria-hidden="true"></i> Telegram</a>
+            <a href="https://twitter.com/intent/tweet?url=<?= rawurlencode($referralLink) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-x-twitter" aria-hidden="true"></i> X</a>
+        </nav>
         <!-- Commission Earnings per Level -->
         <div style="background:var(--primary-bg);border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
             <h6 style="font-weight:700;font-size:0.8rem;color:var(--gray-600);margin-bottom:0.5rem;">
@@ -1345,4 +1345,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <script src="<?= sanitize(SITE_URL) ?>/assets/js/payment-notifications.js?v=<?= filemtime(__DIR__ . '/assets/js/payment-notifications.js') ?>"></script>
+<script src="<?= sanitize(SITE_URL) ?>/assets/js/dashboard-layout.js?v=<?= filemtime(__DIR__.'/assets/js/dashboard-layout.js') ?>" defer></script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>
