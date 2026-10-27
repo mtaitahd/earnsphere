@@ -11,6 +11,7 @@ expect(count(array_filter($items,fn($i)=>$i['type']==='youtube'))===2,'Two video
 expect($items[2]['type']==='link','External link must not become an iframe');
 $user=['id'=>1];ob_start();include __DIR__.'/../includes/welcome_media.php';$html=ob_get_clean();
 expect(substr_count($html,'data-welcome-src=')===2,'Multiple video players missing');
+expect(substr_count($html,'<iframe credentialless ')===2,'Production COEP would block the YouTube players');
 expect(substr_count($html,'data-welcome-retry')===2,'Inline retry missing');
 expect(!str_contains($html,'Open on YouTube'),'Video links leave the site');
 expect(str_contains($html,'origin='),'Embed origin missing');
