@@ -41,7 +41,7 @@ $openTickets = StaffAccess::can('support') ? Database::count('support_tickets', 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <!-- Admin CSS -->
-    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/admin.css">
+    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/admin.css?v=<?= filemtime(dirname(__DIR__).'/assets/css/admin.css') ?>">
 </head>
 <body id="page-top">
 <div id="wrapper">
