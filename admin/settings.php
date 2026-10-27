@@ -14,14 +14,19 @@ Auth::initSession();
 require_once dirname(__DIR__) . '/classes/StaffAccess.php';
 StaffAccess::requirePage('settings');
 
+if (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && empty($_POST) && (int)($_SERVER['CONTENT_LENGTH']??0)>0) {
+    setFlash('error','Upload exceeds the hosting request limit. Upload fewer or smaller files, or use YouTube links.');
+    header('Location: '.SITE_URL.'/admin/settings#welcome-media'); exit;
+}
 $success = getFlash('success') ?? '';
 $error = '';
 
 require_once dirname(__DIR__) . '/classes/WelcomeMedia.php';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'welcome_media') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['welcome_media','welcome_library'], true)) {
     if (!Auth::validateCSRF()) { http_response_code(403); exit('Invalid security token.'); }
     try {
-        WelcomeMedia::save($_POST, $_FILES['welcome_audio'] ?? null);
+        if (($_POST['action'] ?? '') === 'welcome_library') WelcomeMedia::saveLibrary($_POST, $_FILES['media_files'] ?? null);
+        else WelcomeMedia::save($_POST, $_FILES['welcome_audio'] ?? null);
         setFlash('success', 'Welcome audio/video updated.');
     } catch (InvalidArgumentException $e) { setFlash('error', $e->getMessage()); }
     catch (Throwable $e) { error_log('Welcome media save: ' . $e->getMessage()); setFlash('error', 'Welcome media could not be saved. Please try again.'); }

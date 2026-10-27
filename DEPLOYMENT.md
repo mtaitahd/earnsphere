@@ -302,3 +302,7 @@ The dashboard now uses short, responsive icon links (Quiz, Social Media Tasks, P
 
 ### One-time social task links
 After pulling this update, run `php database/migrate_social_task_opens.php` once before using Social Tasks. This adds per-user opened tracking and does not change balances. The first successful open records the task before returning its approved platform URL; repeat requests are blocked server-side. Refreshing or switching devices preserves Opened. Existing submissions also show Opened; earlier clicks without a submission were not tracked. Feedback and admin reward approval remain unchanged.
+
+### Know Your Account media library
+No migration required. In Admin → Settings → Know Your Account, keep or rename saved items, select multiple MP4/WebM videos or audio files, and add one HTTPS link per line. The existing enabled audio/YouTube item is preserved on the first library save. Maximum: 30 items, 10 new uploads per save, 50 MB per video and 20 MB per audio file, subject to hosting upload/post limits. Use MP4 with browser-compatible video/audio codecs for broad playback support. Removed items are unlisted; their files are retained to avoid interrupting open players.
+YouTube uses the standard embed endpoint with the recommended referrer policy. Each embedded video includes Open on YouTube for network blocks or videos whose owner disallows embedding. External HTTPS guide links open as links, never arbitrary iframes.

@@ -12,7 +12,7 @@ foreach (['uploads/welcome/../../config.php','https://evil.test/audio.mp3','uplo
 WelcomeMedia::save(['type'=>'youtube','title'=>'Karibu <script>alert(1)</script>','youtube'=>'https://youtu.be/dQw4w9WgXcQ'],null);
 expect(Database::fetchOne("SELECT setting_value FROM settings WHERE setting_key='welcome_media_type'")['setting_value']==='youtube','Media settings not saved');
 $user=['id'=>1]; ob_start(); include __DIR__.'/../includes/welcome_media.php'; $html=ob_get_clean();
-expect(str_contains($html,'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'),'Video player missing');
+expect(str_contains($html,'https://www.youtube.com/embed/dQw4w9WgXcQ'),'Video player missing');
 expect(!str_contains($html,'<script>alert(1)</script>'),'Media title allowed HTML injection');
 try { WelcomeMedia::save(['type'=>'audio'],null); throw new RuntimeException('Missing audio accepted'); } catch (InvalidArgumentException $e) {}
 try { WelcomeMedia::save(['type'=>'audio'],['error'=>UPLOAD_ERR_OK,'tmp_name'=>__FILE__,'name'=>'audio.mp3']); throw new RuntimeException('Non-uploaded file accepted'); } catch (InvalidArgumentException $e) {}
