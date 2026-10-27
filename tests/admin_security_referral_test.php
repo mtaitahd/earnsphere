@@ -44,4 +44,23 @@ $_GET=['code'=>'GRAND123','relative'=>'USER'];$_SERVER['PHP_SELF']='/admin/refer
 ob_start();include __DIR__.'/../admin/referral-lookup.php';$html=ob_get_clean();
 checkAdmin(str_contains($html,'Level 2')&&str_contains($html,'CHILD123'),'Actual lookup page missing lineage');
 checkAdmin(!str_contains($html,'<script>alert(1)</script>'),'Lookup page XSS');
+$direct=ReferralLookup::members('USER',1);$grand=ReferralLookup::members('USER',2);
+checkAdmin($direct['total']===1&&(int)$direct['items'][0]['id']===10&&$direct['items'][0]['inviter_code']==='USER','Direct members list incorrect');
+checkAdmin($grand['total']===1&&(int)$grand['items'][0]['id']===11&&$grand['items'][0]['inviter_code']==='CHILD123','Grand members/inviter list incorrect');
+checkAdmin(ReferralLookup::members('OTHER123',1)['total']===0,'Different network leaked into list');
+checkAdmin(ReferralLookup::members('NONE123',1)===null,'Unknown code returned members');
+try{ReferralLookup::members('USER',3);throw new RuntimeException('Invalid level accepted');}catch(InvalidArgumentException $e){}
+Database::update('users',['referred_by'=>2],'id = ?',[4]);
+for($i=100;$i<130;$i++)Database::insert('users',['id'=>$i,'full_name'=>'Team Member '.$i,'phone'=>'25570000'.$i,'referral_code'=>'TEAM'.$i,'role'=>'user','status'=>'active','referred_by'=>2,'created_at'=>'2026-10-27']);
+$first=ReferralLookup::members('USER',1,1);$last=ReferralLookup::members('USER',1,999);
+checkAdmin($first['total']===31&&count($first['items'])===25&&$last['page']===2&&count($last['items'])===6,'Pagination or staff exclusion failed');
+checkAdmin(count(array_intersect(array_column($first['items'],'id'),array_column($last['items'],'id')))===0,'Duplicate members across pages');
+$_GET=['code'=>'USER','level'=>'1','page'=>'2'];
+ob_start();include __DIR__.'/../admin/referral-lookup.php';$memberHtml=ob_get_clean();
+checkAdmin(str_contains($memberHtml,'id="referral-members"')&&str_contains($memberHtml,'Aliunganishwa na:')&&str_contains($memberHtml,'CHILD123'),'Clicked level page omitted members/inviters');
+checkAdmin(str_contains($memberHtml,'Page 2 / 2')&&!str_contains($memberHtml,'<script>alert(1)</script>'),'Unsafe or incorrect paginated list');
+$_GET=['code'=>'OTHER123','level'=>'2'];ob_start();include __DIR__.'/../admin/referral-lookup.php';$emptyHtml=ob_get_clean();
+checkAdmin(str_contains($emptyHtml,'Hakuna watu kwenye Level 2'),'Empty level not explained');
+echo "Referral member lists: Level 1/2, inviters, network isolation, empty state, pagination, staff exclusion and XSS passed.\n";
+
 echo "Admin alerts/referrals: thresholds, dedup, privacy, email cap/status, independent read state, exact lookup, inviter chain, levels, cycles and safe page passed.\n";

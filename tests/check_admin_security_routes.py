@@ -22,7 +22,7 @@ for page in ['security-alerts','referral-lookup']:
  assert run('admin/'+page+'.php',1)[1]==200
  assert run('admin/'+page+'.php',1,'POST')[1]==403
 # Service-level guard also forbids calling through a different route.
-for service in ['SecurityAlerts::listing(2)','SecurityAlerts::markRead(2,999)','ReferralLookup::find("USER")']:
+for service in ['SecurityAlerts::listing(2)','SecurityAlerts::markRead(2,999)','ReferralLookup::find("USER")','ReferralLookup::members("USER",1)']:
  code='require '+json.dumps(str(root/'tests/staff_fixture.php'))+';require_once '+json.dumps(str(root/'classes/ReferralLookup.php'))+';$_SESSION=["user_id"=>2,"user_role"=>"admin"];StaffAccess::clearCache();register_shutdown_function(function(){echo "STATUS:".http_response_code();});'+service+';'
  r=subprocess.run([php,'-r',code],capture_output=True,text=True,env=os.environ|{'APP_ENV':'testing'})
  assert r.returncode==0 and r.stdout.endswith('STATUS:403'),r.stdout+r.stderr
