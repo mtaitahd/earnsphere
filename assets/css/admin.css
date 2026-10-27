@@ -9,6 +9,7 @@
     --sidebar-hover: #F3F2F7;
     --sidebar-active: rgba(114, 87, 139, 0.08);
     --sidebar-width: 250px;
+    --admin-header-height: 64px;
     --sidebar-text: #333333;
     --sidebar-text-muted: #858796;
     --body-bg: #F8F9FC;
@@ -105,22 +106,24 @@ body {
 }
 
 .sidebar-brand {
-    padding: 1.35rem 1.25rem;
+    padding: 0 1.25rem;
     text-decoration: none;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     background: var(--sidebar-brand);
-    min-height: 70px;
+    height: var(--admin-header-height);
+    min-height: var(--admin-header-height);
+    box-sizing: border-box;
 }
 
 .sidebar-brand .sidebar-brand-icon {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     color: #fff;
 }
 
 .sidebar-brand .sidebar-brand-text {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 800;
     color: #fff;
 }
@@ -221,32 +224,40 @@ body {
    ============================================================ */
 .topbar {
     background: var(--topbar-bg);
-    padding: 0.625rem 1.5rem;
+    padding: 0 1.5rem;
     border-bottom: 1px solid rgba(0,0,0,0.05);
     position: sticky;
     top: 0;
     z-index: 50;
-    min-height: 56px;
+    height: var(--admin-header-height);
+    min-height: var(--admin-header-height);
+    box-sizing: border-box;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
+
+.topbar .navbar-nav { flex-direction: row; flex-wrap: nowrap; margin: 0 0 0 auto; gap: 0.25rem; }
+.topbar .nav-link { display: flex; align-items: center; min-height: 44px; padding: 0.25rem 0.5rem; }
+.topbar .navbar-search { margin: 0; }
+.topbar .input-group { flex-wrap: nowrap; }
+.topbar .form-control, .topbar .btn-search { height: 36px; padding: 0.375rem 0.75rem; }
 
 .topbar .form-control {
     border-radius: var(--radius);
     font-size: 0.85rem;
-    background: rgba(255,255,255,0.15);
+    background: #fff !important;
     border: 1px solid rgba(255,255,255,0.2);
-    color: #fff;
+    color: #4b3c5a;
 }
 
 .topbar .form-control::placeholder {
-    color: rgba(255,255,255,0.6);
+    color: #756980;
 }
 
 .topbar .form-control:focus {
-    background: rgba(255,255,255,0.25);
+    background: #fff !important;
     border-color: rgba(255,255,255,0.4);
     box-shadow: none;
-    color: #fff;
+    color: #4b3c5a;
 }
 
 .topbar .btn-search {
@@ -264,8 +275,8 @@ body {
 .topbar-divider {
     width: 0;
     border-right: 1px solid rgba(255,255,255,0.15);
-    height: 2rem;
-    margin: 0 1rem;
+    height: 1.5rem;
+    margin: 0 0.5rem;
 }
 
 .topbar .text-gray-600 {

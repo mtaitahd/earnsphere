@@ -102,7 +102,7 @@ if (StaffAccess::isAdministrator()) {
         <!-- Topbar -->
         <nav class="topbar d-flex align-items-center justify-content-between">
             <!-- Sidebar Toggle (Mobile) -->
-            <button id="sidebarToggleTop" class="btn d-md-none" style="color: rgba(255,255,255,0.8); background: none; border: none; font-size: 1.2rem;">
+            <button id="sidebarToggleTop" class="btn d-lg-none" style="color: rgba(255,255,255,0.8); background: none; border: none; font-size: 1.2rem;">
                 <i class="fas fa-bars"></i>
             </button>
             
