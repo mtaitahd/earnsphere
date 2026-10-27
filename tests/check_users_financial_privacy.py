@@ -11,8 +11,9 @@ def run(permissions=(),admin=False,revoked=False,user=False,route="users"):
  if revoked:code+='Database::delete("agent_permissions","permission = ?",["dashboard"]);'
  effective=set(permissions)-({'dashboard'} if revoked else set())
  if admin or effective.intersection({'payments','dashboard'}):code+='$staffDb->exec("CREATE TABLE payments(id INTEGER PRIMARY KEY,user_id INTEGER,amount NUMERIC,purpose TEXT,status TEXT,completed_at TEXT)");Database::insert("payments",["user_id"=>2,"amount"=>97531,"purpose"=>"registration","status"=>"completed","completed_at"=>"2026-10-27"]);'
- if admin or 'commissions' in effective:code+='$staffDb->exec("CREATE TABLE commissions(id INTEGER PRIMARY KEY,earner_id INTEGER,amount NUMERIC,status TEXT)");Database::insert("commissions",["earner_id"=>2,"amount"=>86420,"status"=>"approved"]);'
+ if admin:code+='$staffDb->exec("CREATE TABLE commissions(id INTEGER PRIMARY KEY,earner_id INTEGER,amount NUMERIC,status TEXT)");Database::insert("commissions",["earner_id"=>2,"amount"=>86420,"status"=>"approved"]);'
  code+='$_SESSION=["user_id"=>'+str(1 if admin else (2 if user else 3))+',"user_role"=>"admin","permissions"=>["dashboard","payments","commissions","users_manage"]];StaffAccess::clearCache();'
+ code+='$_GET='+('[]' if admin else '["status"=>"suspended"]')+';'
  code+='$_SERVER["REQUEST_METHOD"]="GET";$_SERVER["PHP_SELF"]='+json.dumps('/admin/'+route+'.php')+';$_SERVER["REQUEST_URI"]='+json.dumps('/admin/'+route)+';'
  code+='register_shutdown_function(function(){echo "\nPRIVACY_STATE:".json_encode(["http"=>http_response_code(),"fields"=>isset($GLOBALS["users"][0])?array_keys($GLOBALS["users"][0]):[]]);});include '+json.dumps(str(root/('admin/'+route+'.php')))+';'
  r=subprocess.run([php,'-r',code],capture_output=True,text=True,timeout=20,env=os.environ|{'APP_ENV':'testing'})
@@ -26,6 +27,11 @@ def check(permissions,summary=False,payments=False,earnings=False,manage=False,a
  assert ('> Total Paid</div>' in body)==summary,permissions
  assert ('<th>Payment</th>' in body)==payments,permissions
  assert ('<th>Earnings</th>' in body)==earnings,permissions
+ assert ('<th>Referrals</th>' in body)==admin,permissions
+ assert ('<th>Status</th>' in body)==admin,permissions
+ assert ('direct_referrals' in state['fields'])==admin,permissions
+ assert ('status' in state['fields'])==(admin or manage),permissions
+ assert ('<option value="">All Status</option>' in body)==admin,permissions
  assert ('paid_amount' in state['fields'])==payments,permissions
  assert ('total_earned' in state['fields'])==earnings,permissions
  assert 'password' not in state['fields'] and 'PRIVATE_HASH_MUST_NOT_BE_SELECTED' not in body
@@ -38,7 +44,7 @@ def check(permissions,summary=False,payments=False,earnings=False,manage=False,a
  if not admin and 'payments_manage' not in permissions:assert 'value="mark_as_paid"' not in body and 'value="mark_as_unpaid"' not in body
  return body
 check(('users',))
-check(('users','commissions'),earnings=True)
+check(('users','commissions'))
 check(('users','payments'),payments=True)
 check(('users','dashboard'),summary=True)
 check(('users','users_manage'),manage=True)

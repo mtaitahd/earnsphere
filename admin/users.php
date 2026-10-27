@@ -15,7 +15,8 @@ require_once dirname(__DIR__) . '/classes/StaffAccess.php';
 StaffAccess::requirePage('users');
 $canViewDashboard = StaffAccess::can('dashboard');
 $canViewPayments = StaffAccess::can('payments');
-$canViewEarnings = StaffAccess::can('commissions');
+$canViewPrivateUserColumns = StaffAccess::isAdministrator();
+$canViewEarnings = $canViewPrivateUserColumns;
 $canManageUsers = StaffAccess::can('users_manage');
 $canManagePayments = $canManageUsers && StaffAccess::can('payments_manage');
 $canViewErrorLogs = StaffAccess::can('error_logs');
@@ -320,7 +321,7 @@ function safeUserDelete(string $table, string $where, array $params): void {
 }
 
 $search = trim($_GET['search'] ?? '');
-$status = $_GET['status'] ?? '';
+$status = $canViewPrivateUserColumns ? ($_GET['status'] ?? '') : '';
 $year   = preg_match('/^\d{4}$/', trim($_GET['year'] ?? '')) ? trim($_GET['year']) : '';
 $page = getCurrentPage();
 $perPage = 20;
@@ -336,8 +337,9 @@ $availableYears = Database::fetchAll(
 
 $total = Database::count('users', $where, $params);
 
-$userFields = 'u.id, u.full_name, u.phone, u.email, u.referral_code, u.status, u.created_at,
-            (SELECT COUNT(*) FROM users WHERE referred_by = u.id) as direct_referrals';
+$userFields = 'u.id, u.full_name, u.phone, u.email, u.referral_code, u.created_at';
+if ($canViewPrivateUserColumns || $canManageUsers) $userFields .= ', u.status';
+if ($canViewPrivateUserColumns) $userFields .= ', (SELECT COUNT(*) FROM users WHERE referred_by = u.id) as direct_referrals';
 if ($canViewEarnings) $userFields .= ", (SELECT COALESCE(SUM(amount),0) FROM commissions WHERE earner_id = u.id AND status != 'cancelled') as total_earned";
 if ($canViewPayments) $userFields .= ", (SELECT COALESCE(SUM(amount),0) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_amount,
             (SELECT MAX(completed_at) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_date";
@@ -391,10 +393,10 @@ include __DIR__ . '/admin_header.php';
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" class="row g-3">
-            <div class="col-md-4">
+            <div class="<?= $canViewPrivateUserColumns ? 'col-md-4' : 'col-md-7' ?>">
                 <input type="text" class="form-control" name="search" placeholder="Search name, phone, email, or code..." value="<?= sanitize($search) ?>">
             </div>
-            <div class="col-md-3">
+            <?php if ($canViewPrivateUserColumns): ?><div class="col-md-3">
                 <select class="form-select" name="status">
                     <option value="">All Status</option>
                     <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option>
@@ -402,6 +404,7 @@ include __DIR__ . '/admin_header.php';
                     <option value="suspended" <?= $status === 'suspended' ? 'selected' : '' ?>>Suspended</option>
                 </select>
             </div>
+            <?php endif; ?>
             <div class="col-md-3">
                 <input type="text" class="form-control" name="year" list="yearOptions" inputmode="numeric" maxlength="4" placeholder="All Years" value="<?= $year !== '' ? sanitize($year) : '' ?>">
                 <datalist id="yearOptions">
@@ -458,10 +461,10 @@ include __DIR__ . '/admin_header.php';
                             <th>Name</th>
                             <th>Phone</th>
                             <th>Code</th>
-                            <th>Referrals</th>
+                            <?php if ($canViewPrivateUserColumns): ?><th>Referrals</th><?php endif; ?>
                             <?php if ($canViewEarnings): ?><th>Earnings</th><?php endif; ?>
                             <?php if ($canViewPayments): ?><th>Payment</th><?php endif; ?>
-                            <th>Status</th>
+                            <?php if ($canViewPrivateUserColumns): ?><th>Status</th><?php endif; ?>
                             <th>Date</th>
                             <?php if ($canManageUsers || $canViewErrorLogs): ?><th>Action</th><?php endif; ?>
                         </tr>
@@ -479,7 +482,7 @@ include __DIR__ . '/admin_header.php';
                             </td>
                             <td><?= formatPhone($u['phone']) ?></td>
                             <td><code style="font-size:0.75rem;"><?= sanitize($u['referral_code']) ?></code></td>
-                            <td><strong><?= number_format($u['direct_referrals']) ?></strong></td>
+                            <?php if ($canViewPrivateUserColumns): ?><td><strong><?= number_format($u['direct_referrals']) ?></strong></td><?php endif; ?>
                             <?php if ($canViewEarnings): ?><td><strong style="color:#10b981;"><?= formatCurrency($u['total_earned']) ?></strong></td><?php endif; ?>
                             <?php if ($canViewPayments): ?>
                             <td>
@@ -492,7 +495,7 @@ include __DIR__ . '/admin_header.php';
                                 <?php endif; ?>
                             </td>
                             <?php endif; ?>
-                            <td><?= statusBadge($u['status']) ?></td>
+                            <?php if ($canViewPrivateUserColumns): ?><td><?= statusBadge($u['status']) ?></td><?php endif; ?>
                             <td><small><?= date('d M Y', strtotime($u['created_at'])) ?></small></td>
                             <?php if ($canManageUsers || $canViewErrorLogs): ?><td>
                                 <div class="dropdown">
@@ -576,7 +579,7 @@ include __DIR__ . '/admin_header.php';
                         
                         <?php if (empty($users)): ?>
                         <tr>
-                            <td colspan="<?= 7 + (int) $canManageUsers + (int) $canViewEarnings + (int) $canViewPayments + (int) ($canManageUsers || $canViewErrorLogs) ?>" class="text-center py-4">
+                            <td colspan="<?= 5 + 2 * (int) $canViewPrivateUserColumns + (int) $canManageUsers + (int) $canViewEarnings + (int) $canViewPayments + (int) ($canManageUsers || $canViewErrorLogs) ?>" class="text-center py-4">
                                 <i class="fas fa-users fa-2x mb-2" style="color:#d1d5db;"></i>
                                 <p class="text-muted mb-0">No users found</p>
                             </td>
