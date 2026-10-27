@@ -28,6 +28,16 @@ body,state=run('marketplace.php')
 assert 'Public phone' in body and 'PRIVATE_' not in body,'Storefront leaked unapproved/expired ads'
 assert '<script>alert(555)</script>' not in body,'Product title injected HTML'
 assert 'product?id=1' in body,'Public product navigation missing'
+body,state=run('index.php')
+assert 'Public phone' in body and 'PRIVATE_' not in body,'Landing leaked private or expired ads'
+assert 'action="marketplace"' in body and 'Search Goods' in body and 'product?id=1' in body,'Landing discovery flow missing'
+assert '<script>alert(555)</script>' not in body,'Landing product title injected HTML'
+body,state=run('marketplace.php',query={'q':'Original phone','category':'electronics'})
+assert 'Public phone' in body,'Public goods search did not find matching product'
+body,state=run('marketplace.php',query={'q':'no-such-goods-12345'})
+assert 'Public phone' not in body and 'Hakuna bidhaa' in body,'Goods search ignored query'
+body,state=run('marketplace.php',query={'category':'fashion'})
+assert 'Public phone' not in body,'Goods category filter ignored'
 for product_id in [2,3,4]:
     body,state=run('product.php',query={'id':product_id})
     assert state['http']==404 and 'Chat on WhatsApp' not in body,'Private/unavailable product leaked contact'

@@ -138,6 +138,14 @@ class Marketplace {
             Database::update('marketplace_listings',['status'=>$target],'id = ?',[$id]);self::event($id,$userId,$target);Database::commit();
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
     }
+    public static function publicCatalog(int $limit = 24, int $offset = 0, string $search = '', string $category = ''): array {
+        $limit=max(1,min(25,$limit));$offset=max(0,min(2400000,$offset));
+        $where="l.status='approved' AND l.fee_status='paid' AND l.expires_at>? AND u.status='active' AND u.role='user'";
+        $params=[gmdate('Y-m-d H:i:s')];
+        if (isset(self::CATEGORIES[$category])) {$where.=' AND l.category=?';$params[]=$category;}
+        if (trim($search)!=='') {$where.=' AND (l.title LIKE ? OR l.description LIKE ? OR l.location LIKE ?)';$term='%'.mb_substr(trim($search),0,100).'%';array_push($params,$term,$term,$term);}
+        return Database::fetchAll("SELECT l.id,l.title,l.product_price,l.location,l.category,l.images FROM marketplace_listings l JOIN users u ON u.id=l.user_id WHERE $where ORDER BY l.approved_at DESC,l.id DESC LIMIT $limit OFFSET $offset",$params);
+    }
     public static function publicListing(int $id): ?array {
         return Database::fetchOne("SELECT l.id,l.user_id,l.title,l.description,l.category,l.product_price,l.location,l.whatsapp,l.images,l.approved_at,l.expires_at FROM marketplace_listings l JOIN users u ON u.id=l.user_id WHERE l.id=? AND l.status='approved' AND l.fee_status='paid' AND l.expires_at>? AND u.status='active' AND u.role='user'",[$id,gmdate('Y-m-d H:i:s')]);
     }

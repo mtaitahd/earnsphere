@@ -16,6 +16,10 @@ if (Auth::isLoggedIn()) {
     exit;
 }
 
+require_once __DIR__.'/classes/Marketplace.php';
+$landingProducts=[];
+try {$landingProducts=Marketplace::publicCatalog(4);} catch(Throwable $e) {error_log('Landing marketplace: '.$e->getMessage());}
+
 // Get system stats
 $totalUsers = Database::count('users', 'status = ?', ['active']);
 $totalPaid = Database::fetchOne("SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE status = 'completed'")['total'] ?? 0;
@@ -283,6 +287,8 @@ include __DIR__ . '/includes/public_head.php';
 }
 </style>
 
+<link rel="stylesheet" href="<?= sanitize(SITE_URL) ?>/assets/css/member-services.css?v=<?= filemtime(__DIR__.'/assets/css/member-services.css') ?>">
+<nav class="landing-public-nav" aria-label="Main navigation"><a class="landing-brand" href="./">EarnSphere</a><div><a href="marketplace"><i class="fas fa-store" aria-hidden="true"></i> Soko</a><a href="login">Login</a></div></nav>
 <!-- Hero Section -->
 <section class="landing-hero">
     <div class="brand-icon">
@@ -301,10 +307,11 @@ include __DIR__ . '/includes/public_head.php';
         <a href="login" class="btn btn-outline-light btn-lg w-100">
             <i class="fas fa-sign-in-alt me-2"></i> Login
         </a>
+        <a href="marketplace" class="btn btn-outline-light btn-lg w-100 mt-3"><i class="fas fa-store me-2" aria-hidden="true"></i> Soko / Buy Goods</a>
     </div>
-    
-    
 </section>
+
+<?php include __DIR__.'/includes/landing_marketplace.php'; ?>
 
 <!-- Live Proof of Payment -->
 <section class="proof-section" id="proofSection">
