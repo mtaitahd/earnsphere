@@ -321,3 +321,6 @@ Security email requires `APP_ENV=production` and working email configuration; re
 Referral Code Lookup's Level 1 and Level 2 counts open a popup without navigating away from the search. Each member shows name, code, phone, status, join date and direct inviter. Paging and retry stay inside the popup. Lists are scoped to the searched account, paginated at 25 members and remain administrator-only, including the private API. Deploy the page, admin CSS, popup JavaScript and `api/admin_referrals.php` together. No migration is needed.
 
 Admin flash messages already displayed within a page do not generate another empty toast. Pending keyed or legacy messages use a readable text-only toast with a close button; if the toast library is unavailable, they appear as inline text alerts. No migration is needed.
+
+### Agent privacy on Users
+View users does not grant financial access. Total Paid requires Dashboard reports; per-user payment amounts/paid styling require View payments; earnings require View commissions. Unauthorized financial data is not selected from the database or emitted in HTML. Edit/delete controls require Manage users; activation and mark-paid/unpaid additionally require Manage payments. Administrator access is unchanged. Existing database grants apply immediately on the next request; no migration is needed.

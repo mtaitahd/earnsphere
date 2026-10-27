@@ -7,12 +7,12 @@ class StaffAccess {
 
     public static function catalog(): array {
         return [
-            'dashboard' => ['label' => 'Dashboard reports', 'description' => 'View system-wide user and financial summaries.', 'page' => 'index', 'icon' => 'tachometer-alt'],
-            'users' => ['label' => 'View users', 'description' => 'View regular user accounts.', 'page' => 'users', 'icon' => 'users'],
+            'dashboard' => ['label' => 'Dashboard reports', 'description' => 'View system-wide user and financial summaries, including Total Paid on the Users page.', 'page' => 'index', 'icon' => 'tachometer-alt'],
+            'users' => ['label' => 'View users', 'description' => 'View regular user accounts. Financial summaries, payments and earnings require their separate permissions.', 'page' => 'users', 'icon' => 'users'],
             'users_manage' => ['label' => 'Manage users', 'description' => 'Edit, suspend and delete regular user accounts. Activation additionally requires Manage payments.', 'requires' => 'users'],
-            'payments' => ['label' => 'View payments', 'description' => 'View payment records.', 'page' => 'payments', 'icon' => 'credit-card'],
+            'payments' => ['label' => 'View payments', 'description' => 'View payment records and each user\'s payment amounts on the Users page.', 'page' => 'payments', 'icon' => 'credit-card'],
             'payments_manage' => ['label' => 'Manage payments', 'description' => 'Delete legacy records; also required to manually mark users paid or unpaid.', 'requires' => 'payments'],
-            'commissions' => ['label' => 'View commissions', 'description' => 'View commission history.', 'page' => 'commissions', 'icon' => 'coins'],
+            'commissions' => ['label' => 'View commissions', 'description' => 'View commission history and each user\'s earnings on the Users page.', 'page' => 'commissions', 'icon' => 'coins'],
             'commissions_manage' => ['label' => 'Manage commissions', 'description' => 'Perform commission record actions.', 'requires' => 'commissions'],
             'withdrawals' => ['label' => 'View withdrawals', 'description' => 'View requests and verify existing payout status.', 'page' => 'withdrawals', 'icon' => 'money-bill-wave'],
             'withdrawals_manage' => ['label' => 'Manage withdrawals / send payouts', 'description' => 'Dispatch payouts and perform withdrawal actions.', 'requires' => 'withdrawals'],

@@ -13,6 +13,12 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 Auth::initSession();
 require_once dirname(__DIR__) . '/classes/StaffAccess.php';
 StaffAccess::requirePage('users');
+$canViewDashboard = StaffAccess::can('dashboard');
+$canViewPayments = StaffAccess::can('payments');
+$canViewEarnings = StaffAccess::can('commissions');
+$canManageUsers = StaffAccess::can('users_manage');
+$canManagePayments = $canManageUsers && StaffAccess::can('payments_manage');
+$canViewErrorLogs = StaffAccess::can('error_logs');
 
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -330,12 +336,13 @@ $availableYears = Database::fetchAll(
 
 $total = Database::count('users', $where, $params);
 
+$userFields = 'u.id, u.full_name, u.phone, u.email, u.referral_code, u.status, u.created_at,
+            (SELECT COUNT(*) FROM users WHERE referred_by = u.id) as direct_referrals';
+if ($canViewEarnings) $userFields .= ", (SELECT COALESCE(SUM(amount),0) FROM commissions WHERE earner_id = u.id AND status != 'cancelled') as total_earned";
+if ($canViewPayments) $userFields .= ", (SELECT COALESCE(SUM(amount),0) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_amount,
+            (SELECT MAX(completed_at) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_date";
 $users = Database::fetchAll(
-    "SELECT u.*,
-            (SELECT COUNT(*) FROM users WHERE referred_by = u.id) as direct_referrals,
-            (SELECT COALESCE(SUM(amount),0) FROM commissions WHERE earner_id = u.id AND status != 'cancelled') as total_earned,
-            (SELECT COALESCE(SUM(amount),0) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_amount,
-            (SELECT MAX(completed_at) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_date
+    "SELECT {$userFields}
      FROM users u
      WHERE {$where}
      ORDER BY u.created_at DESC
@@ -343,12 +350,12 @@ $users = Database::fetchAll(
     $params
 );
 
-$paidSummary = Database::fetchOne(
+$paidSummary = $canViewDashboard ? Database::fetchOne(
     "SELECT COALESCE(SUM(p.amount),0) AS total_paid, COUNT(DISTINCT p.user_id) AS paid_users
      FROM payments p WHERE p.status = 'completed' AND p.purpose = 'registration'
      AND EXISTS (SELECT 1 FROM users WHERE id = p.user_id AND {$where})",
     $params
-);
+) : null;
 
 $csrf = Auth::generateCSRF();
 $pageTitle = 'Users';
@@ -370,11 +377,13 @@ include __DIR__ . '/admin_header.php';
 .payment-paid-total { display:block; color:#14532d; font-weight:800; margin-top:0.35rem; white-space:nowrap; }
 .payment-paid-date { color:#166534; font-size:0.75rem; }
 </style>
+<?php if ($canViewDashboard): ?>
 <div class="users-paid-summary" role="status">
     <div><i class="fas fa-check-circle me-1"></i> Total Paid</div>
     <strong><?= formatCurrency((float) $paidSummary['total_paid']) ?></strong>
     <div><?= number_format((int) $paidSummary['paid_users']) ?> paid users · completed registration payments matching your filters</div>
 </div>
+<?php endif; ?>
 
 <?php displayFlash(); ?>
 
@@ -409,6 +418,7 @@ include __DIR__ . '/admin_header.php';
 </div>
 
 <!-- Bulk Delete Form -->
+<?php if ($canManageUsers): ?>
 <form method="POST" id="bulkDeleteForm">
     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
     <input type="hidden" name="action" value="delete_selected">
@@ -432,8 +442,9 @@ include __DIR__ . '/admin_header.php';
             </button>
         </div>
     </div>
-    </form>
     <?php endif; ?>
+</form>
+<?php endif; ?>
 
     <!-- Users Table -->
     <div class="card">
@@ -442,23 +453,23 @@ include __DIR__ . '/admin_header.php';
                 <table class="table mb-0">
                     <thead>
                         <tr>
-                            <th style="width:40px;"><input type="checkbox" class="form-check-input" id="selectAllHeader"></th>
+                            <?php if ($canManageUsers): ?><th style="width:40px;"><input type="checkbox" class="form-check-input" id="selectAllHeader"></th><?php endif; ?>
                             <th>#</th>
                             <th>Name</th>
                             <th>Phone</th>
                             <th>Code</th>
                             <th>Referrals</th>
-                            <th>Earnings</th>
-                            <th>Payment</th>
+                            <?php if ($canViewEarnings): ?><th>Earnings</th><?php endif; ?>
+                            <?php if ($canViewPayments): ?><th>Payment</th><?php endif; ?>
                             <th>Status</th>
                             <th>Date</th>
-                            <th>Action</th>
+                            <?php if ($canManageUsers || $canViewErrorLogs): ?><th>Action</th><?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($users as $i => $u): ?>
-                        <tr class="<?= (float) $u['paid_amount'] > 0 ? 'user-paid' : '' ?>">
-                            <td><input type="checkbox" name="user_ids[]" value="<?= $u['id'] ?>" class="form-check-input item-checkbox" form="bulkDeleteForm"></td>
+                        <tr class="<?= $canViewPayments && (float) $u['paid_amount'] > 0 ? 'user-paid' : '' ?>">
+                            <?php if ($canManageUsers): ?><td><input type="checkbox" name="user_ids[]" value="<?= $u['id'] ?>" class="form-check-input item-checkbox" form="bulkDeleteForm"></td><?php endif; ?>
                             <td><?= $offset + $i + 1 ?></td>
                             <td>
                                 <strong><?= sanitize($u['full_name']) ?></strong>
@@ -467,11 +478,12 @@ include __DIR__ . '/admin_header.php';
                                 <?php endif; ?>
                             </td>
                             <td><?= formatPhone($u['phone']) ?></td>
-                            <td><code style="font-size:0.75rem;"><?= $u['referral_code'] ?></code></td>
+                            <td><code style="font-size:0.75rem;"><?= sanitize($u['referral_code']) ?></code></td>
                             <td><strong><?= number_format($u['direct_referrals']) ?></strong></td>
-                            <td><strong style="color:#10b981;"><?= formatCurrency($u['total_earned']) ?></strong></td>
+                            <?php if ($canViewEarnings): ?><td><strong style="color:#10b981;"><?= formatCurrency($u['total_earned']) ?></strong></td><?php endif; ?>
+                            <?php if ($canViewPayments): ?>
                             <td>
-                                <?php if ($u['paid_amount']): ?>
+                                <?php if ((float) $u['paid_amount'] > 0): ?>
                                     <span class="payment-paid-label"><i class="fas fa-check-circle me-1"></i> Paid</span>
                                     <span class="payment-paid-total">Total paid: <?= formatCurrency((float) $u['paid_amount']) ?></span>
                                     <?php if ($u['paid_date']): ?><small class="payment-paid-date"><?= date('d M Y', strtotime($u['paid_date'])) ?></small><?php endif; ?>
@@ -479,17 +491,19 @@ include __DIR__ . '/admin_header.php';
                                     <span class="text-muted" style="font-size:0.85rem;">Unpaid</span>
                                 <?php endif; ?>
                             </td>
+                            <?php endif; ?>
                             <td><?= statusBadge($u['status']) ?></td>
                             <td><small><?= date('d M Y', strtotime($u['created_at'])) ?></small></td>
-                            <td>
+                            <?php if ($canManageUsers || $canViewErrorLogs): ?><td>
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu">
+                                        <?php if ($canManageUsers): ?>
                                         <li><h6 class="dropdown-header">Change Status</h6></li>
                                         <?php foreach (['active' => 'Activate', 'pending' => 'Pending', 'suspended' => 'Suspend'] as $val => $label): ?>
-                                        <?php if ($u['status'] !== $val): ?>
+                                        <?php if ($u['status'] !== $val && ($val !== 'active' || $canManagePayments)): ?>
                                         <li>
                                             <form method="POST" class="d-inline">
                                                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
@@ -503,7 +517,8 @@ include __DIR__ . '/admin_header.php';
                                         </li>
                                         <?php endif; ?>
                                         <?php endforeach; ?>
-                                        <?php if ($u['paid_amount']): ?>
+                                        <?php if ($canManagePayments): ?>
+                                        <?php if ((float) $u['paid_amount'] > 0): ?>
                                         <li>
                                             <form method="POST" class="d-inline" onsubmit="return confirm('Mark <?= sanitize($u['full_name']) ?> as UNPAID? TZS <?= number_format((float)$u['paid_amount']) ?> will be removed from their account wallet.')">
                                                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
@@ -526,12 +541,17 @@ include __DIR__ . '/admin_header.php';
                                             </form>
                                         </li>
                                         <?php endif; ?>
+                                        <?php endif; ?>
+                                        <?php endif; ?>
                                     <li><hr class="dropdown-divider"></li>
+                                    <?php if ($canViewErrorLogs): ?>
                                     <li>
                                         <a class="dropdown-item" href="<?= SITE_URL ?>/admin/error-logs?<?= http_build_query(['user_id' => $u['id']]) ?>">
                                             <i class="fas fa-bug me-1"></i> Error Logs
                                         </a>
                                     </li>
+                                    <?php endif; ?>
+                                    <?php if ($canManageUsers): ?>
                                     <li>
                                         <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#emailModal" data-user-id="<?= $u['id'] ?>" data-user-name="<?= sanitize($u['full_name']) ?>" data-user-email="<?= sanitize($u['email'] ?? '') ?>">
                                             <i class="fas fa-envelope me-1"></i> Edit Email
@@ -547,15 +567,16 @@ include __DIR__ . '/admin_header.php';
                                                 </button>
                                             </form>
                                         </li>
+                                    <?php endif; ?>
                                     </ul>
                                 </div>
-                            </td>
+                            </td><?php endif; ?>
                         </tr>
                         <?php endforeach; ?>
                         
                         <?php if (empty($users)): ?>
                         <tr>
-                            <td colspan="11" class="text-center py-4">
+                            <td colspan="<?= 7 + (int) $canManageUsers + (int) $canViewEarnings + (int) $canViewPayments + (int) ($canManageUsers || $canViewErrorLogs) ?>" class="text-center py-4">
                                 <i class="fas fa-users fa-2x mb-2" style="color:#d1d5db;"></i>
                                 <p class="text-muted mb-0">No users found</p>
                             </td>
@@ -573,6 +594,7 @@ include __DIR__ . '/admin_header.php';
 </div>
 
 <!-- Email Edit Modal -->
+<?php if ($canManageUsers): ?>
 <div class="modal fade" id="emailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -596,6 +618,7 @@ include __DIR__ . '/admin_header.php';
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <script>
 const selectAll = document.getElementById('selectAll');
@@ -607,6 +630,7 @@ const selectAllMode = document.getElementById('selectAllMode');
 const totalMatching = <?= (int) $total ?>;
 
 function updateBulkUI() {
+    if (!selectAllMode || !selectedCount || !bulkActions) return;
     const checked = document.querySelectorAll('.item-checkbox:checked').length;
     const modeOn = selectAllMode.value === '1';
     selectedCount.textContent = modeOn ? totalMatching.toLocaleString() : checked;
