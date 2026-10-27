@@ -956,11 +956,17 @@ include __DIR__ . '/admin_header.php';
         var chip = document.createElement('div');
         chip.className = 'd-inline-flex align-items-center gap-2 px-2 py-1 rounded';
         chip.style.cssText = 'background:var(--accent-dim,#f0eef6);border:1px solid #ddd3ee;font-size:0.8rem;';
-        chip.innerHTML = '<input type="hidden" name="user_ids[]" value="' + id + '">' +
-            '<span style="font-weight:700;">' + name + '</span>' +
-            '<span class="text-muted">' + phone + '</span>' +
-            '<button type="button" class="btn-close" style="font-size:0.6rem;" data-remove="' + id + '"></button>';
-        chip.querySelector('[data-remove]').addEventListener('click', function() {
+        var input = document.createElement('input');
+        input.type = 'hidden'; input.name = 'user_ids[]'; input.value = String(id);
+        var label = document.createElement('span');
+        label.style.fontWeight = '700'; label.textContent = name;
+        var number = document.createElement('span');
+        number.className = 'text-muted'; number.textContent = phone;
+        var remove = document.createElement('button');
+        remove.type = 'button'; remove.className = 'btn-close'; remove.style.fontSize = '0.6rem';
+        remove.setAttribute('aria-label', 'Remove recipient');
+        chip.append(input, label, number, remove);
+        remove.addEventListener('click', function() {
             chip.remove();
             delete selectedMap[id];
         });
@@ -991,8 +997,14 @@ include __DIR__ . '/admin_header.php';
                             item.className = 'd-flex justify-content-between align-items-center p-2 mb-1 rounded';
                             item.style.cssText = 'border:1px solid #eee;cursor:pointer;font-size:0.85rem;';
                             if (selectedMap[u.id]) item.style.opacity = '0.5';
-                            item.innerHTML = '<div><strong>' + u.name + '</strong> <span class="text-muted small">' + u.phone + '</span></div>' +
-                                (selectedMap[u.id] ? '<span class="badge bg-secondary">added</span>' : '<span class="badge" style="background:var(--primary);color:#fff;">Add</span>');
+                            var details = document.createElement('div');
+                            var name = document.createElement('strong'); name.textContent = u.name;
+                            var phone = document.createElement('span'); phone.className = 'text-muted small'; phone.textContent = ' ' + u.phone;
+                            details.append(name, phone);
+                            var badge = document.createElement('span');
+                            badge.className = 'badge ' + (selectedMap[u.id] ? 'bg-secondary' : 'bg-primary');
+                            badge.textContent = selectedMap[u.id] ? 'added' : 'Add';
+                            item.append(details, badge);
                             item.addEventListener('click', function() {
                                 if (!selectedMap[u.id]) addUser(u.id, u.name, u.phone);
                             });

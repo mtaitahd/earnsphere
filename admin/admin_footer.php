@@ -87,8 +87,8 @@ document.querySelectorAll('[data-target="#logoutModal"]').forEach(el => {
     Swal.fire({
         toast: true,
         position: 'top-end',
-        icon: '<?= $flash['type'] ?>',
-        title: '<?= addslashes($flash['message']) ?>',
+        icon: <?= json_encode($flash['type'] ?? 'info', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+        title: <?= json_encode($flash['message'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
         showConfirmButton: false,
         timer: 4000,
         timerProgressBar: true

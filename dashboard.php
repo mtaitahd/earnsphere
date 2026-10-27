@@ -610,7 +610,7 @@ function openAnnouncements() {
                         (!a.viewed ? '<i class="fas fa-circle" style="color:#D4A843;font-size:0.5rem;"></i>' : '') +
                         escapeHtml(a.title) +
                     '</div>' +
-                    '<div class="ann-item-date">' + a.created_at + '</div>' +
+                    '<div class="ann-item-date">' + escapeHtml(a.created_at) + '</div>' +
                     '<div class="ann-item-preview">' + escapeHtml(a.content) + '</div>' +
                 '</div>';
             });
@@ -632,13 +632,13 @@ function viewAnnouncement(id) {
     body.innerHTML = '<div class="ann-detail">' +
         '<button onclick="openAnnouncements()" style="background:none;border:none;color:#72578B;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.75rem;padding:0;"><i class="fas fa-arrow-left me-1"></i> Back</button>' +
         '<h4>' + escapeHtml(a.title) + '</h4>' +
-        '<div style="font-size:0.75rem;color:var(--gray-400);margin-bottom:0.75rem;">' + a.created_at + '</div>' +
+        '<div style="font-size:0.75rem;color:var(--gray-400);margin-bottom:0.75rem;">' + escapeHtml(a.created_at) + '</div>' +
         '<p>' + escapeHtml(a.content) + '</p>' +
     '</div>';
     if (!a.viewed) {
         fetch('api/announcements.php?action=mark_read&id=' + id, {
             method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content }
         }).then(r => r.json()).then(() => {
             a.viewed = true;
             updateAnnBadge(annData.filter(x => !x.viewed).length);

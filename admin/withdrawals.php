@@ -379,15 +379,15 @@ async function sendPayout(btn) {
                 '<i class="fas fa-check-circle fa-3x text-success mb-3"></i>' +
                 '<h6>Payout Sent!</h6>' +
                 '<p>Kiasi: <strong>TZS ' + amount.toLocaleString() + '</strong></p>' +
-                '<p class="text-muted" style="font-size:0.85rem;">Ref: ' + (data.reference || '-') + '</p>' +
-                '<p class="text-muted" style="font-size:0.85rem;">Status: ' + data.status + '</p>' +
+                '<p class="text-muted" style="font-size:0.85rem;">Ref: ' + payoutSafeText(data.reference || '-') + '</p>' +
+                '<p class="text-muted" style="font-size:0.85rem;">Status: ' + payoutSafeText(data.status) + '</p>' +
                 '</div>';
         } else {
             document.getElementById('payoutModalBody').innerHTML =
                 '<div class="text-center">' +
                 '<i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>' +
                 '<h6>Payout Not Completed</h6>' +
-                '<p class="text-danger">' + data.error + '</p>' +
+                '<p class="text-danger">' + payoutSafeText(data.error) + '</p>' +
                 '<p class="text-muted" style="font-size:0.85rem;">Withdrawal is still pending. You can retry later when payment service is available.</p>' +
                 '</div>';
         }
@@ -398,6 +398,12 @@ async function sendPayout(btn) {
 
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Send Payout';
+}
+
+function payoutSafeText(value) {
+    const node = document.createElement('span');
+    node.textContent = String(value ?? '');
+    return node.innerHTML;
 }
 
 async function checkPayout(payoutId, reference, btn) {
@@ -413,8 +419,8 @@ async function checkPayout(payoutId, reference, btn) {
                 '<div class="text-center">' +
                 '<i class="fas fa-info-circle fa-3x text-info mb-3"></i>' +
                 '<h6>Payout Status</h6>' +
-                '<p>Status: <strong>' + data.status + '</strong></p>' +
-                '<p class="text-muted" style="font-size:0.8rem;">Chanzo: ' + data.source + '</p>' +
+                '<p>Status: <strong>' + payoutSafeText(data.status) + '</strong></p>' +
+                '<p class="text-muted" style="font-size:0.8rem;">Chanzo: ' + payoutSafeText(data.source) + '</p>' +
                 '</div>';
             new bootstrap.Modal(document.getElementById('payoutModal')).show();
         }

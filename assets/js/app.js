@@ -233,13 +233,20 @@ const App = {
         
         const toast = document.createElement('div');
         toast.className = 'custom-toast';
-        toast.innerHTML = `
-            <i class="fas fa-${icons[type]}" style="color: ${colors[type]}; font-size: 1.25rem;"></i>
-            <span style="flex: 1; font-size: 0.9rem; font-weight: 600;">${message}</span>
-            <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#9ca3af;padding:4px;">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
+        const safeType = Object.hasOwn(icons, type) ? type : 'info';
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-' + icons[safeType];
+        icon.style.cssText = 'color:' + colors[safeType] + ';font-size:1.25rem;';
+        const text = document.createElement('span');
+        text.style.cssText = 'flex:1;font-size:0.9rem;font-weight:600;';
+        text.textContent = String(message ?? '');
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.setAttribute('aria-label', 'Close notification');
+        close.style.cssText = 'background:none;border:none;color:#9ca3af;padding:4px;';
+        close.textContent = '×';
+        close.addEventListener('click', () => toast.remove());
+        toast.append(icon, text, close);
         
         container.appendChild(toast);
         

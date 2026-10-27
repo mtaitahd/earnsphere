@@ -72,7 +72,7 @@ function statusBadge(string $status): string {
         'cancelled'  => 'Cancelled',
     ];
     
-    $label = $labels[$status] ?? ucfirst($status);
+    $label = htmlspecialchars($labels[$status] ?? ucfirst($status), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     return "<span class=\"badge {$classes}\">{$label}</span>";
 }
 

@@ -94,7 +94,7 @@ include __DIR__ . '/includes/public_head.php';
         <i class="fas fa-arrow-left"></i>
     </a>
     <div class="profile-avatar">
-        <?= strtoupper(substr($user['full_name'], 0, 1)) ?>
+        <?= sanitize(strtoupper(substr($user['full_name'], 0, 1))) ?>
     </div>
     <h5 style="font-weight:800;"><?= sanitize($user['full_name']) ?></h5>
     <p style="opacity:0.8;font-size:0.85rem;margin:0;"><?= formatPhone($user['phone']) ?></p>

@@ -29,6 +29,11 @@ switch ($action) {
         break;
 
     case 'mark_read':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            header('Allow: POST');
+            jsonResponse(['success' => false, 'error' => 'Use POST.'], 405);
+        }
+        if (!Auth::validateCSRF()) jsonResponse(['success' => false, 'error' => 'Invalid security token.'], 403);
         $annId = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         if ($annId) {
             $existing = Database::fetchOne(

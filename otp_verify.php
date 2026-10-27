@@ -30,6 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             if (OTP::verify($userId, $otpCode, 'reset')) {
                 $_SESSION['reset_verified'] = true;
+                $_SESSION['reset_verified_user'] = $userId;
+                $_SESSION['reset_verified_at'] = time();
+                session_regenerate_id(true);
                 header('Location: ' . SITE_URL . '/reset_password');
                 exit;
             } else {

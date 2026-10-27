@@ -7,6 +7,7 @@
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/Mailer.php';
+require_once __DIR__ . '/SecurityRateLimit.php';
 
 class OTP {
 
@@ -26,6 +27,7 @@ class OTP {
      * Invalidates previous unused OTPs of the same type for this user
      */
     public static function create(int $userId, string $type = 'reset'): ?string {
+        if (!SecurityRateLimit::consume('otp-send:' . $userId . ':' . $type, 3, 900)) return null;
         // Invalidate previous unused OTPs
         Database::query(
             "UPDATE user_otps SET used = 1 WHERE user_id = ? AND type = ? AND used = 0",
@@ -94,6 +96,8 @@ class OTP {
      * Verify OTP for user
      */
     public static function verify(int $userId, string $inputOtp, string $type = 'reset'): bool {
+        if (!preg_match('/^\d{6}$/D', $inputOtp)
+            || !SecurityRateLimit::consume('otp-verify:' . $userId . ':' . $type, 10, 900)) return false;
         $row = Database::fetchOne(
             "SELECT id, otp FROM user_otps 
              WHERE user_id = ? AND type = ? AND used = 0 AND expires_at > NOW()

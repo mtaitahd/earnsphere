@@ -13,7 +13,9 @@ Auth::initSession();
 $userId = (int)($_SESSION['reset_user_id'] ?? 0);
 $verified = $_SESSION['reset_verified'] ?? false;
 
-if (!$userId || !$verified) {
+if (!$userId || !$verified || (int)($_SESSION['reset_verified_user'] ?? 0) !== $userId
+    || time() - (int)($_SESSION['reset_verified_at'] ?? 0) > 900) {
+    unset($_SESSION['reset_verified'], $_SESSION['reset_verified_user'], $_SESSION['reset_verified_at']);
     header('Location: ' . SITE_URL . '/forgot_password');
     exit;
 }
@@ -42,7 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Database::commit();
 
                 // Clear reset session
-                unset($_SESSION['reset_user_id'], $_SESSION['reset_verified'], $_SESSION['reset_email']);
+                unset($_SESSION['reset_user_id'], $_SESSION['reset_verified'], $_SESSION['reset_email'], $_SESSION['reset_verified_user'], $_SESSION['reset_verified_at']);
+                unset($_SESSION[CSRF_TOKEN_NAME]);
+                session_regenerate_id(true);
 
                 header('Location: ' . SITE_URL . '/login');
                 exit;

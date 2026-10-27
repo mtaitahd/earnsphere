@@ -9,7 +9,7 @@ RewriteEngine On
 # Private application directories and repository metadata are never public.
 RewriteRule ^(?:config|classes|includes|logs|database|cron|tests|\.git)(?:/|$) - [F,L,NC]
 # Uploaded media may be served, but uploaded scripts must never execute.
-RewriteRule ^uploads/.*\.(?:php[0-9]*|phtml|phar)(?:[./]|$) - [F,L,NC]
+RewriteRule ^uploads/.*\.(?:php[0-9]*|pht(?:ml)?|phar|shtml|cgi|pl|py|asp(?:x)?|jsp)(?:[./]|$) - [F,L,NC]
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
@@ -49,7 +49,7 @@ ServerSignature Off
 Options -Indexes
 
 # --- Protect specific files (web access only, PHP can still read) ---
-<FilesMatch "\.(git|htaccess|htpasswd|ini|log|sh|bak)$">
+<FilesMatch "(?i)(\.(git|htaccess|htpasswd|ini|log|sh|bak|old|orig|sql|sqlite|sqlite3|db|swp|save)$|~$|^\.env(?:\..*)?$)">
     Require all denied
 </FilesMatch>
 

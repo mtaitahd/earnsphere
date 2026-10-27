@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/SecurityRateLimit.php';
 
 class Auth {
     
@@ -49,9 +50,10 @@ class Auth {
     /**
      * Validate CSRF token
      */
-    public static function validateCSRF(?string $token = null): bool {
+    public static function validateCSRF(mixed $token = null): bool {
         $token = $token ?? $_POST[CSRF_TOKEN_NAME] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        return isset($_SESSION[CSRF_TOKEN_NAME]) && hash_equals($_SESSION[CSRF_TOKEN_NAME], $token);
+        return is_string($token) && is_string($_SESSION[CSRF_TOKEN_NAME] ?? null)
+            && $token !== '' && hash_equals($_SESSION[CSRF_TOKEN_NAME], $token);
     }
     
     /**
@@ -218,8 +220,15 @@ class Auth {
      * Login user
      */
     public static function login(string $identifier, string $password): array {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        if (!SecurityRateLimit::consume('login-ip:' . $ip, 60, 900)) {
+            return ['success' => false, 'errors' => ['Too many login attempts. Please try again in 15 minutes.']];
+        }
         // Normalize phone: 0622... -> 255622..., +255622... -> 255622...
         $normalized = preg_replace('/^(\+?255|0)(\d{9})$/', '255$2', trim($identifier));
+        if (!SecurityRateLimit::consume('login-account:' . strtolower($normalized), 20, 900)) {
+            return ['success' => false, 'errors' => ['Too many login attempts. Please try again in 15 minutes.']];
+        }
         
         // Find user by phone or email
         $user = Database::fetchOne(
@@ -232,7 +241,8 @@ class Auth {
                 'identifier' => $identifier,
                 'normalized' => $normalized,
             ], null, 'warning', 'Auth::login');
-            return ['success' => false, 'errors' => ['User not found']];
+            password_verify($password, '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi');
+            return ['success' => false, 'errors' => ['Phone/email or password is incorrect.']];
         }
         
         if (!password_verify($password, $user['password'])) {
@@ -241,7 +251,7 @@ class Auth {
                 'phone'      => $user['phone'] ?? null,
                 'email'      => $user['email'] ?? null,
             ], (int) $user['id'], 'warning', 'Auth::login');
-            return ['success' => false, 'errors' => ['Incorrect password']];
+            return ['success' => false, 'errors' => ['Phone/email or password is incorrect.']];
         }
         
         if ($user['status'] === 'suspended') {

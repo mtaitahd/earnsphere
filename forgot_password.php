@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
     } else {
+        // Starting another recovery must not inherit a previous account's proof.
+        unset($_SESSION['reset_verified'], $_SESSION['reset_verified_user'], $_SESSION['reset_verified_at'], $_SESSION['reset_user_id'], $_SESSION['reset_email']);
         $email = trim($_POST['email'] ?? '');
 
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
