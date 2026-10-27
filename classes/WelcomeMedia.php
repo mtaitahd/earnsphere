@@ -19,6 +19,13 @@ class WelcomeMedia {
         return $id;
     }
 
+    public static function embedUrl(string $url, bool $privacy = false): string {
+        $id = self::youtubeId($url);
+        $site = parse_url(SITE_URL);
+        $origin = ($site['scheme'] ?? 'https').'://'.($site['host'] ?? '').(isset($site['port']) ? ':'.$site['port'] : '');
+        return 'https://www.'.($privacy ? 'youtube-nocookie.com' : 'youtube.com').'/embed/'.$id.'?'.http_build_query(['playsinline'=>1,'controls'=>1,'rel'=>0,'origin'=>$origin], '', '&', PHP_QUERY_RFC3986);
+    }
+
     public static function audioPath(string $path): bool {
         return (bool) preg_match('~^uploads/welcome/[a-f0-9]{32}\.(?:mp3|wav|ogg|m4a)$~D', $path);
     }

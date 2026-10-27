@@ -11,7 +11,9 @@ expect(count(array_filter($items,fn($i)=>$i['type']==='youtube'))===2,'Two video
 expect($items[2]['type']==='link','External link must not become an iframe');
 $user=['id'=>1];ob_start();include __DIR__.'/../includes/welcome_media.php';$html=ob_get_clean();
 expect(substr_count($html,'data-welcome-src=')===2,'Multiple video players missing');
-expect(substr_count($html,'Open on YouTube')===2,'YouTube fallback missing');
+expect(substr_count($html,'data-welcome-retry')===2,'Inline retry missing');
+expect(!str_contains($html,'Open on YouTube'),'Video links leave the site');
+expect(str_contains($html,'origin='),'Embed origin missing');
 expect(str_contains($html,'strict-origin-when-cross-origin'),'YouTube referrer suppressed');
 expect(!str_contains($html,'iframe src='),'YouTube players loaded before popup opens');
 WelcomeMedia::saveLibrary(['enabled'=>'1','title'=>'Instructions','item_titles'=>[$items[0]['id']=>'<script>alert(2)</script>'],'remove_items'=>[$items[1]['id']]],null);
@@ -28,6 +30,8 @@ try { WelcomeMedia::saveLibrary(['enabled'=>'1'],['error'=>[UPLOAD_ERR_OK],'tmp_
 WelcomeMedia::saveLibrary(['title'=>'Instructions'],null);
 expect(WelcomeMedia::items()===[],'Hidden library visible');
 expect(count(WelcomeMedia::items(true))===2,'Hidden items deleted');
+expect(str_contains(WelcomeMedia::embedUrl('https://youtu.be/3a_69gfYSE0'),'youtube.com/embed/3a_69gfYSE0?'),'Unlisted link was not normalized');
+expect(str_contains(WelcomeMedia::embedUrl('https://youtu.be/3a_69gfYSE0',true),'youtube-nocookie.com/embed/3a_69gfYSE0?'),'Alternate embed missing');
 expect(WelcomeMedia::mediaPath('uploads/welcome/'.str_repeat('a',32).'.mp4'),'MP4 path rejected');
 expect(!WelcomeMedia::mediaPath('uploads/welcome/../../config.php'),'Traversal accepted');
 echo "Welcome library: two videos, external links, legacy preservation, fallback, escaping, editing, hide/remove, limits and unsafe uploads passed. No live requests.\n";

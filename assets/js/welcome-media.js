@@ -24,6 +24,17 @@
             guides.filter(other => other !== guide).forEach(other => { other.open = false; stop(other); });
             load(guide);
         });
+        guide.querySelector('[data-welcome-retry]')?.addEventListener('click', () => {
+            const frame = guide.querySelector('iframe');
+            if (!frame || !dialog.open) return;
+            const replacement = frame.cloneNode(false);
+            const alternate = frame.dataset.welcomeAlternate;
+            const next = alternate && frame.getAttribute('src') !== alternate ? alternate : frame.dataset.welcomeSrc;
+            replacement.setAttribute('src', next);
+            frame.replaceWith(replacement);
+            const status = guide.querySelector('[data-welcome-status]');
+            if (status) status.textContent = 'Video inapakiwa upya hapa. Subiri kisha bonyeza Play.';
+        });
         guide.querySelectorAll('audio, video').forEach(media => {
             media.addEventListener('play', () => {
                 guides.filter(other => other !== guide).forEach(stop);

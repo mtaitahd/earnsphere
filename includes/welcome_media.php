@@ -14,8 +14,8 @@ $welcomeItems=WelcomeMedia::items();
         <summary><span class="welcome-guide-number"><?= $index+1 ?></span><?= sanitize($item['title']) ?><small><?= sanitize(ucfirst($item['type'])) ?></small></summary>
         <div class="welcome-guide-content">
         <?php if ($item['type']==='youtube'): $videoId=WelcomeMedia::youtubeId($item['source']); ?>
-            <iframe data-welcome-src="https://www.youtube.com/embed/<?= sanitize($videoId) ?>?playsinline=1&amp;rel=0" title="<?= sanitize($item['title']) ?>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-            <p class="welcome-playback-help">Video haifunguki? <a href="https://www.youtube.com/watch?v=<?= sanitize($videoId) ?>" target="_blank" rel="noopener">Open on YouTube</a></p>
+            <iframe width="560" height="315" loading="eager" data-welcome-src="<?= sanitize(WelcomeMedia::embedUrl($item['source'])) ?>" data-welcome-alternate="<?= sanitize(WelcomeMedia::embedUrl($item['source'], true)) ?>" title="<?= sanitize($item['title']) ?>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            <div class="welcome-playback-actions"><p data-welcome-status role="status">Bonyeza Play kutazama video hapa.</p><button class="welcome-retry" type="button" data-welcome-retry>Jaribu tena</button></div>
         <?php elseif ($item['type']==='video'): ?>
             <video controls playsinline preload="none" src="<?= sanitize(SITE_URL.'/'.$item['source']) ?>">Your browser does not support video playback.</video>
         <?php elseif ($item['type']==='audio'): ?>
