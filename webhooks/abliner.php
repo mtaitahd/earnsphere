@@ -4,7 +4,11 @@ header('Content-Type: application/json');
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { http_response_code(405); exit; }
 $raw = file_get_contents('php://input');
 $client = new AblinerClient();
-if (!$client->verifyWebhookSignature(getallheaders(), $raw)) { http_response_code(401); exit('{"error":"Invalid signature"}'); }
+if (!$client->verifyWebhookSignature(getallheaders(), $raw)) {
+    require_once __DIR__ . '/../classes/SecurityAlerts.php';
+    SecurityAlerts::record('webhook_signature');
+    http_response_code(401); exit('{"error":"Invalid signature"}');
+}
 try {
     $body = json_decode($raw, true, 64, JSON_THROW_ON_ERROR);
     if (!is_array($body)) throw new InvalidArgumentException('Invalid body');

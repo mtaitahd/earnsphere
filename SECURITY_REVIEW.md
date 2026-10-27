@@ -33,3 +33,17 @@ Existing staff/agent authorization, payment access, marketplace ownership/XSS, u
 Inline scripts/event handlers still require CSP `unsafe-inline`; a strict nonce policy needs a separate frontend migration. This pass does not verify production TLS, hosting permissions, server/runtime patch levels, backups, firewall rules, dependencies or gateway account security. Password policy and session revocation across all devices deserve a dedicated authentication review. Do not describe the service as impossible to hack.
 
 References: [OWASP DOM XSS prevention](https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html), [OWASP CSP](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html).
+
+## Administrator alerts and referral lookup
+
+Security Alerts is administrator-only, with an unread badge and independent read state for each administrator. Five rejected logins in 15 minutes (per source IP or normalized identifier), exhausted login/OTP limits, repeated invalid CSRF tokens, repeated access denials and invalid signed payment callbacks generate warnings. A warning is suspicion, not proof of an attacker. No account is automatically suspended because of an alert.
+
+Alerts are stored in the existing `error_logs` table under `security`; read cursors use the existing `settings` table. No new migration or cron is required. General error-log deletion retains security records, and agents cannot read security records through the general log viewer. Similar alerts from a source are deduplicated for 15 minutes. At most four alert emails are attempted globally each hour; additional events remain visible in the account with their email status.
+
+Email uses the configured `admin_email`, falling back to the existing administrator notification address if no valid address is configured. Real mail is sent only with `APP_ENV=production`; development/test events still appear in the account. SMTP or PHP-mail acceptance is shown as acceptance, not inbox delivery. Failed sends remain visible; they are not blindly retried. Set the production environment and valid email/SMTP settings on the server and confirm receipt with an authorized test. Email body excludes passwords, OTPs, cookies, headers and URL query strings.
+
+The mail transport now validates TLS certificates/hostnames, refuses to authenticate after a failed STARTTLS negotiation, checks SMTP replies, rejects header injection and dot-stuffs message bodies. Hosting must provide a working CA trust store and valid SMTP certificate; do not disable verification to work around a configuration error.
+
+Referral Code Lookup is also administrator-only, including its service methods. It searches exact codes, displays the member and inviter, traces up to 30 ancestors, and optionally calculates the level relative to another code. It handles missing parents and cycles. It shows counts at Levels 1 and 2 but never modifies referrals, commissions or balances. Levels are relationships, not global account ranks. Normal member pages are unchanged; existing authorized agent tree access does not grant access to this new lookup.
+
+Additional tests: `admin_security_referral_test.php` and `check_admin_security_routes.py` cover warning thresholds, deduplication, email cap/status, per-admin read state, guest/user/agent denial, CSRF, inviter chains, relative levels, cycles, rendering safety and SMTP downgrade refusal. Email tests use an injected fake sender and a local rejecting SMTP server; no real email is sent.

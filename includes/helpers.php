@@ -258,7 +258,7 @@ function notifyAdmin(string $subject, string $message): void {
     $html .= '<div style="background:#72578B;color:white;padding:15px;border-radius:12px 12px 0 0;text-align:center;">';
     $html .= '<h2 style="margin:0;">EarnSphere</h2></div>';
     $html .= '<div style="background:#f9fafb;padding:20px;border:1px solid #e5e7eb;border-radius:0 0 12px 12px;">';
-    $html .= '<p>' . nl2br($message) . '</p>';
+    $html .= '<p>' . nl2br(htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>';
     $html .= '<hr style="border:none;border-top:1px solid #e5e7eb;">';
     $html .= '<p style="color:#6b7280;font-size:0.8rem;">This is an automated notification from EarnSphere</p>';
     $html .= '</div></div>';

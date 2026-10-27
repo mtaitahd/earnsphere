@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/SecurityRateLimit.php';
+require_once __DIR__ . '/SecurityAlerts.php';
 
 class Auth {
     
@@ -52,8 +53,10 @@ class Auth {
      */
     public static function validateCSRF(mixed $token = null): bool {
         $token = $token ?? $_POST[CSRF_TOKEN_NAME] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        return is_string($token) && is_string($_SESSION[CSRF_TOKEN_NAME] ?? null)
+        $valid = is_string($token) && is_string($_SESSION[CSRF_TOKEN_NAME] ?? null)
             && $token !== '' && hash_equals($_SESSION[CSRF_TOKEN_NAME], $token);
+        if (!$valid) SecurityAlerts::repeated('csrf_failures');
+        return $valid;
     }
     
     /**
@@ -222,11 +225,13 @@ class Auth {
     public static function login(string $identifier, string $password): array {
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         if (!SecurityRateLimit::consume('login-ip:' . $ip, 60, 900)) {
+            SecurityAlerts::record('login_blocked');
             return ['success' => false, 'errors' => ['Too many login attempts. Please try again in 15 minutes.']];
         }
         // Normalize phone: 0622... -> 255622..., +255622... -> 255622...
         $normalized = preg_replace('/^(\+?255|0)(\d{9})$/', '255$2', trim($identifier));
         if (!SecurityRateLimit::consume('login-account:' . strtolower($normalized), 20, 900)) {
+            SecurityAlerts::record('login_blocked');
             return ['success' => false, 'errors' => ['Too many login attempts. Please try again in 15 minutes.']];
         }
         
@@ -237,6 +242,7 @@ class Auth {
         );
         
         if (!$user) {
+            SecurityAlerts::loginFailure($normalized);
             ErrorLogger::log('login', 'Login failed: user not found', [
                 'identifier' => $identifier,
                 'normalized' => $normalized,
@@ -246,6 +252,7 @@ class Auth {
         }
         
         if (!password_verify($password, $user['password'])) {
+            SecurityAlerts::loginFailure($normalized);
             ErrorLogger::log('login', 'Login failed: incorrect password', [
                 'identifier' => $identifier,
                 'phone'      => $user['phone'] ?? null,

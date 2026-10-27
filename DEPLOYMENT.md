@@ -312,3 +312,8 @@ The production `.htaccess` sends `Cross-Origin-Embedder-Policy: require-corp` an
 
 ### Home layout and member help
 The public home uses a compact hero, Soko discovery, a short getting-started section, recent payment proof and collapsible weekly contest details. Existing live proof and contest APIs still populate their sections. The shared public footer adds Need Help for signed-in user accounts (not guests or staff); it opens a support form and the user's existing replies on any member page, with unread badges and CSRF-protected send/read actions through the existing support API. No migration or payment changes are required.
+
+### Security alerts and referral code lookup
+Deploy all files together. No new database migration or cron is needed. PHP must be able to write to the private `logs/` directory for shared login/OTP limits and alert deduplication. Administrators receive a Security Alerts sidebar link/badge, per-admin Mark all as read, and Referral Code Lookup. Normal users and agents cannot open these new pages, even by direct URL. General error-log clearing retains security alerts.
+
+Security email requires `APP_ENV=production` and working email configuration; recipient comes from the existing `admin_email` setting, with the existing administrator notification address as fallback. Email is deduplicated and capped at four attempts per hour; the account shows accepted/failed/grouped status. Acceptance does not prove inbox delivery. Verify the hosting CA trust store and SMTP TLS certificate; insecure TLS fallback is no longer allowed. See `SECURITY_REVIEW.md` for thresholds, test coverage and production checks.

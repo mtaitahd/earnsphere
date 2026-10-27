@@ -26,6 +26,8 @@ class Mailer {
     }
 
     public function send(string $to, string $subject, string $htmlBody, string $textBody = ''): bool {
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL) || !filter_var($this->fromEmail, FILTER_VALIDATE_EMAIL)
+            || preg_match('/[\r\n]/', $to . $this->fromEmail . $subject . $this->fromName)) return false;
         // Try SMTP first
         $result = $this->sendSMTP($to, $subject, $htmlBody);
         if ($result) return true;
@@ -52,9 +54,10 @@ class Mailer {
 
         $context = stream_context_create([
             'ssl' => [
-                'verify_peer'       => false,
-                'verify_peer_name'  => false,
-                'allow_self_signed' => true,
+                'verify_peer'       => true,
+                'verify_peer_name'  => true,
+                'allow_self_signed' => false,
+                'peer_name'         => $this->host,
             ],
         ]);
 
@@ -72,36 +75,48 @@ class Mailer {
             return false;
         }
 
-        $response = fread($socket, 512);
+        stream_set_timeout($socket, 10);
+        if (substr($this->readResponse($socket), 0, 3) !== '220') { fclose($socket); return false; }
 
         fwrite($socket, "EHLO earnsphere\r\n");
         $response = $this->readResponse($socket);
+        if (substr($response, 0, 3) !== '250') { fclose($socket); return false; }
 
         if ($this->encryption !== 'ssl') {
             fwrite($socket, "STARTTLS\r\n");
             $response = $this->readResponse($socket);
-            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT);
+            if (substr($response, 0, 3) !== '220'
+                || @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT) !== true) {
+                fclose($socket); return false;
+            }
             fwrite($socket, "EHLO earnsphere\r\n");
             $response = $this->readResponse($socket);
+            if (substr($response, 0, 3) !== '250') { fclose($socket); return false; }
         }
 
         fwrite($socket, "AUTH LOGIN\r\n");
         $response = $this->readResponse($socket);
+        if (substr($response, 0, 3) !== '334') { fclose($socket); return false; }
 
         fwrite($socket, base64_encode($this->username) . "\r\n");
         $response = $this->readResponse($socket);
+        if (substr($response, 0, 3) !== '334') { fclose($socket); return false; }
 
         fwrite($socket, base64_encode($this->password) . "\r\n");
         $response = $this->readResponse($socket);
+        if (substr($response, 0, 3) !== '235') { fclose($socket); return false; }
 
         fwrite($socket, "MAIL FROM:<{$this->fromEmail}>\r\n");
         $response = $this->readResponse($socket);
+        if (substr($response, 0, 3) !== '250') { fclose($socket); return false; }
 
         fwrite($socket, "RCPT TO:<{$to}>\r\n");
         $response = $this->readResponse($socket);
+        if (!in_array(substr($response, 0, 3), ['250', '251'], true)) { fclose($socket); return false; }
 
         fwrite($socket, "DATA\r\n");
         $response = $this->readResponse($socket);
+        if (substr($response, 0, 3) !== '354') { fclose($socket); return false; }
 
         $headers  = "From: =?UTF-8?B?" . base64_encode($this->fromName) . "?= <{$this->fromEmail}>\r\n";
         $headers .= "To: <{$to}>\r\n";
@@ -112,7 +127,9 @@ class Mailer {
         $headers .= "Message-ID: <" . md5(uniqid()) . "@" . $this->host . ">\r\n";
         $headers .= "\r\n";
 
-        fwrite($socket, $headers . $htmlBody . "\r\n.\r\n");
+        $body = str_replace(["\r\n", "\r"], "\n", $htmlBody);
+        $body = preg_replace('/^\./m', '..', $body);
+        fwrite($socket, $headers . str_replace("\n", "\r\n", $body) . "\r\n.\r\n");
         $response = $this->readResponse($socket);
 
         fwrite($socket, "QUIT\r\n");

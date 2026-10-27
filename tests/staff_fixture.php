@@ -23,3 +23,6 @@ $_SERVER['REQUEST_URI'] = '/admin/support';
 $_SERVER['PHP_SELF'] = '/admin/support.php';
 $_SESSION = ['user_id' => 1, 'user_role' => 'admin', 'staff_version' => 0];
 StaffAccess::clearCache();
+
+$staffDb->exec('CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY AUTOINCREMENT, setting_key TEXT UNIQUE, setting_value TEXT, description TEXT)');
+$staffDb->exec("CREATE TABLE IF NOT EXISTS error_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, category TEXT, severity TEXT, source TEXT, message TEXT, context TEXT, request_method TEXT, request_uri TEXT, ip_address TEXT, user_agent TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)");

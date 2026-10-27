@@ -75,7 +75,7 @@ class StaffAccess {
         $user = self::current();
         if (!$user) return false;
         if (in_array($permission, ['profile', 'home'], true)) return true;
-        if (in_array($permission, ['settings', 'agents'], true)) return $user['role'] === 'admin';
+        if (in_array($permission, ['settings', 'agents', 'security-alerts', 'referral-lookup'], true)) return $user['role'] === 'admin';
         return isset(self::catalog()[$permission]) && in_array($permission, $user['permissions'], true);
     }
     public static function canForUser(int $id, string $permission): bool {
@@ -88,6 +88,8 @@ class StaffAccess {
             if (isset($item['page']) && self::can($key)) $items[] = ['permission' => $key] + $item;
         }
         if (self::isAdministrator()) {
+            $items[] = ['permission' => 'security-alerts', 'page' => 'security-alerts', 'label' => 'Security Alerts', 'icon' => 'shield-alt'];
+            $items[] = ['permission' => 'referral-lookup', 'page' => 'referral-lookup', 'label' => 'Referral Code Lookup', 'icon' => 'search'];
             $items[] = ['permission' => 'agents', 'page' => 'agents', 'label' => 'Agents & Permissions', 'icon' => 'user-shield'];
             $items[] = ['permission' => 'settings', 'page' => 'settings', 'label' => 'System Settings', 'icon' => 'cog'];
         }
@@ -101,12 +103,14 @@ class StaffAccess {
     }
     public static function pagePermission(string $page): ?string {
         foreach (self::catalog() as $key => $item) if (($item['page'] ?? '') === $page) return $key;
-        return in_array($page, ['settings', 'agents', 'profile', 'home'], true) ? $page : null;
+        return in_array($page, ['settings', 'agents', 'security-alerts', 'referral-lookup', 'profile', 'home'], true) ? $page : null;
     }
     public static function writePermission(string $permission): string {
         return in_array($permission, ['users', 'payments', 'commissions', 'withdrawals', 'wallet', 'logs', 'error_logs'], true) ? $permission . '_manage' : $permission;
     }
     public static function deny(bool $json = false, int $status = 403): never {
+        require_once __DIR__ . '/SecurityAlerts.php';
+        SecurityAlerts::repeated('access_denied', 3);
         http_response_code($status);
         header('Cache-Control: no-store');
         if ($json) { header('Content-Type: application/json'); echo json_encode(['success' => false, 'error' => 'You do not have permission to access this section.']); }

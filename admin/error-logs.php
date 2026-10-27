@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'delete_single') {
         $logId = (int)($_POST['log_id'] ?? 0);
         if ($logId > 0) {
-            Database::delete('error_logs', 'id = ?', [$logId]);
+            Database::delete('error_logs', 'id = ? AND category != ?', [$logId, 'security']);
             setFlash('success', 'Error log deleted');
         }
     }
@@ -37,14 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         if ($ids) {
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            Database::query("DELETE FROM error_logs WHERE id IN ({$placeholders})", $ids);
+            Database::query("DELETE FROM error_logs WHERE category != 'security' AND id IN ({$placeholders})", $ids);
             setFlash('success', count($ids) . ' error log(s) deleted');
         }
     }
 
     if ($action === 'clear_all') {
-        Database::query('TRUNCATE TABLE error_logs');
-        setFlash('success', 'All error logs cleared');
+        Database::query("DELETE FROM error_logs WHERE category != 'security'");
+        setFlash('success', 'Error logs cleared. Security alerts are retained.');
     }
 
     header('Location: ' . $_SERVER['REQUEST_URI']);
@@ -61,7 +61,7 @@ $page = getCurrentPage();
 $perPage = 25;
 $offset = ($page - 1) * $perPage;
 
-$where = '1=1';
+$where = StaffAccess::isAdministrator() ? '1=1' : "el.category != 'security'";
 $params = [];
 
 if ($search !== '') {
@@ -110,18 +110,20 @@ $logs = Database::fetchAll(
     $params
 );
 
-$categories = Database::fetchAll('SELECT DISTINCT category FROM error_logs ORDER BY category ASC');
-$severities = Database::fetchAll('SELECT DISTINCT severity FROM error_logs ORDER BY severity ASC');
+$visibleLogs = StaffAccess::isAdministrator() ? '1=1' : "category != 'security'";
+$categories = Database::fetchAll('SELECT DISTINCT category FROM error_logs WHERE ' . $visibleLogs . ' ORDER BY category ASC');
+$severities = Database::fetchAll('SELECT DISTINCT severity FROM error_logs WHERE ' . $visibleLogs . ' ORDER BY severity ASC');
 $logUsers = Database::fetchAll(
     "SELECT u.id, u.full_name, u.phone
      FROM users u
      INNER JOIN error_logs el ON u.id = el.user_id
+     WHERE " . (StaffAccess::isAdministrator() ? '1=1' : "el.category != 'security'") . "
      GROUP BY u.id
      ORDER BY u.full_name ASC"
 );
 
 $stats = [
-    'today'      => Database::count('error_logs', 'DATE(created_at) = CURDATE()'),
+    'today'      => Database::count('error_logs', 'DATE(created_at) = CURDATE() AND ' . $visibleLogs),
     'login'      => Database::count('error_logs', 'category = ?', ['login']),
     'payment'    => Database::count('error_logs', 'category = ?', ['payment']),
     'withdrawal' => Database::count('error_logs', 'category = ?', ['withdrawal']),

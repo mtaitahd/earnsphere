@@ -17,6 +17,11 @@ $adminUser = Database::fetchOne("SELECT full_name, avatar FROM users WHERE id = 
 
 $pendingWd = StaffAccess::can('withdrawals') ? Database::count('withdrawals', 'status = ?', ['pending']) : 0;
 $openTickets = StaffAccess::can('support') ? Database::count('support_tickets', 'status = ?', ['open']) : 0;
+$securityUnread = 0;
+if (StaffAccess::isAdministrator()) {
+    require_once dirname(__DIR__) . '/classes/SecurityAlerts.php';
+    $securityUnread = SecurityAlerts::unread((int) $_SESSION['user_id']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -62,7 +67,7 @@ $openTickets = StaffAccess::can('support') ? Database::count('support_tickets', 
         <a class="nav-link" href="<?= SITE_URL ?>/admin/<?= htmlspecialchars($item['page'], ENT_QUOTES) ?>">
             <i class="fas fa-fw fa-<?= htmlspecialchars($item['icon'], ENT_QUOTES) ?>"></i>
             <span><?= htmlspecialchars($item['label'], ENT_QUOTES) ?></span>
-            <?php $count = $item['permission'] === 'withdrawals' ? $pendingWd : ($item['permission'] === 'support' ? $openTickets : 0); ?>
+            <?php $count = $item['permission'] === 'withdrawals' ? $pendingWd : ($item['permission'] === 'support' ? $openTickets : ($item['permission'] === 'security-alerts' ? $securityUnread : 0)); ?>
             <?php if ($count > 0): ?><span class="badge badge-danger badge-pill"><?= (int) $count ?></span><?php endif; ?>
         </a>
     </li>
@@ -115,6 +120,12 @@ $openTickets = StaffAccess::can('support') ? Database::count('support_tickets', 
             
             <!-- Right: Notifications + User -->
             <ul class="navbar-nav ml-auto d-flex align-items-center">
+                <?php if (StaffAccess::isAdministrator()): ?>
+                <li class="nav-item mx-2"><a class="nav-link position-relative" href="<?= SITE_URL ?>/admin/security-alerts" aria-label="Security alerts<?= $securityUnread ? ': ' . (int) $securityUnread . ' unread' : '' ?>" style="color:white">
+                    <i class="fas fa-shield-alt"></i>
+                    <?php if ($securityUnread): ?><span class="badge bg-danger"><?= $securityUnread > 99 ? '99+' : (int) $securityUnread ?></span><?php endif; ?>
+                </a></li>
+                <?php endif; ?>
                 <!-- Pending Withdrawals Alert -->
                 <?php if ($pendingWd > 0): ?>
                 <li class="nav-item dropdown no-arrow mx-1">
@@ -136,7 +147,7 @@ $openTickets = StaffAccess::can('support') ? Database::count('support_tickets', 
                             <?= htmlspecialchars($adminUser['full_name'] ?? 'Staff', ENT_QUOTES) ?>
                         </span>
                         <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);color:white;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;vertical-align:middle;margin-left:0.5rem;border:2px solid rgba(255,255,255,0.3);">
-                            <?= strtoupper(substr($adminUser['full_name'] ?? 'A', 0, 1)) ?>
+                            <?= sanitize(strtoupper(substr($adminUser['full_name'] ?? 'A', 0, 1))) ?>
                         </div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
