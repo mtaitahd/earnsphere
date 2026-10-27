@@ -309,3 +309,6 @@ YouTube uses the standard embed endpoint with the recommended referrer policy. Y
 
 ### YouTube embeds with production isolation headers
 The production `.htaccess` sends `Cross-Origin-Embedder-Policy: require-corp` and `Cross-Origin-Opener-Policy: same-origin`. Ordinary YouTube iframes are blocked in that environment even when they work on a plain development server. Instruction YouTube iframes now use `credentialless`, which allows compatible browsers to load the player in an ephemeral context without disabling production isolation. Retry clones preserve this attribute. Test media previews with both production headers enabled; a plain static-server preview does not reproduce this restriction. The feature is supported in current Chromium browsers; sign-in-only videos cannot use an anonymous player.
+
+### Home layout and member help
+The public home uses a compact hero, Soko discovery, a short getting-started section, recent payment proof and collapsible weekly contest details. Existing live proof and contest APIs still populate their sections. The shared public footer adds Need Help for signed-in user accounts (not guests or staff); it opens a support form and the user's existing replies on any member page, with unread badges and CSRF-protected send/read actions through the existing support API. No migration or payment changes are required.

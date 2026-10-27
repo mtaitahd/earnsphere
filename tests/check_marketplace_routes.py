@@ -28,6 +28,7 @@ body,state=run('marketplace.php')
 assert 'Public phone' in body and 'PRIVATE_' not in body,'Storefront leaked unapproved/expired ads'
 assert '<script>alert(555)</script>' not in body,'Product title injected HTML'
 assert 'product?id=1' in body,'Public product navigation missing'
+assert 'data-account-help' not in body,'Member support controls leaked into guest pages'
 body,state=run('index.php')
 assert 'Public phone' in body and 'PRIVATE_' not in body,'Landing leaked private or expired ads'
 assert 'action="marketplace"' in body and 'Search Goods' in body and 'product?id=1' in body,'Landing discovery flow missing'
@@ -45,6 +46,7 @@ body,state=run('product.php',query={'id':1})
 assert 'https://wa.me/255712345678?text=' in body and '<script>alert(555)</script>' not in body
 body,state=run('my-products.php',user=200)
 assert 'PRIVATE_PENDING_200' in body and 'PRIVATE_DRAFT_201' not in body,'Seller view leaked another account'
+assert 'data-account-help' in body and 'data-support-form' in body,'Member support missing from seller account page'
 assert '<details class="service-card" open><summary>Post bidhaa yako</summary>' in body,'Seller posting form was hidden'
 assert run('my-products.php',user=200,method='POST',post={'action':'pay','id':3})[1]['http']==403
 state=run('my-products.php',user=200,method='POST',post={'csrf_token':'market-csrf','action':'pay','accepted':'1','id':3})[1]

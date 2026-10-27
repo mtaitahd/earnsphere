@@ -1967,3 +1967,26 @@ img {
     .welcome-media-dialog .welcome-guide iframe, .welcome-media-dialog .welcome-guide video { width: 100%; height: calc(100vh - 225px); height: calc(100dvh - 225px); min-height: 220px; max-height: none; aspect-ratio: auto; border: 0; background: #000; object-fit: contain; }
 }
 html:has(.welcome-media-dialog[open]) { overflow: hidden; }
+
+.account-help-fab { position:fixed;right:1rem;bottom:calc(90px + env(safe-area-inset-bottom));z-index:1001;display:flex;align-items:center;gap:.5rem;min-height:44px;padding:.7rem 1rem;border:1px solid #ffffff40;background:#72578b;color:#fff;font-size:.8rem;font-weight:800;box-shadow:0 3px 14px #44315330;cursor:pointer; }
+.account-help-fab [data-help-unread] { padding:.1rem .4rem;border-radius:20px;background:#fff;color:#604577;font-size:.65rem; }
+.account-help-fab [hidden] { display:none; }
+.account-support-dialog { width:calc(100% - 2rem);max-width:520px;max-height:85vh;max-height:85dvh;padding:1.25rem;border:0;border-radius:12px;background:#fff;color:#443153;overflow:auto; }
+.account-support-dialog::backdrop { background:#20172999; }
+.account-support-heading { display:flex;justify-content:space-between;align-items:center;gap:1rem; }
+.account-support-heading p { margin:0 0 .25rem;font-size:.6rem;letter-spacing:1px;color:#93859e; }
+.account-support-heading h2 { margin:0;font-size:1.25rem;font-weight:800; }
+.account-support-heading button { width:44px;height:44px;border:1px solid #e2dce8;background:#fff;color:#604577;font-size:1.6rem;flex-shrink:0; }
+.account-support-intro { font-size:.85rem;line-height:1.7;color:#706878;margin:1rem 0; }
+.account-support-dialog label { display:block;font-size:.8rem;font-weight:700;margin:.8rem 0 .35rem; }
+.account-support-dialog input,.account-support-dialog textarea { display:block;width:100%;padding:.7rem;border:1px solid #dcd3e4;background:#fff;box-sizing:border-box; }
+.account-support-dialog form > button { margin-top:.75rem;font-size:.85rem; }
+.account-support-dialog h3 { font-size:.95rem;font-weight:800;border-top:1px solid #eee8f2;padding-top:1rem;margin-top:1.25rem; }
+.account-support-dialog [role=status] { font-size:.8rem;line-height:1.6;margin:.6rem 0; }
+.account-support-ticket { padding:1rem 0;border-bottom:1px solid #eee8f2;font-size:.85rem; }
+.account-support-ticket h4 { font-size:.9rem;font-weight:700;margin:0 0 .35rem; }
+.account-support-ticket p { white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;margin:.35rem 0;color:#706878; }
+.account-support-ticket small { color:#93859e; }
+.account-support-reply { margin-top:.75rem;padding:.8rem;background:#f4eff8;border-left:3px solid #72578b; }
+.account-support-read { min-height:40px;border:1px solid #23754e;background:#fff;color:#23754e;padding:.4rem .65rem;margin-top:.5rem;font-size:.75rem; }
+@media(min-width:992px) { .account-help-fab { bottom:1.25rem; } }
