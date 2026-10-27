@@ -81,18 +81,51 @@ document.querySelectorAll('[data-target="#logoutModal"]').forEach(el => {
     });
 });
 
-// SweetAlert flash messages
-<?php if (isset($_SESSION['flash'])): ?>
-    <?php $flash = $_SESSION['flash']; unset($_SESSION['flash']); ?>
-    Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: <?= json_encode($flash['type'] ?? 'info', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-        title: <?= json_encode($flash['message'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-        showConfirmButton: false,
-        timer: 4000,
-        timerProgressBar: true
-    });
+// Only show messages not already consumed by the page's inline alerts.
+<?php
+$pendingFlash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+$adminFlashMessages = [];
+if (is_array($pendingFlash)) {
+    if (is_string($pendingFlash['message'] ?? null) && trim($pendingFlash['message']) !== '') {
+        $type = in_array($pendingFlash['type'] ?? '', ['success', 'error', 'warning', 'info'], true) ? $pendingFlash['type'] : 'info';
+        $adminFlashMessages[] = ['type' => $type, 'message' => $pendingFlash['message']];
+    } else {
+        foreach (['success', 'error', 'warning', 'info'] as $type) {
+            if (is_string($pendingFlash[$type] ?? null) && trim($pendingFlash[$type]) !== '') {
+                $adminFlashMessages[] = ['type' => $type, 'message' => $pendingFlash[$type]];
+            }
+        }
+    }
+}
+?>
+<?php if ($adminFlashMessages): ?>
+const adminFlashMessages = <?= json_encode($adminFlashMessages, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+(async function () {
+    for (const flash of adminFlashMessages) {
+        if (typeof Swal === 'undefined') {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-' + (flash.type === 'error' ? 'danger' : flash.type);
+            alert.setAttribute('role', 'status');
+            alert.textContent = flash.message;
+            document.getElementById('container-wrapper')?.prepend(alert);
+            continue;
+        }
+        await Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: flash.type,
+            titleText: flash.message,
+            background: '#ffffff',
+            color: '#292232',
+            customClass: { popup: 'admin-flash-toast' },
+            showConfirmButton: false,
+            showCloseButton: true,
+            timer: 5000,
+            timerProgressBar: true
+        });
+    }
+})();
 <?php endif; ?>
 
 // Auto-hide alerts after 5 seconds

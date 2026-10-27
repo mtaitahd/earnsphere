@@ -872,6 +872,9 @@ body {
 }
 
 /* Administrator referral members popup */
+.swal2-popup.admin-flash-toast { background: #fff; color: #292232; max-width: calc(100vw - 24px); }
+.swal2-popup.admin-flash-toast .swal2-title { color: #292232; white-space: normal; overflow-wrap: anywhere; line-height: 1.45; }
+.swal2-popup.admin-flash-toast .swal2-close { color: #604577; }
 .referral-members-dialog { width: min(720px, calc(100vw - 28px)); max-height: 88vh; max-height: 88dvh; padding: 0; border: 1px solid #e5dfee; border-radius: 16px; color: #292232; background: white; box-shadow: 0 20px 70px #24173240; }
 .referral-members-dialog::backdrop { background: #21152e99; }
 .referral-members-dialog[open] { display: flex; flex-direction: column; }

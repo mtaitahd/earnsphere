@@ -104,6 +104,7 @@ function getFlash(string $type): ?string {
     if (isset($_SESSION['flash'][$type])) {
         $message = $_SESSION['flash'][$type];
         unset($_SESSION['flash'][$type]);
+        if (empty($_SESSION['flash'])) unset($_SESSION['flash']);
         return $message;
     }
     return null;
