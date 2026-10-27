@@ -15,7 +15,7 @@ $welcomeItems=WelcomeMedia::items();
         <div class="welcome-guide-content">
         <?php if ($item['type']==='youtube'): $videoId=WelcomeMedia::youtubeId($item['source']); ?>
             <!-- Keep YouTube in an ephemeral context so hosting COEP can remain enabled. -->
-            <iframe credentialless width="560" height="315" loading="eager" data-welcome-src="<?= sanitize(WelcomeMedia::embedUrl($item['source'])) ?>" data-welcome-alternate="<?= sanitize(WelcomeMedia::embedUrl($item['source'], true)) ?>" title="<?= sanitize($item['title']) ?>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            <iframe credentialless width="560" height="315" loading="eager" data-welcome-src="<?= sanitize(WelcomeMedia::embedUrl($item['source'])) ?>" title="<?= sanitize($item['title']) ?>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
             <div class="welcome-playback-actions"><p data-welcome-status role="status">Bonyeza Play kutazama video hapa.</p><button class="welcome-retry" type="button" data-welcome-retry>Jaribu tena</button></div>
         <?php elseif ($item['type']==='video'): ?>
             <video controls playsinline preload="none" src="<?= sanitize(SITE_URL.'/'.$item['source']) ?>">Your browser does not support video playback.</video>

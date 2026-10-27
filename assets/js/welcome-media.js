@@ -28,8 +28,7 @@
             const frame = guide.querySelector('iframe');
             if (!frame || !dialog.open) return;
             const replacement = frame.cloneNode(false);
-            const alternate = frame.dataset.welcomeAlternate;
-            const next = alternate && frame.getAttribute('src') !== alternate ? alternate : frame.dataset.welcomeSrc;
+            const next = frame.dataset.welcomeSrc;
             replacement.setAttribute('src', next);
             frame.replaceWith(replacement);
             const status = guide.querySelector('[data-welcome-status]');

@@ -9,7 +9,7 @@ const first=guide(true),second=guide(false),button={},close={},dialog={open:fals
 button.addEventListener=(_,fn)=>button.click=fn;close.addEventListener=(_,fn)=>close.click=fn;
 vm.runInNewContext(fs.readFileSync('assets/js/welcome-media.js','utf8'),{document:{getElementById:()=>dialog,querySelectorAll:()=>[button]}});
 assert(!first.frame.src);button.click();assert(dialog.open);assert(first.frame.src);assert(!second.frame.src);
-const original=first.frame;first.retry.click();assert.notEqual(first.frame,original);assert(first.frame.src.includes('youtube-nocookie.com'));first.retry.click();assert(first.frame.src.includes('www.youtube.com'));
+const original=first.frame;first.retry.click();assert.notEqual(first.frame,original);assert(first.frame.src.includes('www.youtube.com'));first.retry.click();assert(first.frame.src.includes('www.youtube.com'));
 second.open=true;second.listeners.toggle();assert(!first.open);assert(!first.frame.src);assert(second.frame.src);assert(first.media.paused>0);
 close.click();assert(!dialog.open);assert(!second.frame.src);assert(second.media.paused>0);button.click();assert(second.frame.src);
-console.log('Guide UI: inline retry replaces blocked frame, alternates approved embeds, stops inactive players and reopens safely.');
+console.log('Guide UI: inline retry replaces blocked frame, preserves the approved embed host, stops inactive players and reopens safely.');
