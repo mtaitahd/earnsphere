@@ -21,6 +21,11 @@ for page in ['security-alerts','referral-lookup']:
  assert run('admin/'+page+'.php',0)[1]==302
  assert run('admin/'+page+'.php',1)[1]==200
  assert run('admin/'+page+'.php',1,'POST')[1]==403
+for user in [0,2,3]:
+ body,status=run('api/admin_referrals.php',user,permissions=('referrals',))
+ assert status in (401,403) and 'items' not in body,(user,status,body)
+assert run('api/admin_referrals.php',1,'POST')[1]==405
+assert run('api/admin_referrals.php',1)[1]==400
 # Service-level guard also forbids calling through a different route.
 for service in ['SecurityAlerts::listing(2)','SecurityAlerts::markRead(2,999)','ReferralLookup::find("USER")','ReferralLookup::members("USER",1)']:
  code='require '+json.dumps(str(root/'tests/staff_fixture.php'))+';require_once '+json.dumps(str(root/'classes/ReferralLookup.php'))+';$_SESSION=["user_id"=>2,"user_role"=>"admin"];StaffAccess::clearCache();register_shutdown_function(function(){echo "STATUS:".http_response_code();});'+service+';'

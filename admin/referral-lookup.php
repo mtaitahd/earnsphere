@@ -5,13 +5,10 @@ Auth::initSession();
 StaffAccess::requirePage('referral-lookup');
 $code = is_string($_GET['code'] ?? null) ? trim($_GET['code']) : '';
 $relativeCode = is_string($_GET['relative'] ?? null) ? trim($_GET['relative']) : '';
-$selectedLevel = in_array($_GET['level'] ?? '', ['1', '2'], true) ? (int) $_GET['level'] : 0;
-$members = null;
 $result = null; $error = '';
 if ($code !== '') {
     try {
         $result = ReferralLookup::find($code, $relativeCode);
-        if ($result && $selectedLevel) $members = ReferralLookup::members($code, $selectedLevel, max(1, (int) ($_GET['page'] ?? 1)));
     }
     catch (InvalidArgumentException $e) { $error = $e->getMessage(); }
     catch (Throwable $e) { $error = 'Could not load referral details. Please try again.'; }
@@ -39,34 +36,22 @@ include __DIR__ . '/admin_header.php';
         <dt class="col-sm-3">Referrals zake</dt><dd class="col-sm-9">
             <div class="d-flex flex-wrap gap-2">
             <?php foreach ([1 => $result['direct'], 2 => $result['grand']] as $level => $count): ?>
-                <a class="btn <?= $selectedLevel === $level ? 'btn-primary' : 'btn-outline-primary' ?>" href="?<?= sanitize(http_build_query(['code' => $member['referral_code'], 'relative' => $relativeCode, 'level' => $level])) ?>#referral-members" <?= $selectedLevel === $level ? 'aria-current="true"' : '' ?>>Level <?= $level ?>: <?= (int) $count ?> <span class="small">— Ona watu</span></a>
+                <button type="button" class="btn btn-outline-primary" data-referral-level="<?= $level ?>" data-referral-code="<?= sanitize($member['referral_code']) ?>" data-referral-name="<?= sanitize($member['full_name']) ?>" aria-haspopup="dialog" aria-controls="referral-members-dialog" aria-expanded="false">Level <?= $level ?>: <?= (int) $count ?> <span class="small">— Ona watu</span></button>
             <?php endforeach; ?>
             </div>
         </dd>
     </dl>
     <a class="btn btn-outline-primary mt-3" href="referral-tree?user_id=<?= (int) $member['id'] ?>">View their referral network</a>
 </div></div>
-<?php if ($members !== null): ?>
-<section class="card mb-4" id="referral-members" aria-labelledby="referral-members-title">
-    <div class="card-header"><h2 class="h6 mb-0" id="referral-members-title">Watu wa Level <?= (int) $members['level'] ?> wa <?= sanitize($member['full_name']) ?> (<?= (int) $members['total'] ?>)</h2></div>
-    <div class="card-body">
-        <?php if (!$members['items']): ?><p class="text-muted mb-0">Hakuna watu kwenye Level <?= (int) $members['level'] ?> kwa sasa.</p><?php endif; ?>
-        <?php foreach ($members['items'] as $person): ?>
-        <article class="border-bottom py-3" style="overflow-wrap:anywhere">
-            <div class="d-flex justify-content-between gap-2 flex-wrap"><a class="fw-bold" href="?<?= sanitize(http_build_query(['code' => $person['referral_code'], 'relative' => $member['referral_code']])) ?>"><?= sanitize($person['full_name']) ?></a><?= statusBadge($person['status']) ?></div>
-            <div class="small mt-1">Code: <code><?= sanitize($person['referral_code']) ?></code> · <?= sanitize(formatPhone($person['phone'])) ?></div>
-            <div class="small mt-1">Aliunganishwa na: <strong><?= sanitize($person['inviter_name']) ?></strong> · <?= sanitize($person['inviter_code']) ?></div>
-            <div class="small text-muted mt-1">Joined: <?= sanitize($person['created_at'] ?? '—') ?></div>
-        </article>
-        <?php endforeach; ?>
-        <?php if ($members['pages'] > 1): ?><nav class="d-flex align-items-center flex-wrap gap-3 mt-3" aria-label="Referral members pages">
-            <?php if ($members['page'] > 1): ?><a class="btn btn-outline-primary" href="?<?= sanitize(http_build_query(['code' => $member['referral_code'], 'relative' => $relativeCode, 'level' => $selectedLevel, 'page' => $members['page'] - 1])) ?>#referral-members">Previous</a><?php endif; ?>
-            <span class="small">Page <?= (int) $members['page'] ?> / <?= (int) $members['pages'] ?></span>
-            <?php if ($members['page'] < $members['pages']): ?><a class="btn btn-outline-primary" href="?<?= sanitize(http_build_query(['code' => $member['referral_code'], 'relative' => $relativeCode, 'level' => $selectedLevel, 'page' => $members['page'] + 1])) ?>#referral-members">Next</a><?php endif; ?>
-        </nav><?php endif; ?>
+<dialog id="referral-members-dialog" class="referral-members-dialog" aria-labelledby="referral-members-title" data-endpoint="<?= sanitize(SITE_URL . '/api/admin_referrals.php') ?>" data-lookup-url="<?= sanitize(SITE_URL . '/admin/referral-lookup') ?>">
+    <header class="referral-members-header"><h2 id="referral-members-title" class="h5 mb-0" data-members-title>Referrals</h2><button type="button" class="btn btn-outline-secondary" data-members-close aria-label="Funga orodha">×</button></header>
+    <div class="referral-members-content">
+        <p class="text-muted small" data-members-status role="status" aria-live="polite"></p>
+        <div data-members-body aria-busy="false"></div>
+        <nav class="d-flex align-items-center flex-wrap gap-3 mt-3" data-members-pages aria-label="Referral members pages"></nav>
     </div>
-</section>
-<?php endif; ?>
+</dialog>
+<script src="<?= SITE_URL ?>/assets/js/admin-referral-members.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/admin-referral-members.js') ?>" defer></script>
 <?php if ($result['relative']): ?><div class="alert alert-info">
     <?= sanitize($member['referral_code']) ?>:
     <?php if ($result['level'] === 0): ?>Code zote mbili ni account hiyo hiyo.

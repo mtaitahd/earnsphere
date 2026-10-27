@@ -57,10 +57,13 @@ checkAdmin($first['total']===31&&count($first['items'])===25&&$last['page']===2&
 checkAdmin(count(array_intersect(array_column($first['items'],'id'),array_column($last['items'],'id')))===0,'Duplicate members across pages');
 $_GET=['code'=>'USER','level'=>'1','page'=>'2'];
 ob_start();include __DIR__.'/../admin/referral-lookup.php';$memberHtml=ob_get_clean();
-checkAdmin(str_contains($memberHtml,'id="referral-members"')&&str_contains($memberHtml,'Aliunganishwa na:')&&str_contains($memberHtml,'CHILD123'),'Clicked level page omitted members/inviters');
-checkAdmin(str_contains($memberHtml,'Page 2 / 2')&&!str_contains($memberHtml,'<script>alert(1)</script>'),'Unsafe or incorrect paginated list');
-$_GET=['code'=>'OTHER123','level'=>'2'];ob_start();include __DIR__.'/../admin/referral-lookup.php';$emptyHtml=ob_get_clean();
-checkAdmin(str_contains($emptyHtml,'Hakuna watu kwenye Level 2'),'Empty level not explained');
+checkAdmin(str_contains($memberHtml,'id="referral-members-dialog"')&&str_contains($memberHtml,'data-referral-level="1"')&&str_contains($memberHtml,'data-referral-level="2"'),'Popup or level triggers missing');
+checkAdmin(!str_contains($memberHtml,'Team Member 100'),'Member list rendered outside popup');
+ob_start();include __DIR__.'/../api/admin_referrals.php';$response=json_decode(ob_get_clean(),true);
+checkAdmin($response['success']&&$response['data']['page']===2&&count($response['data']['items'])===6,'Popup endpoint pagination failed');
+checkAdmin(in_array(10,array_column($response['data']['items'],'id')),'Popup endpoint omitted members');
+$_GET=['code'=>'OTHER123','level'=>'2'];ob_start();include __DIR__.'/../api/admin_referrals.php';$empty=json_decode(ob_get_clean(),true);
+checkAdmin($empty['success']&&$empty['data']['items']===[],'Empty popup level failed');
 echo "Referral member lists: Level 1/2, inviters, network isolation, empty state, pagination, staff exclusion and XSS passed.\n";
 
 echo "Admin alerts/referrals: thresholds, dedup, privacy, email cap/status, independent read state, exact lookup, inviter chain, levels, cycles and safe page passed.\n";
