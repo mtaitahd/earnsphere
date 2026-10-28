@@ -93,21 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         'completed_at'    => date('Y-m-d H:i:s'),
                         'metadata'        => json_encode(['marked_by' => $_SESSION['user_id'], 'method' => 'admin']),
                     ]);
-                    Wallet::credit(
-                        $userId,
-                        $fee,
-                        'registration_bonus',
-                        'Registration fee credited — marked as paid by admin',
-                        $paymentId,
-                        'payment'
-                    );
                     if ($user['status'] !== 'active') {
                         Database::update('users', ['status' => 'active'], "id = ? AND role = 'user'", [$userId]);
                         CommissionEngine::processRegistrationCommissions($userId);
                         Auth::logActivity($userId, 'account_activated', 'Account activated by admin (Mark as Paid)');
                     }
                     Database::commit();
-                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as paid — TZS ' . number_format($fee) . ' added to their account');
+                    setFlash('success', 'User "' . sanitize($user['full_name']) . '" marked as paid — registration payment recorded; no wallet earnings added');
 
                     // Notify the user that payment was completed and account is activated
                     try {
@@ -154,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         $totalRefunded += (float) $payment['amount'];
                     }
                     // Only remove money from the wallet if it was actually credited
-                    // (admin "Mark as Paid" credits a registration_bonus; Snippe payments do not)
+                    // Older manual activations credited registration_bonus; new activations do not.
                     $credited = Database::fetchOne(
                         "SELECT id, amount FROM wallet_transactions
                          WHERE user_id = ? AND type = 'registration_bonus' AND status = 'completed'

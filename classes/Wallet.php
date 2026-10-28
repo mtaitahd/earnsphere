@@ -9,6 +9,14 @@ require_once __DIR__ . '/../includes/helpers.php';
 
 class Wallet {
     
+    private const EARNING_TYPES = ['commission','daily_mission_bonus','contest_bonus','social_reward'];
+
+    public static function earnedTotal(int $userId): float {
+        $types=implode(',',array_fill(0,count(self::EARNING_TYPES),'?'));
+        $row=Database::fetchOne("SELECT COALESCE(SUM(amount),0) AS earned FROM wallet_transactions WHERE user_id = ? AND status = 'completed' AND amount > 0 AND type IN ($types)",array_merge([$userId],self::EARNING_TYPES));
+        return (float)($row['earned']??0);
+    }
+
     /**
      * Get or create wallet for a user
      */
@@ -32,7 +40,7 @@ class Wallet {
     /**
      * Credit user wallet (add money)
      * Referral commissions and approved mission, contest and social rewards are withdrawable.
-     * Registration fees and admin adjustments are NOT withdrawable.
+     * Registration fees and admin adjustments are NOT earnings or withdrawable.
      */
     public static function credit(
         int $userId,
@@ -51,12 +59,12 @@ class Wallet {
             $wallet = self::getWallet($userId);
             $balanceBefore = (float) $wallet['balance'];
             $balanceAfter = $balanceBefore + $amount;
-            $isWithdrawable = in_array($type, ['commission', 'daily_mission_bonus', 'contest_bonus', 'social_reward']);
+            $isWithdrawable = in_array($type, self::EARNING_TYPES, true);
             $withdrawableBefore = (float) ($wallet['withdrawable_balance'] ?? 0);
             $withdrawableAfter = $isWithdrawable ? $withdrawableBefore + $amount : $withdrawableBefore;
             $updateData = [
                 'balance'      => $balanceAfter,
-                'total_earned' => $wallet['total_earned'] + $amount,
+                'total_earned' => self::earnedTotal($userId) + ($isWithdrawable ? $amount : 0),
             ];
             if ($isWithdrawable) {
                 $updateData['withdrawable_balance'] = $withdrawableAfter;
@@ -95,7 +103,7 @@ class Wallet {
     
     /**
      * Reverse a previous credit (e.g. admin marking a user as unpaid).
-     * Removes money from balance and total_earned WITHOUT touching
+     * Removes a non-earning credit from balance WITHOUT touching
      * withdrawable_balance or total_withdrawn.
      * Used for reversing non-withdrawable credits like registration bonuses.
      */
@@ -120,7 +128,7 @@ class Wallet {
         }
 
         $balanceAfter = $balanceBefore - $amount;
-        $totalEarnedAfter = max(0, (float) $wallet['total_earned'] - $amount);
+        $totalEarnedAfter = self::earnedTotal($userId);
 
         $isNested = Database::inTransaction();
         if (!$isNested) {
