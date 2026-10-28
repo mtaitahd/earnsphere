@@ -12,9 +12,11 @@ document.querySelectorAll('[data-social-open]').forEach(form => {
         button.textContent = 'Opening…';
         message.textContent = '';
         try {
-            const response = await fetch(form.action, {method: 'POST', body: new FormData(form), headers: {'Accept':'application/json'}, credentials: 'same-origin', redirect: 'error'});
+            const endpoint = new URL(form.dataset.openEndpoint, window.location.origin);
+            if (endpoint.origin !== window.location.origin) throw new Error('Invalid task endpoint. Refresh this page.');
+            const response = await fetch(endpoint.href, {method: 'POST', body: new URLSearchParams(new FormData(form)), headers: {'Accept':'application/json'}, credentials: 'same-origin', redirect: 'error'});
             const isJson = (response.headers.get('content-type') || '').toLowerCase().includes('application/json');
-            if (!isJson) throw new Error(response.status === 403 ? 'Your session or security token has expired. Refresh this page and sign in again if needed.' : 'The server could not open this task. Refresh this page and try again.');
+            if (!isJson) throw new Error(response.status === 403 ? 'Your session or security token has expired. Refresh this page and sign in again if needed.' : 'The server blocked the task request (HTTP ' + response.status + '). Please contact support.');
             let result;
             try { result = await response.json(); }
             catch (_) { throw new Error('The server returned an invalid response. Refresh this page and try again.'); }

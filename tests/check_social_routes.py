@@ -60,5 +60,18 @@ for actor,post,status in [(202,{'csrf_token':'route-csrf','action':'open','campa
     if status==200: assert result['url']=='https://youtu.be/dQw4w9WgXcQ'
     else: assert result['message']
 body,_=run('social-tasks.php',user=202)
-assert '/social-tasks" target="_blank" rel="noopener" data-social-open' in body
+assert '/social-tasks" target="_blank" rel="noopener" data-social-open data-open-endpoint=' in body
+assert '/api/social_task_open.php' in body
 print('Social open JSON: success, repeat protection, expired session, inactive account and CSRF passed.')
+
+# Dedicated endpoint bypasses clean-page redirects and always emits JSON.
+for actor,post,status in [(202,{'csrf_token':'route-csrf','campaign_id':'1'},200),(202,{'campaign_id':'1'},403),(203,{'csrf_token':'route-csrf','campaign_id':'1'},403),(204,{'csrf_token':'route-csrf','campaign_id':'1'},403),(999,{'csrf_token':'route-csrf','campaign_id':'1'},401),(200,{'csrf_token':'route-csrf','campaign_id':'1'},409),(202,{'csrf_token':'route-csrf','campaign_id':[]},409)]:
+    body,state=run('api/social_task_open.php',user=actor,method='POST',post=post,accept='application/json')
+    result=json.loads(body)
+    assert state['http']==status,(state,body)
+    assert result['success']==(status==200)
+    if status==200: assert result['url']=='https://youtu.be/dQw4w9WgXcQ'
+    else: assert result['message']
+body,state=run('api/social_task_open.php',user=202)
+assert state['http']==405 and not json.loads(body)['success']
+print('Dedicated social open API: link, CSRF, roles, inactive/expired accounts, repeated opens and malformed IDs passed.')
