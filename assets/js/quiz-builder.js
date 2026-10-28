@@ -1,5 +1,15 @@
 (function () {
     'use strict';
+    var bank=document.getElementById('quiz-bank-form');
+    if(bank){
+        var choices=bank.querySelectorAll('input[name="question_ids[]"]'),count=document.getElementById('quiz-bank-count');
+        function updateSelection(){
+            var total=bank.querySelectorAll('input[name="question_ids[]"]:checked').length;
+            count.textContent=total+' / 10 selected';
+            choices.forEach(function(choice){choice.disabled=!choice.checked && total>=10;});
+        }
+        bank.addEventListener('change',updateSelection);updateSelection();
+    }
     var list=document.getElementById('quiz-question-list'), add=document.getElementById('add-quiz-question');
     if(!list || !add) return;
     var template=list.firstElementChild.cloneNode(true);

@@ -30,4 +30,9 @@ assert 'Correct answer' in body and 'quiz-question-list' in body,'Authorized age
 assert run('admin/quizzes.php',user=204,permission=True,method='POST',post={'action':'toggle','id':1})[1]['http']==403
 state=run('admin/quizzes.php',user=204,permission=True,method='POST',post={'csrf_token':'quiz-csrf','action':'toggle','id':1})[1]
 assert state['http']==302,'Authorized agent could not pause quiz'
+body,state=run('admin/quizzes.php',user=3)
+assert 'quiz-bank-form' in body and 'question_ids[]' in body
+assert run('admin/quizzes.php',user=3,method='POST',post={'action':'load_bank','question_ids':['daily-sw-01-01']})[1]['http']==403
+state=run('admin/quizzes.php',user=3,method='POST',post={'csrf_token':'quiz-csrf','action':'load_bank','question_ids':['daily-sw-01-01']})[1]
+assert state['http']==302 and state['count']==1 and state['paid']==0
 print('Quiz routes: private answer keys, automatic scoring/payment, CSRF, active accounts and agent publishing permissions passed.')

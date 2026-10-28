@@ -1,0 +1,1245 @@
+{
+  "version": 1,
+  "quizzes": [
+    {
+      "id": "daily-sw-01",
+      "language": "sw",
+      "title": "Mpangilio wa nyumbani",
+      "questions": [
+        {
+          "id": "daily-sw-01-01",
+          "question": "Unapoteza muda kutafuta funguo kila asubuhi. Mpango upi unasaidia?",
+          "options": [
+            "Kuzificha bila kukumbuka",
+            "Kuziacha popote",
+            "Kuweka funguo sehemu moja maalumu",
+            "Kuzibadilishia mahali kila siku"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-01-02",
+          "question": "Una vitu usivyotumia lakini bado vinafaa. Unaweza kufanya nini?",
+          "options": [
+            "Kuviharibu makusudi",
+            "Kuvitupa barabarani",
+            "Kuvizuia kutumiwa na yeyote",
+            "Kuvitoa kwa anayevihitaji"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-01-03",
+          "question": "Umeazima kifaa cha jirani. Baada ya kutumia ufanye nini?",
+          "options": [
+            "Kukirudisha kwa makubaliano yenu",
+            "Kukiuza bila ruhusa",
+            "Kukificha",
+            "Kumpa mtu mwingine bila kuuliza"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-01-04",
+          "question": "Unataka kukumbuka kazi tatu za nyumbani. Njia ipi ni ya moja kwa moja?",
+          "options": [
+            "Kubadilisha mada kila wakati",
+            "Kuandika orodha ya kazi hizo",
+            "Kufuta kumbukumbu zote",
+            "Kuandika vitu visivyohusika"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-01-05",
+          "question": "Unamaliza kutumia kifaa cha pamoja. Ufanye nini ili kipatikane kirahisi kwa anayefuata?",
+          "options": [
+            "Kukihamisha bila taarifa",
+            "Kukipeleka mbali bila ruhusa",
+            "Kukirudisha sehemu yake",
+            "Kukificha chini ya kitanda"
+          ],
+          "correct": 2
+        }
+      ]
+    },
+    {
+      "id": "daily-en-01",
+      "language": "en",
+      "title": "Home organisation",
+      "questions": [
+        {
+          "id": "daily-en-01-01",
+          "question": "You waste time finding your keys each morning. Which plan helps?",
+          "options": [
+            "Keep keys in one designated place",
+            "Move them to a new place daily",
+            "Hide them without remembering where",
+            "Leave them anywhere"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-01-02",
+          "question": "You have usable items you no longer need. What can you do?",
+          "options": [
+            "Prevent anyone from using them",
+            "Give them to someone who needs them",
+            "Destroy them deliberately",
+            "Throw them into the road"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-01-03",
+          "question": "You borrowed a tool from a neighbour. What should you do after using it?",
+          "options": [
+            "Hide it",
+            "Give it away without asking",
+            "Return it as agreed",
+            "Sell it without permission"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-01-04",
+          "question": "You want to remember three household tasks. Which method is straightforward?",
+          "options": [
+            "Delete all reminders",
+            "Write unrelated items",
+            "Keep changing the subject",
+            "Write a list of the tasks"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-01-05",
+          "question": "You finish using a shared item. What makes it easy for the next person to find?",
+          "options": [
+            "Return it to its usual place",
+            "Hide it under a bed",
+            "Move it without telling anyone",
+            "Take it away without permission"
+          ],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-02",
+      "language": "sw",
+      "title": "Muda na ratiba",
+      "questions": [
+        {
+          "id": "daily-sw-02-01",
+          "question": "Saa moja ina dakika ngapi?",
+          "options": [
+            "30",
+            "90",
+            "100",
+            "60"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-02-02",
+          "question": "Kazi inaanza 09:00 na kuisha 09:30 siku hiyo hiyo. Imechukua dakika ngapi?",
+          "options": [
+            "30",
+            "15",
+            "45",
+            "60"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-02-03",
+          "question": "Miadi ni 14:00. Umefika 13:45 siku hiyo hiyo. Umefika dakika ngapi mapema?",
+          "options": [
+            "45",
+            "15",
+            "5",
+            "30"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-02-04",
+          "question": "Wiki moja ina siku ngapi?",
+          "options": [
+            "10",
+            "12",
+            "7",
+            "5"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-02-05",
+          "question": "Unahitaji dakika 20 kujiandaa na 10 kutembea. Jumla ni dakika ngapi?",
+          "options": [
+            "10",
+            "20",
+            "40",
+            "30"
+          ],
+          "correct": 3
+        }
+      ]
+    },
+    {
+      "id": "daily-en-02",
+      "language": "en",
+      "title": "Time and schedules",
+      "questions": [
+        {
+          "id": "daily-en-02-01",
+          "question": "How many minutes are in one hour?",
+          "options": [
+            "100",
+            "60",
+            "30",
+            "90"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-02-02",
+          "question": "A task starts at 09:00 and ends at 09:30 on the same day. How many minutes did it take?",
+          "options": [
+            "45",
+            "60",
+            "30",
+            "15"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-02-03",
+          "question": "An appointment is at 14:00. You arrive at 13:45 that day. How many minutes early are you?",
+          "options": [
+            "5",
+            "30",
+            "45",
+            "15"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-02-04",
+          "question": "How many days are in one week?",
+          "options": [
+            "7",
+            "5",
+            "10",
+            "12"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-02-05",
+          "question": "You need 20 minutes to get ready and 10 minutes to walk. What is the total?",
+          "options": [
+            "40",
+            "30",
+            "10",
+            "20"
+          ],
+          "correct": 1
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-03",
+      "language": "sw",
+      "title": "Hesabu za dukani",
+      "questions": [
+        {
+          "id": "daily-sw-03-01",
+          "question": "Daftari moja ni TZS 2,000. Madaftari matatu ni kiasi gani?",
+          "options": [
+            "TZS 6,000",
+            "TZS 4,000",
+            "TZS 5,000",
+            "TZS 8,000"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-03-02",
+          "question": "Umenunua bidhaa ya TZS 3,500 na kulipa TZS 5,000. Chenji ni kiasi gani?",
+          "options": [
+            "TZS 3,500",
+            "TZS 1,500",
+            "TZS 500",
+            "TZS 2,500"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-03-03",
+          "question": "Kalamu nne zinagharimu TZS 2,000 kwa pamoja. Kila kalamu ni kiasi gani?",
+          "options": [
+            "TZS 1,000",
+            "TZS 2,000",
+            "TZS 500",
+            "TZS 250"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-03-04",
+          "question": "Bei ilikuwa TZS 10,000, punguzo ni TZS 2,000. Bei mpya ni kiasi gani?",
+          "options": [
+            "TZS 12,000",
+            "TZS 6,000",
+            "TZS 2,000",
+            "TZS 8,000"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-03-05",
+          "question": "Bidhaa mbili za TZS 1,500 kila moja na moja ya TZS 2,000 ni jumla gani?",
+          "options": [
+            "TZS 5,000",
+            "TZS 3,500",
+            "TZS 4,000",
+            "TZS 6,500"
+          ],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": "daily-en-03",
+      "language": "en",
+      "title": "Shopping calculations",
+      "questions": [
+        {
+          "id": "daily-en-03-01",
+          "question": "One notebook costs TZS 2,000. How much do three cost?",
+          "options": [
+            "TZS 5,000",
+            "TZS 8,000",
+            "TZS 6,000",
+            "TZS 4,000"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-03-02",
+          "question": "An item costs TZS 3,500 and you pay TZS 5,000. How much change is due?",
+          "options": [
+            "TZS 500",
+            "TZS 2,500",
+            "TZS 3,500",
+            "TZS 1,500"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-03-03",
+          "question": "Four pens cost TZS 2,000 in total. How much is each pen?",
+          "options": [
+            "TZS 500",
+            "TZS 250",
+            "TZS 1,000",
+            "TZS 2,000"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-03-04",
+          "question": "The price was TZS 10,000 with a TZS 2,000 discount. What is the new price?",
+          "options": [
+            "TZS 2,000",
+            "TZS 8,000",
+            "TZS 12,000",
+            "TZS 6,000"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-03-05",
+          "question": "What is the total for two items at TZS 1,500 each and one at TZS 2,000?",
+          "options": [
+            "TZS 4,000",
+            "TZS 6,500",
+            "TZS 5,000",
+            "TZS 3,500"
+          ],
+          "correct": 2
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-04",
+      "language": "sw",
+      "title": "Matumizi ya kila siku",
+      "questions": [
+        {
+          "id": "daily-sw-04-01",
+          "question": "Una TZS 20,000. Umetumia TZS 7,000. Umebaki na kiasi gani?",
+          "options": [
+            "TZS 12,000",
+            "TZS 13,000",
+            "TZS 27,000",
+            "TZS 7,000"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-04-02",
+          "question": "Umeweka pembeni TZS 1,000 kila siku kwa siku tano. Jumla ni kiasi gani?",
+          "options": [
+            "TZS 4,000",
+            "TZS 6,000",
+            "TZS 5,000",
+            "TZS 1,000"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-04-03",
+          "question": "Nauli ni TZS 800 kwenda na TZS 800 kurudi. Jumla ni kiasi gani?",
+          "options": [
+            "TZS 800",
+            "TZS 2,400",
+            "TZS 1,200",
+            "TZS 1,600"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-04-04",
+          "question": "Una TZS 15,000. Unatenga TZS 5,000 na kutumia TZS 6,000. Kinachobaki ni kiasi gani?",
+          "options": [
+            "TZS 4,000",
+            "TZS 9,000",
+            "TZS 10,000",
+            "TZS 11,000"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-04-05",
+          "question": "Gharama ni TZS 2,000, TZS 3,000 na TZS 4,000. Jumla ni kiasi gani?",
+          "options": [
+            "TZS 10,000",
+            "TZS 9,000",
+            "TZS 7,000",
+            "TZS 8,000"
+          ],
+          "correct": 1
+        }
+      ]
+    },
+    {
+      "id": "daily-en-04",
+      "language": "en",
+      "title": "Everyday spending arithmetic",
+      "questions": [
+        {
+          "id": "daily-en-04-01",
+          "question": "You have TZS 20,000 and spend TZS 7,000. How much remains?",
+          "options": [
+            "TZS 27,000",
+            "TZS 7,000",
+            "TZS 12,000",
+            "TZS 13,000"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-04-02",
+          "question": "You set aside TZS 1,000 each day for five days. What is the total?",
+          "options": [
+            "TZS 5,000",
+            "TZS 1,000",
+            "TZS 4,000",
+            "TZS 6,000"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-04-03",
+          "question": "Transport costs TZS 800 going and TZS 800 returning. What is the total?",
+          "options": [
+            "TZS 1,200",
+            "TZS 1,600",
+            "TZS 800",
+            "TZS 2,400"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-04-04",
+          "question": "You have TZS 15,000, set aside TZS 5,000 and spend TZS 6,000. How much is left unallocated?",
+          "options": [
+            "TZS 10,000",
+            "TZS 11,000",
+            "TZS 4,000",
+            "TZS 9,000"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-04-05",
+          "question": "Three expenses are TZS 2,000, TZS 3,000 and TZS 4,000. What is the total?",
+          "options": [
+            "TZS 7,000",
+            "TZS 8,000",
+            "TZS 10,000",
+            "TZS 9,000"
+          ],
+          "correct": 3
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-05",
+      "language": "sw",
+      "title": "Mawasiliano bora",
+      "questions": [
+        {
+          "id": "daily-sw-05-01",
+          "question": "Hujasikia vizuri maelekezo. Hatua ipi inasaidia kuelewa?",
+          "options": [
+            "Kutoa jibu lisilohusiana",
+            "Kuondoka bila kuuliza",
+            "Kuomba yarudiwe kwa ufafanuzi",
+            "Kujifanya umeelewa"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-05-02",
+          "question": "Hutoweza kufika kwenye miadi iliyopangwa. Mawasiliano yapi yanafaa?",
+          "options": [
+            "Kunyamaza kabisa",
+            "Kusema umefika wakati hujafika",
+            "Kumtumia mtu taarifa isiyohusiana",
+            "Kutoa taarifa mapema na kuomba kupanga upya"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-05-03",
+          "question": "Mtu anakueleza tatizo. Njia ipi inasaidia kulielewa?",
+          "options": [
+            "Kusikiliza na kuuliza swali la ufafanuzi",
+            "Kumkatiza kila sentensi",
+            "Kubadilisha maelezo yake bila kusikia",
+            "Kuziba masikio"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-05-04",
+          "question": "Unaandika ujumbe wa kuomba msaada. Ni taarifa ipi inasaidia zaidi?",
+          "options": [
+            "Matusi badala ya maelezo",
+            "Tatizo na hatua ulizojaribu",
+            "Maneno yasiyohusiana pekee",
+            "Ujumbe mtupu"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-05-05",
+          "question": "Ujumbe unasema mkutano ni Jumanne saa 10:00. Unahitaji kuthibitisha nini?",
+          "options": [
+            "Jina la mnyama asiyehusika",
+            "Namba isiyohusiana na mkutano",
+            "Tarehe na eneo la mkutano",
+            "Rangi ya kalamu ya mtumaji"
+          ],
+          "correct": 2
+        }
+      ]
+    },
+    {
+      "id": "daily-en-05",
+      "language": "en",
+      "title": "Clear communication",
+      "questions": [
+        {
+          "id": "daily-en-05-01",
+          "question": "You did not hear the instructions clearly. Which action helps you understand?",
+          "options": [
+            "Ask for them to be repeated or clarified",
+            "Pretend you understood",
+            "Give an unrelated answer",
+            "Leave without asking"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-05-02",
+          "question": "You cannot attend an agreed appointment. Which response communicates clearly?",
+          "options": [
+            "Send an unrelated message",
+            "Inform the other person early and ask to reschedule",
+            "Say nothing",
+            "Claim to have arrived when you have not"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-05-03",
+          "question": "Someone is explaining a problem. What helps you understand it?",
+          "options": [
+            "Change the story before hearing it",
+            "Cover your ears",
+            "Listen and ask a clarifying question",
+            "Interrupt every sentence"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-05-04",
+          "question": "You are writing a message asking for help. Which information is most useful?",
+          "options": [
+            "Only unrelated words",
+            "An empty message",
+            "Insults instead of an explanation",
+            "The problem and the steps you have tried"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-05-05",
+          "question": "A message says a meeting is on Tuesday at 10:00. What is useful to confirm?",
+          "options": [
+            "The date and meeting location",
+            "The colour of the sender's pen",
+            "The name of an unrelated animal",
+            "A number unrelated to the meeting"
+          ],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-06",
+      "language": "sw",
+      "title": "Usalama wa taarifa",
+      "questions": [
+        {
+          "id": "daily-sw-06-01",
+          "question": "Mtu amekuomba OTP iliyotumwa kwenye simu yako. Ufanye nini?",
+          "options": [
+            "Mpe OTP mara moja",
+            "Iweke kwenye kundi la umma",
+            "Iandike kwenye tangazo",
+            "Usimpe OTP yako"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-06-02",
+          "question": "Password yako inapaswa kushirikiwa na nani katika matumizi ya kawaida ya account binafsi?",
+          "options": [
+            "Usiishiriki na mtu mwingine",
+            "Kila anayekuomba",
+            "Kila member wa kundi",
+            "Mgeni yeyote mtandaoni"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-06-03",
+          "question": "Link usiyoijua inaomba password yako. Hatua ipi ni salama zaidi?",
+          "options": [
+            "Chapisha password ili upate msaada",
+            "Fungua tovuti rasmi mwenyewe na hakiki ombi",
+            "Ingiza password bila kukagua",
+            "Tuma password kwa mtumaji"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-06-04",
+          "question": "Umetumia account yako kwenye kompyuta ya pamoja. Ukimaliza ufanye nini?",
+          "options": [
+            "Hifadhi password kwa kila mtu",
+            "Mpe anayefuata OTP yako",
+            "Toka kwenye account yako",
+            "Iache wazi kwa anayefuata"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-06-05",
+          "question": "Taarifa ipi haifai kuchapishwa hadharani?",
+          "options": [
+            "Jina la bidhaa unayouza",
+            "Maelezo ya bidhaa ya dukani",
+            "Saa za kufungua duka ulizotangaza",
+            "PIN ya account yako"
+          ],
+          "correct": 3
+        }
+      ]
+    },
+    {
+      "id": "daily-en-06",
+      "language": "en",
+      "title": "Digital privacy basics",
+      "questions": [
+        {
+          "id": "daily-en-06-01",
+          "question": "Someone asks for the OTP sent to your phone. What should you do?",
+          "options": [
+            "Put it in an advertisement",
+            "Do not share your OTP",
+            "Give them the OTP immediately",
+            "Post it in a public group"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-06-02",
+          "question": "Who should you share your personal account password with during normal use?",
+          "options": [
+            "Every group member",
+            "Any stranger online",
+            "Do not share it with another person",
+            "Anyone who asks"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-06-03",
+          "question": "An unfamiliar link asks for your password. Which action is safer?",
+          "options": [
+            "Enter the password without checking",
+            "Send the password to the sender",
+            "Publish the password to get help",
+            "Open the official website yourself and verify the request"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-06-04",
+          "question": "You used your account on a shared computer. What should you do when finished?",
+          "options": [
+            "Sign out of your account",
+            "Leave it open for the next person",
+            "Save the password for everyone",
+            "Give the next person your OTP"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-06-05",
+          "question": "Which information should not be posted publicly?",
+          "options": [
+            "Your publicly advertised opening hours",
+            "Your account PIN",
+            "The name of a product you sell",
+            "A shop product description"
+          ],
+          "correct": 1
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-07",
+      "language": "sw",
+      "title": "Utunzaji wa mazingira",
+      "questions": [
+        {
+          "id": "daily-sw-07-01",
+          "question": "Umemaliza kunywa maji ya chupa. Chupa tupu iwekwe wapi?",
+          "options": [
+            "Kwenye sehemu sahihi ya taka au urejelezaji",
+            "Katikati ya barabara",
+            "Ndani ya mfereji",
+            "Kwenye njia ya watembea kwa miguu"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-07-02",
+          "question": "Unataka kutumia karatasi chache kwa mazoezi. Njia ipi inasaidia?",
+          "options": [
+            "Kurarua daftari kabla ya kutumia",
+            "Kutumia pande zote mbili inapofaa",
+            "Kutumia ukurasa mpya kwa kila neno",
+            "Kutupa karatasi tupu"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-07-03",
+          "question": "Bomba linaendelea kutoa maji bila kutumiwa. Ufanye nini?",
+          "options": [
+            "Liache siku nzima",
+            "Ziba njia ya maji kwa taka",
+            "Lifunge ikiwa unaweza kufanya hivyo kawaida",
+            "Lifungue zaidi"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-07-04",
+          "question": "Mwanga wa mchana unatosha na taa haihitajiki. Ni hatua ipi inapunguza matumizi ya umeme?",
+          "options": [
+            "Kuwasha taa nyingine tatu",
+            "Kuacha taa zote zikiwaka",
+            "Kuwasha taa kwenye vyumba tupu",
+            "Kuzima taa hiyo"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-07-05",
+          "question": "Mfuko wa manunuzi bado uko imara. Unaweza kupunguza taka kwa kufanya nini?",
+          "options": [
+            "Kuutumia tena unapohitaji",
+            "Kuutupa baada ya kila matumizi",
+            "Kuuacha barabarani",
+            "Kuuharibu makusudi"
+          ],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": "daily-en-07",
+      "language": "en",
+      "title": "Looking after shared spaces",
+      "questions": [
+        {
+          "id": "daily-en-07-01",
+          "question": "You have finished a bottle of water. Where should the empty bottle go?",
+          "options": [
+            "Inside a drain",
+            "On a pedestrian path",
+            "In the appropriate waste or recycling container",
+            "In the middle of the road"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-07-02",
+          "question": "You want to use less paper for practice notes. Which method helps?",
+          "options": [
+            "Use a new page for every word",
+            "Throw away blank paper",
+            "Tear up a notebook before using it",
+            "Use both sides where suitable"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-07-03",
+          "question": "A tap is running while nobody is using the water. What should you do?",
+          "options": [
+            "Turn it off if you can do so normally",
+            "Open it further",
+            "Leave it running all day",
+            "Block the drain with rubbish"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-07-04",
+          "question": "Daylight is sufficient and a lamp is not needed. What reduces electricity use?",
+          "options": [
+            "Switch on lights in empty rooms",
+            "Switch off that lamp",
+            "Switch on three more lamps",
+            "Leave all lamps on"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-07-05",
+          "question": "A shopping bag is still in good condition. How can you reduce waste?",
+          "options": [
+            "Leave it in the road",
+            "Destroy it deliberately",
+            "Reuse it when needed",
+            "Throw it away after every use"
+          ],
+          "correct": 2
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-08",
+      "language": "sw",
+      "title": "Vipimo vya jikoni",
+      "questions": [
+        {
+          "id": "daily-sw-08-01",
+          "question": "Lita moja ina mililita ngapi?",
+          "options": [
+            "10,000",
+            "1,000",
+            "100",
+            "500"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-08-02",
+          "question": "Nusu ya lita moja ni mililita ngapi?",
+          "options": [
+            "750",
+            "1,500",
+            "500",
+            "250"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-08-03",
+          "question": "Kikombe kina ujazo wa mililita 250. Vikombe viwili vina ujazo gani?",
+          "options": [
+            "Mililita 250",
+            "Mililita 750",
+            "Mililita 1,000",
+            "Mililita 500"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-08-04",
+          "question": "Mapishi yanahitaji vikombe viwili vya mchele. Ukiongeza kila kipimo mara mbili, utatumia vikombe vingapi?",
+          "options": [
+            "4",
+            "2",
+            "3",
+            "6"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-08-05",
+          "question": "Chupa tatu zina mililita 500 kila moja. Jumla ya ujazo ni kiasi gani?",
+          "options": [
+            "Mililita 2,000",
+            "Mililita 1,500",
+            "Mililita 1,000",
+            "Mililita 500"
+          ],
+          "correct": 1
+        }
+      ]
+    },
+    {
+      "id": "daily-en-08",
+      "language": "en",
+      "title": "Kitchen measurements",
+      "questions": [
+        {
+          "id": "daily-en-08-01",
+          "question": "How many millilitres are in one litre?",
+          "options": [
+            "100",
+            "500",
+            "10,000",
+            "1,000"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-08-02",
+          "question": "How many millilitres are in half a litre?",
+          "options": [
+            "500",
+            "250",
+            "750",
+            "1,500"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-08-03",
+          "question": "A cup holds 250 millilitres. How much do two cups hold?",
+          "options": [
+            "1,000 millilitres",
+            "500 millilitres",
+            "250 millilitres",
+            "750 millilitres"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-08-04",
+          "question": "A recipe needs two cups of rice. If you double every quantity, how many cups will you use?",
+          "options": [
+            "3",
+            "6",
+            "4",
+            "2"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-08-05",
+          "question": "Three bottles hold 500 millilitres each. What is the total volume?",
+          "options": [
+            "1,000 millilitres",
+            "500 millilitres",
+            "2,000 millilitres",
+            "1,500 millilitres"
+          ],
+          "correct": 3
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-09",
+      "language": "sw",
+      "title": "Mipango ya safari",
+      "questions": [
+        {
+          "id": "daily-sw-09-01",
+          "question": "Safari inachukua dakika 40. Ukiondoka 08:00 na hakuna kuchelewa, unafika saa ngapi?",
+          "options": [
+            "09:00",
+            "09:40",
+            "08:40",
+            "08:20"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-09-02",
+          "question": "Basi linaondoka 16:00. Safari ya kwenda kituoni ni dakika 30. Ukiondoka 15:00, unabaki na dakika ngapi kabla ya basi kuondoka?",
+          "options": [
+            "15",
+            "45",
+            "60",
+            "30"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-09-03",
+          "question": "Unataka kujua mahali pa kushukia kabla ya safari. Taarifa ipi inasaidia?",
+          "options": [
+            "Jina la kituo unachokwenda",
+            "Rangi ya begi la mtu asiyehusika",
+            "Bei ya bidhaa isiyohusiana",
+            "Namba ya ukurasa wa daftari"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-09-04",
+          "question": "Nauli ya kwenda ni TZS 1,000 na ya kurudi TZS 1,500. Jumla ni kiasi gani?",
+          "options": [
+            "TZS 3,000",
+            "TZS 2,500",
+            "TZS 500",
+            "TZS 1,500"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-09-05",
+          "question": "Unaelekezwa kufika lango B, si lango A. Unapaswa kwenda wapi?",
+          "options": [
+            "Lango C",
+            "Lango D",
+            "Lango B",
+            "Lango A"
+          ],
+          "correct": 2
+        }
+      ]
+    },
+    {
+      "id": "daily-en-09",
+      "language": "en",
+      "title": "Planning a journey",
+      "questions": [
+        {
+          "id": "daily-en-09-01",
+          "question": "A journey takes 40 minutes. If you leave at 08:00 with no delays, when do you arrive?",
+          "options": [
+            "08:40",
+            "08:20",
+            "09:00",
+            "09:40"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-09-02",
+          "question": "A bus leaves at 16:00. It takes 30 minutes to reach the station. If you leave at 15:00, how many minutes remain before departure when you arrive?",
+          "options": [
+            "60",
+            "30",
+            "15",
+            "45"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-09-03",
+          "question": "You want to know where to get off before travelling. Which information helps?",
+          "options": [
+            "The price of an unrelated product",
+            "A notebook page number",
+            "The name of your destination stop",
+            "An unrelated person's bag colour"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-09-04",
+          "question": "The outward fare is TZS 1,000 and the return fare is TZS 1,500. What is the total?",
+          "options": [
+            "TZS 500",
+            "TZS 1,500",
+            "TZS 3,000",
+            "TZS 2,500"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-09-05",
+          "question": "You are told to arrive at Gate B, not Gate A. Where should you go?",
+          "options": [
+            "Gate B",
+            "Gate A",
+            "Gate C",
+            "Gate D"
+          ],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": "daily-sw-10",
+      "language": "sw",
+      "title": "Kazi na kujifunza",
+      "questions": [
+        {
+          "id": "daily-sw-10-01",
+          "question": "Maelekezo yanasema tuma faili la PDF. Ni faili lipi linalolingana?",
+          "options": [
+            "Ripoti.jpg",
+            "Ripoti.mp3",
+            "Ripoti.mp4",
+            "Ripoti.pdf"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-sw-10-02",
+          "question": "Una kazi tano na umemaliza tatu. Zimebaki ngapi?",
+          "options": [
+            "2",
+            "3",
+            "4",
+            "5"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-sw-10-03",
+          "question": "Unataka kutofautisha faili za kazi mbili. Njia ipi inasaidia?",
+          "options": [
+            "Kuzihamisha kila dakika bila mpango",
+            "Kuzipa majina yanayoeleza kila kazi",
+            "Kuzipa zote jina lisiloeleweka",
+            "Kufuta majina yote"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-sw-10-04",
+          "question": "Unasoma maelekezo yenye hatua 1, 2 na 3. Bila sababu ya kubadilisha mpangilio, unaanza na ipi?",
+          "options": [
+            "Hatua 2",
+            "Hakuna hatua",
+            "Hatua 1",
+            "Hatua 3"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-sw-10-05",
+          "question": "Umefanya marekebisho kwenye faili na unataka kuyahifadhi. Hatua ipi inafaa?",
+          "options": [
+            "Kuchagua kufunga bila kuhifadhi",
+            "Kufuta faili",
+            "Kuondoa maandishi yote",
+            "Kutumia Save au Hifadhi"
+          ],
+          "correct": 3
+        }
+      ]
+    },
+    {
+      "id": "daily-en-10",
+      "language": "en",
+      "title": "Work and learning habits",
+      "questions": [
+        {
+          "id": "daily-en-10-01",
+          "question": "The instructions say to submit a PDF file. Which file matches?",
+          "options": [
+            "Report.mp4",
+            "Report.pdf",
+            "Report.jpg",
+            "Report.mp3"
+          ],
+          "correct": 1
+        },
+        {
+          "id": "daily-en-10-02",
+          "question": "You have five tasks and have completed three. How many remain?",
+          "options": [
+            "4",
+            "5",
+            "2",
+            "3"
+          ],
+          "correct": 2
+        },
+        {
+          "id": "daily-en-10-03",
+          "question": "You want to distinguish files for two different tasks. Which method helps?",
+          "options": [
+            "Give both unclear names",
+            "Remove all names",
+            "Move them every minute without a plan",
+            "Give each a descriptive task name"
+          ],
+          "correct": 3
+        },
+        {
+          "id": "daily-en-10-04",
+          "question": "Instructions list steps 1, 2 and 3. With no reason to change the order, which comes first?",
+          "options": [
+            "Step 1",
+            "Step 3",
+            "Step 2",
+            "No step"
+          ],
+          "correct": 0
+        },
+        {
+          "id": "daily-en-10-05",
+          "question": "You edited a file and want to keep the changes. Which action is appropriate?",
+          "options": [
+            "Remove all the text",
+            "Use Save",
+            "Choose to close without saving",
+            "Delete the file"
+          ],
+          "correct": 1
+        }
+      ]
+    }
+  ]
+}

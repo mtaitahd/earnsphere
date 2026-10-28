@@ -324,3 +324,9 @@ Admin flash messages already displayed within a page do not generate another emp
 
 ### Agent privacy on Users
 View users does not grant financial access. On Users, the Referrals, Earnings and Status columns are administrator-only; agent access to Commissions does not enable these columns. Agents also cannot use the status filter. Referral counts and earnings are not selected for agents; user status is selected internally only when required for explicitly granted management actions. Total Paid requires Dashboard reports; per-user payment amounts/paid styling require View payments. Edit/delete controls require Manage users; activation and mark-paid/unpaid additionally require Manage payments. Administrator access is unchanged. Existing database grants apply immediately on the next request; no migration is needed.
+
+
+### Everyday-life question bank
+No database migration is needed. Admin → Comprehension quizzes → Question bank contains 100 questions (50 Kiswahili, 50 English), organised into 20 batches. Select 1–10 questions across topics, load the draft, review answers, choose reward and paid-user limit, confirm the funded budget, then Publish quiz manually. Loading does not publish or pay rewards. Pause previous quizzes separately when needed; there is no automatic daily schedule. Agents need the existing quizzes permission.
+
+The bank is reusable and answer keys are included in repository data; repository readers can see them. Use your own questions when answer secrecy matters for rewarded quizzes.

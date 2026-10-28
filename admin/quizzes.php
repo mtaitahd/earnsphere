@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__).'/classes/ComprehensionQuiz.php';
+require_once dirname(__DIR__).'/classes/QuizQuestionBank.php';
 Auth::initSession();StaffAccess::requirePage('quizzes');
 require_once dirname(__DIR__).'/includes/service_view.php';
 $actor=(int)$_SESSION['user_id'];
@@ -7,6 +8,9 @@ if (($_SERVER['REQUEST_METHOD']??'GET')==='POST') {
     try {
         if (($_POST['action']??'')==='create') {
             ComprehensionQuiz::create($actor,$_POST);unset($_SESSION['quiz_draft']);setFlash('success','Quiz published. Perfect scores will automatically receive the reward.');
+        }elseif (($_POST['action']??'')==='load_bank') {
+            $_SESSION['quiz_draft']=QuizQuestionBank::draft($actor,$_POST['question_ids']??[]);
+            setFlash('success','Questions loaded into draft only. Review, set reward and participant limit, then Publish quiz when ready.');
         }elseif (($_POST['action']??'')==='toggle') {ComprehensionQuiz::toggle($actor,(int)($_POST['id']??0));setFlash('success','Quiz visibility updated.');}
         else throw new InvalidArgumentException('Unknown quiz action.');
     }catch (Throwable $e) {
@@ -28,6 +32,19 @@ $more=count($quizzes)>25;$quizzes=array_slice($quizzes,0,25);$pageTitle='Compreh
 <h1>Comprehension quizzes</h1><?php displayFlash(); ?>
 <p class="service-notice">Users answer every question once. All answers must be correct to automatically receive the configured reward in their wallet. Correct answers stay private. Published questions cannot be edited; pause the quiz and publish a new one if a correction is needed.</p>
 <?php if(!$available): ?><div class="alert alert-warning">Run <code>php database/migrate_quizzes.php</code> before publishing quizzes.</div><?php else: ?>
+<details class="service-card"><summary>Question bank · Benki ya maswali (100)</summary>
+<p>Chagua maswali 1–10, kisha Load selected questions. Haya ni maandalizi tu: weka zawadi na idadi ya washiriki, kisha publish mwenyewe kila siku. Maswali yasiyochaguliwa yanabaki hapa.</p>
+<form method="POST" id="quiz-bank-form"><?php featureToken(); ?><input type="hidden" name="action" value="load_bank">
+<?php $bank=QuizQuestionBank::catalog($actor); foreach(['sw'=>'Kiswahili · 50 maswali','en'=>'English · 50 questions'] as $language=>$label): ?>
+<details class="service-card"><summary><?= $label ?></summary>
+<?php foreach($bank as $batch): if($batch['language']!==$language)continue; ?>
+<details class="service-card"><summary><?= sanitize($batch['title']) ?> · 5</summary>
+<?php foreach($batch['questions'] as $question): ?>
+<label style="display:flex;gap:10px;align-items:flex-start;padding:8px 0"><input style="width:auto;flex-shrink:0" type="checkbox" name="question_ids[]" value="<?= sanitize($question['id']) ?>"> <span><?= sanitize($question['question']) ?></span></label>
+<?php endforeach; ?></details><?php endforeach; ?></details><?php endforeach; ?>
+<p id="quiz-bank-count" aria-live="polite">0 / 10 selected</p><button class="btn btn-primary">Load selected questions into draft</button>
+<p>Loading replaces the current unpublished draft. Nothing is published until you press Publish quiz.</p>
+</form></details>
 <details class="service-card" <?= $draft?'open':'' ?>><summary>Publish a comprehension quiz</summary>
 <form method="POST" id="quiz-publish-form"><?php featureToken(); ?><input type="hidden" name="action" value="create">
 <label for="quiz-title">Title</label><input id="quiz-title" name="title" maxlength="150" value="<?= quizField($draft,'title') ?>" required>
