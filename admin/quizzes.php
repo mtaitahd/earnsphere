@@ -11,6 +11,9 @@ if (($_SERVER['REQUEST_METHOD']??'GET')==='POST') {
         }elseif (($_POST['action']??'')==='load_bank') {
             $_SESSION['quiz_draft']=QuizQuestionBank::draft($actor,$_POST['question_ids']??[]);
             setFlash('success','Questions loaded into draft only. Review, set reward and participant limit, then Publish quiz when ready.');
+        }elseif (($_POST['action']??'')==='update_reward') {
+            ComprehensionQuiz::updateReward($actor,(int)($_POST['id']??0),$_POST);
+            setFlash('success','Malipo yamebadilishwa. Waliolipwa awali hawajabadilishwa. Bonyeza Resume kurudisha quiz kwa users.');
         }elseif (($_POST['action']??'')==='toggle') {ComprehensionQuiz::toggle($actor,(int)($_POST['id']??0));setFlash('success','Quiz visibility updated.');}
         else throw new InvalidArgumentException('Unknown quiz action.');
     }catch (Throwable $e) {
@@ -66,8 +69,17 @@ $more=count($quizzes)>25;$quizzes=array_slice($quizzes,0,25);$pageTitle='Compreh
 <button class="btn btn-primary" type="submit">Publish quiz</button></form></details>
 <?php endif; ?>
 <?php if(!$quizzes && $available): ?><p class="service-empty">No quizzes published yet.</p><?php endif; ?>
-<?php foreach($quizzes as $quiz): ?><article class="service-card"><h2><?= sanitize($quiz['title']) ?></h2><p>#<?= (int)$quiz['id'] ?> · <?= featureStatus($quiz['status']) ?> · Published by <?= sanitize($quiz['full_name']??'Staff') ?></p><p class="service-note"><?= sanitize($quiz['instructions']) ?></p><p class="service-budget">Reward <?= formatCurrency($quiz['reward']) ?> · <?= (int)$quiz['paid_count'] ?> / <?= (int)$quiz['slots'] ?> users paid · <?= (int)$quiz['attempt_count'] ?> attempts · Maximum budget <?= formatCurrency($quiz['reward']*$quiz['slots']) ?></p>
+<?php foreach($quizzes as $quiz): ?><article class="service-card"><h2><?= sanitize($quiz['title']) ?></h2><p>#<?= (int)$quiz['id'] ?> · <?= featureStatus($quiz['status']) ?> · Published by <?= sanitize($quiz['full_name']??'Staff') ?></p><p class="service-note"><?= sanitize($quiz['instructions']) ?></p><p class="service-budget">Reward <?= formatCurrency($quiz['reward']) ?> · <?= (int)$quiz['paid_count'] ?> / <?= (int)$quiz['slots'] ?> users paid · <?= (int)$quiz['attempt_count'] ?> attempts · Remaining reward budget <?= formatCurrency($quiz['reward']*max(0,(int)$quiz['slots']-(int)$quiz['paid_count'])) ?></p>
 <details><summary>Questions and private answer key</summary><?php foreach(ComprehensionQuiz::validateQuestions(json_decode($quiz['questions'],true)) as $index=>$question): ?><p><strong><?= $index+1 ?>. <?= sanitize($question['question']) ?></strong></p><ol type="A"><?php foreach($question['options'] as $choice=>$option): ?><li><?= sanitize($option) ?><?= $choice===$question['correct']?' — Correct':'' ?></li><?php endforeach; ?></ol><?php endforeach; ?></details>
+<?php if(in_array($quiz['status'],['active','paused'],true)): ?>
+<details class="service-card"><summary>Badilisha malipo / Update reward - <?= formatCurrency($quiz['reward']) ?></summary>
+<p>Kiasi hiki ni kwa quiz nzima, si kila swali. Malipo mapya yatatumika kwa majibu mapya tu; fedha na rekodi za waliolipwa awali hazibadilishwi.</p>
+<?php if($quiz['status']==='active'): ?><p>Bonyeza <strong>Pause</strong> hapa chini kwanza, kisha fungua sehemu hii kubadilisha malipo.</p>
+<?php else: ?><form method="POST"><?php featureToken(); ?><input type="hidden" name="action" value="update_reward"><input type="hidden" name="id" value="<?= (int)$quiz['id'] ?>">
+<label>Malipo mapya kwa mshindi (TZS)<input name="reward" type="number" min="1" max="100000" value="<?= (int)$quiz['reward'] ?>" required></label>
+<p>Washindi waliobaki: <?= max(0,(int)$quiz['slots']-(int)$quiz['paid_count']) ?>. Bajeti iliyobaki itakuwa idadi hii mara malipo mapya.</p>
+<label><input type="checkbox" name="budget_confirmed" value="1" required>Nimethibitisha bajeti ya malipo mapya kwa washindi waliobaki.</label>
+<button class="btn btn-primary">Hifadhi malipo mapya</button></form><?php endif; ?></details><?php endif; ?>
 <?php if(in_array($quiz['status'],['active','paused'],true)): ?><form method="POST"><?php featureToken(); ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$quiz['id'] ?>"><button class="btn btn-outline-primary"><?= $quiz['status']==='active'?'Pause':'Resume' ?></button></form><?php endif; ?></article><?php endforeach; ?>
 <?php featurePages($page,$more); ?><script src="<?= SITE_URL ?>/assets/js/quiz-builder.js"></script>
 <?php include __DIR__.'/admin_footer.php'; ?>

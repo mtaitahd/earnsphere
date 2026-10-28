@@ -36,6 +36,19 @@ $invalid=$input;$invalid['questions'][0]['correct']='4';quizBlocked(fn()=>Compre
 $invalid=$input;$invalid['questions']=[];quizBlocked(fn()=>ComprehensionQuiz::create(3,$invalid),'Empty quiz accepted');
 $invalid=$input;$invalid['questions']=array_fill(0,11,$input['questions'][0]);quizBlocked(fn()=>ComprehensionQuiz::create(3,$invalid),'Oversize quiz accepted');
 $invalid=$input;$invalid['budget_confirmed']='';quizBlocked(fn()=>ComprehensionQuiz::create(3,$invalid),'Unconfirmed automatic reward budget published');
+// Reward edits affect future attempts only and require a paused quiz and funded budget.
+$editInput=sampleQuiz();$editInput['slots']='10';$editId=ComprehensionQuiz::create(3,$editInput);
+$oldAttempt=ComprehensionQuiz::submit(200,$editId,['1','2']);
+quizBlocked(fn()=>ComprehensionQuiz::updateReward(3,$editId,['reward'=>'250','budget_confirmed'=>'1']),'Active reward changed');
+ComprehensionQuiz::toggle(3,$editId);
+quizBlocked(fn()=>ComprehensionQuiz::updateReward(200,$editId,['reward'=>'250','budget_confirmed'=>'1']),'Member changed reward');
+quizBlocked(fn()=>ComprehensionQuiz::updateReward(3,$editId,['reward'=>'250']),'Unconfirmed budget changed');
+quizBlocked(fn()=>ComprehensionQuiz::updateReward(3,$editId,['reward'=>'0','budget_confirmed'=>'1']),'Invalid reward accepted');
+ComprehensionQuiz::updateReward(3,$editId,['reward'=>'250','budget_confirmed'=>'1']);
+expect((int)Database::fetchOne('SELECT reward FROM comprehension_attempts WHERE id=?',[$oldAttempt['id']])['reward']===100,'Historical reward rewritten');
+expect(Database::fetchOne('SELECT status FROM comprehension_quizzes WHERE id=?',[$editId])['status']==='paused','Update unexpectedly resumed quiz');
+ComprehensionQuiz::toggle(3,$editId);$newAttempt=ComprehensionQuiz::submit(201,$editId,['1','2']);
+expect((int)$newAttempt['reward']===250,'New attempt did not receive updated reward');
 // A failed ledger write must roll back the attempt, slot count and notification together.
 $id3=ComprehensionQuiz::create(3,$input);
 $db->exec("CREATE TRIGGER fail_quiz_ledger BEFORE INSERT ON wallet_transactions WHEN NEW.reference_type='quiz_attempt' BEGIN SELECT RAISE(ABORT,'Simulated ledger failure'); END");

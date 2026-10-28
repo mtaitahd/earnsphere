@@ -53,6 +53,19 @@ class ComprehensionQuiz {
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
     }
 
+    public static function updateReward(int $actor,int $id,array $input): void {
+        self::publisher($actor);
+        $reward=SocialHub::number($input['reward']??'',1,100000,'Reward');
+        if (($input['budget_confirmed']??'')!=='1') throw new InvalidArgumentException('Confirm the updated reward budget.');
+        Database::beginTransaction();
+        try {
+            $quiz=Database::fetchOne('SELECT * FROM comprehension_quizzes WHERE id = ? FOR UPDATE',[$id]);
+            if (!$quiz || $quiz['status']!=='paused') throw new InvalidArgumentException('Pause the quiz before changing its reward. Completed quizzes cannot be changed.');
+            Database::update('comprehension_quizzes',['reward'=>$reward],'id = ?',[$id]);
+            Database::commit();
+        }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
+    }
+
     public static function submit(int $userId,int $quizId,$answers): array {
         Database::beginTransaction();
         try {
