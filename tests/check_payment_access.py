@@ -33,5 +33,6 @@ for name in ["create_payment.php", "create_payout.php", "lookup_phone.php"]:
     assert run("api/" + name, session="admin").endswith("HTTP:403"), f"Missing CSRF accepted: {name}"
 for name in ["create_payout.php", "check_payout.php", "abliner_balance.php"]:
     assert run("api/" + name, session="user").endswith("HTTP:403"), f"Non-admin access accepted: {name}"
-assert run("webhooks/snippe.php") == "HTTP:410", "Legacy webhook remains active"
+assert run("webhooks/snippe.php", "GET") == "HTTP:405", "Snippe webhook accepted GET"
+assert run("webhooks/snippe.php", "POST").endswith("HTTP:401"), "Snippe webhook accepted unsigned event"
 print("Payment endpoint access checks passed.")

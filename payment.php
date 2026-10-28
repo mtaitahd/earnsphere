@@ -7,6 +7,7 @@
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/classes/Auth.php';
 require_once __DIR__ . '/classes/AblinerPayment.php';
+require_once __DIR__.'/classes/SnippePayment.php';
 require_once __DIR__ . '/includes/helpers.php';
 
 Auth::initSession();
@@ -40,6 +41,19 @@ $existingPayment = Database::fetchOne(
 );
 
 $displayRegistrationFee = $existingPayment ? (float) $existingPayment['amount'] : (float) app_setting('registration_fee', REGISTRATION_FEE);
+
+$snippe=new SnippePayment();
+if (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && $action==='snippe_checkout') {
+    if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME]??'')) $error='Security token expired. Refresh and try again.';
+    else {
+        try {
+            $result=$snippe->initiate($userId);
+            if ($result['success']) {header('Location: '.(($result['status']??'')==='completed'?rtrim(SITE_URL,'/').'/dashboard':$result['checkout_url']),true,303);exit;}
+            $error=$result['error'];
+        } catch(Throwable $e){error_log('Snippe checkout could not be created: '.$e->getMessage());$error='Checkout could not be confirmed. Contact support before starting another payment.';}
+    }
+    $action='show';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['pay', 'change_number'])) {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
@@ -343,10 +357,20 @@ $referralLink = getReferralLink($refCode);
         </div>
     </div>
 
+    <div class="form-card" aria-label="Payment provider">
+        <h3 class="card-title">Chagua njia ya malipo</h3>
+        <p>Instant Pay via Snippe au Mobile Payment via Abliner.</p>
+        <?php if($snippe->ready()): ?><form method="POST" action="<?= sanitize(SITE_URL) ?>/payment">
+            <input type="hidden" name="<?= $csrfName ?>" value="<?= $csrfVal ?>"><input type="hidden" name="action" value="snippe_checkout">
+            <button class="pay-btn" type="submit">Instant Pay via Snippe - <?= formatCurrency($displayRegistrationFee) ?></button>
+            <small>Fungua checkout salama ya Snippe uchague namba yako ya mobile money.</small>
+        </form><?php else: ?><p class="text-muted">Snippe checkout haipatikani kwa sasa. Tumia Abliner hapa chini.</p><?php endif; ?>
+        <a class="btn btn-outline-primary mt-3" href="#abliner-payment">Pay via Abliner</a>
+    </div>
     <!-- Payment Form -->
-    <div class="form-card">
+    <div class="form-card" id="abliner-payment">
         <div class="card-title">
-            <i class="fas fa-mobile-alt"></i> Mobile Payment
+            <i class="fas fa-mobile-alt"></i> Mobile Payment via Abliner
         </div>
 
         <form method="POST" action="<?= sanitize(SITE_URL) ?>/payment">
@@ -402,7 +426,7 @@ $referralLink = getReferralLink($refCode);
         <i class="fas fa-arrow-left"></i> Change Number
     </a>
     <h2><i class="fas fa-hourglass-half me-2"></i>Processing Payment</h2>
-    <p>Ombi la malipo limetumwa kwa <strong><?= sanitize($waitingPayment['phone']) ?></strong>. Thibitisha kwenye namba hii pekee.</p>
+    <?php $waitingSnippe=($waitingPayment['gateway']??'')==='snippe'; ?><p><?= $waitingSnippe?'Tunasubiri uthibitisho wa malipo kutoka Snippe.':'Ombi la malipo limetumwa kwa <strong>'.sanitize($waitingPayment['phone']).'</strong>. Thibitisha kwenye namba hii pekee.' ?></p>
 </div>
 
 <div class="payment-body">
@@ -425,7 +449,7 @@ $referralLink = getReferralLink($refCode);
         </div>
         <?php endif; ?>
 
-        <p id="payment-notice" class="alert alert-info" role="status"><?= sanitize($paymentNotice ?: 'Checking your existing request with Abliner. An accepted request does not guarantee a phone prompt was delivered.') ?></p>
+        <p id="payment-notice" class="alert alert-info" role="status"><?= sanitize($paymentNotice ?: 'Checking your existing payment request. Account activation requires verified payment.') ?></p>
         <div id="payment-status" style="display:none;" role="status"></div>
 
         <div id="payment-error" class="alert alert-danger d-none" style="font-size:0.85rem;">
@@ -437,16 +461,16 @@ $referralLink = getReferralLink($refCode);
         </button>
 
         <div style="margin-top:1rem;">
-            <button type="button" class="btn btn-outline-primary" id="toggleChangeNumBtn" onclick="toggleChangeNum()" style="font-size:0.85rem;">
+            <?php if(!$waitingSnippe): ?><button type="button" class="btn btn-outline-primary" id="toggleChangeNumBtn" onclick="toggleChangeNum()" style="font-size:0.85rem;">
                 <i class="fas fa-sync me-1"></i> Change Number
-            </button>
+            </button><?php else: $waitingMeta=json_decode($waitingPayment['metadata']??'{}',true)?:[]; if(!empty($waitingMeta['checkout_url'])): ?><a class="btn btn-outline-primary" href="<?= sanitize(SnippeClient::checkoutUrl($waitingMeta['checkout_url'])) ?>">Continue Snippe checkout</a><?php endif; endif; ?>
             <a href="<?= $siteUrl ?>/dashboard"
                class="btn btn-outline-secondary ms-2" style="font-size:0.85rem;">
                 <i class="fas fa-home me-1"></i> Dashboard
             </a>
         </div>
 
-        <div id="changeNumSection" style="display:none;margin-top:1rem;text-align:left;background:var(--gray-50);padding:1rem;border-radius:var(--radius-md);">
+        <?php if(!$waitingSnippe): ?><div id="changeNumSection" style="display:none;margin-top:1rem;text-align:left;background:var(--gray-50);padding:1rem;border-radius:var(--radius-md);">
             <p style="font-size:0.85rem;font-weight:700;color:var(--gray-800);margin-bottom:0.5rem;">
                 <i class="fas fa-mobile-screen me-1"></i> Use a different number (do not approve the old request)
             </p>
@@ -474,12 +498,12 @@ $referralLink = getReferralLink($refCode);
                     <br><i class="fas fa-exclamation-circle me-1"></i> Network is detected automatically from your number
                 </div>
             </form>
-        </div>
+        </div><?php endif; ?>
     </div>
 </div>
 
 <script>
-window.paymentWaiting = <?= json_encode(['orderId' => (string) ($_GET['order_id'] ?? ''), 'siteUrl' => $siteUrl, 'userId' => (int) $userIdVal], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+window.paymentWaiting = <?= json_encode(['provider' => ($waitingPayment['gateway']??'abliner')==='snippe'?'Snippe':'Abliner', 'orderId' => (string) ($_GET['order_id'] ?? ''), 'siteUrl' => $siteUrl, 'userId' => (int) $userIdVal], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
 <script src="<?= htmlspecialchars(SITE_URL, ENT_QUOTES) ?>/assets/js/payment-waiting.js?v=<?= filemtime(__DIR__ . '/assets/js/payment-waiting.js') ?>"></script>
 <?php endif; ?>

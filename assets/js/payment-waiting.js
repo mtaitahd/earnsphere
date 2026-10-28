@@ -42,7 +42,7 @@
                 link.textContent = ' Try again';
                 notice.appendChild(link);
             } else {
-                notice.textContent = data.message || 'Abliner has not confirmed this payment. If no prompt arrived, contact support with the order ID. No new push has been sent.';
+                notice.textContent = data.message || (config.provider || 'The provider') + ' has not confirmed this payment. If no prompt arrived, contact support with the order ID. No new push has been sent.';
             }
         } catch (error) {
             notice.textContent = 'Payment verification is temporarily unavailable. We have not confirmed payment. Check your connection or contact support with the order ID before paying again.';
