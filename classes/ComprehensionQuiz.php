@@ -6,6 +6,10 @@ class ComprehensionQuiz {
         if (!StaffAccess::canForUser($id, 'quizzes')) throw new InvalidArgumentException('Quiz publishing permission required.');
     }
 
+    public static function hasPaidRegistration(int $userId): bool {
+        return (bool)Database::fetchOne("SELECT id FROM payments WHERE user_id = ? AND purpose = 'registration' AND status = 'completed' AND amount > 0 LIMIT 1",[$userId]);
+    }
+
     public static function validateQuestions($questions): array {
         if (!is_array($questions) || count($questions)<1 || count($questions)>10) throw new InvalidArgumentException('Add between 1 and 10 questions.');
         $validated=[];
@@ -70,6 +74,7 @@ class ComprehensionQuiz {
         Database::beginTransaction();
         try {
             SocialHub::activeUser($userId);
+            if (!self::hasPaidRegistration($userId)) throw new InvalidArgumentException('Kamilisha malipo ya usajili kabla ya kufanya quiz.');
             // Shared lock order with social rewards: user, content, then wallet.
             $quiz=Database::fetchOne('SELECT * FROM comprehension_quizzes WHERE id = ? FOR UPDATE',[$quizId]);
             if (!$quiz) throw new InvalidArgumentException('Quiz not found.');

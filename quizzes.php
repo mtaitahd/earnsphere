@@ -1,5 +1,9 @@
 <?php
 require_once __DIR__.'/includes/member_feature.php';require_once __DIR__.'/classes/ComprehensionQuiz.php';
+if (!ComprehensionQuiz::hasPaidRegistration((int)$user['id'])) {
+    setFlash('error','Kamilisha malipo ya usajili kabla ya kufanya quiz.');
+    header('Location: '.SITE_URL.'/dashboard');exit;
+}
 if (($_SERVER['REQUEST_METHOD']??'GET')==='POST') {
     try {
         if (($_POST['confirmed']??'')!=='1') throw new InvalidArgumentException('Confirm that you are ready to submit your single attempt.');

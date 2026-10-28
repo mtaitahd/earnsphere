@@ -7,6 +7,7 @@ def run(endpoint,user=200,method='GET',post=None,permission=False):
     code='ob_start();require '+json.dumps(str(root/'tests/quizzes_fixture.php'))+';ob_end_clean();'
     code+='ComprehensionQuiz::create(3,sampleQuiz());'
     if permission: code+='Database::insert("agent_permissions",["user_id"=>204,"permission"=>"quizzes"]);StaffAccess::clearCache();'
+    if user==205: code+='Database::insert("users",["id"=>205,"status"=>"active","role"=>"user"]);'
     code+='Auth::initSession();$_SESSION=["user_id"=>'+str(user)+',"user_role"=>'+json.dumps('admin' if user==3 else ('agent' if user==204 else 'user'))+',CSRF_TOKEN_NAME=>"quiz-csrf"];'
     code+='$_SERVER["REQUEST_METHOD"]='+json.dumps(method)+';$_SERVER["PHP_SELF"]='+json.dumps('/'+endpoint)+';$_SERVER["REQUEST_URI"]='+json.dumps('/'+endpoint)+';'
     code+='$_POST=json_decode('+json.dumps(json.dumps(post or {}))+',true);'
@@ -17,6 +18,10 @@ def run(endpoint,user=200,method='GET',post=None,permission=False):
     body,state=p.stdout.rsplit('QUIZ_STATE:',1)
     assert 'Fatal error' not in body and 'Warning:' not in body,(endpoint,body[-2000:])
     return body,json.loads(state)
+for method in ['GET','POST']:
+    body,state=run('quizzes.php',user=205,method=method,post={'csrf_token':'quiz-csrf','quiz_id':1,'confirmed':'1','answers':['1','2']})
+    assert state['http']==302 and state['attempts']==0 and state['paid']==0
+    assert 'answers[0]' not in body,'Unpaid active user saw quiz questions'
 body,state=run('quizzes.php')
 assert 'answers[0]' in body and 'answers[1]' in body and 'jaribio' in body
 assert 'name="correct"' not in body and '"correct":' not in body and 'Correct answer' not in body,'Public page exposed answer key'

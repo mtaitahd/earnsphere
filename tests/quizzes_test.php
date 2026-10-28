@@ -11,6 +11,19 @@ expect(!StaffAccess::canForUser(204,'social'),'Quiz permission granted promotion
 $id=ComprehensionQuiz::create(204,$input);
 $quiz=Database::fetchOne('SELECT * FROM comprehension_quizzes WHERE id=?',[$id]);
 foreach(ComprehensionQuiz::publicQuestions($quiz['questions']) as $question)expect(array_keys($question)===['question','options'],'Answer key leaked into public projection');
+// An active status alone must never unlock paid quizzes.
+Database::insert('users',['id'=>205,'status'=>'active','role'=>'user']);
+$unpaidBefore=Wallet::getWallet(205);$attemptCount=Database::count('comprehension_attempts');
+foreach([['pending','registration',16000],['failed','registration',16000],['completed','admin_funding',16000],['completed','registration',0]] as $case){
+ Database::delete('payments','user_id = ?',[205]);
+ Database::insert('payments',['user_id'=>205,'order_id'=>'QUIZ-UNPAID','status'=>$case[0],'purpose'=>$case[1],'amount'=>$case[2]]);
+ expect(!ComprehensionQuiz::hasPaidRegistration(205),'Unpaid account passed payment gate');
+ quizBlocked(fn()=>ComprehensionQuiz::submit(205,$id,['1','2']),'Unpaid account received quiz reward');
+ expect(Database::count('comprehension_attempts')===$attemptCount && Wallet::getWallet(205)===$unpaidBefore,'Unpaid attempt changed balances or consumed attempt');
+}
+Database::delete('payments','user_id = ?',[205]);
+expect(!ComprehensionQuiz::hasPaidRegistration(205),'Missing payment passed gate');
+quizBlocked(fn()=>ComprehensionQuiz::submit(205,$id,['1','2']),'Missing payment accepted');
 $before=Wallet::getWallet(200);
 foreach([[1],['1'=>'1','2'=>'2'],[1,9],['1',[]],['1','2','0']] as $invalid)quizBlocked(fn()=>ComprehensionQuiz::submit(200,$id,$invalid),'Invalid answer set accepted');
 expect(Database::count('comprehension_attempts')===0 && Wallet::getWallet(200)===$before,'Invalid answers consumed attempt or changed wallet');
