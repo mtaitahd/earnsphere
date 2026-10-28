@@ -409,6 +409,11 @@ include __DIR__ . '/admin_header.php';
                             <label class="form-label" style="font-weight:700;">Template <span class="text-muted" style="font-weight:400;font-size:0.8rem;">(optional, loads into message)</span></label>
                             <select class="form-select" name="template_key" id="templateSelect">
                                 <option value="">— Custom message —</option>
+                                <optgroup label="New learning content / Mafunzo mapya">
+                                    <option value="" data-message="<?= htmlspecialchars('Habari {name}, video mpya ya YouTube imechapishwa kwenye {site}. Ingia akaunti yako ujifunze: '.SITE_URL.'/social-tasks', ENT_QUOTES) ?>">YouTube mpya - tembelea akaunti</option>
+                                    <option value="" data-message="<?= htmlspecialchars('Habari {name}, quiz mpya imechapishwa kwenye {site}. Ingia akaunti yako uone maswali, zawadi na masharti: '.SITE_URL.'/quizzes', ENT_QUOTES) ?>">Quiz mpya - tembelea akaunti</option>
+                                    <option value="" data-message="<?= htmlspecialchars('Habari {name}, video mpya za YouTube na quiz zimechapishwa kwenye {site}. Tembelea akaunti yako uone mafunzo, maswali na masharti: '.SITE_URL.'/dashboard', ENT_QUOTES) ?>">YouTube na quiz mpya - tembelea akaunti</option>
+                                </optgroup>
                                 <?php foreach ($templates as $t): ?>
                                     <option value="<?= $t['template_key'] ?>" data-message="<?= htmlspecialchars($t['message'], ENT_QUOTES) ?>">
                                         <?= sanitize($t['name']) ?> (<?= $t['template_key'] ?>)
