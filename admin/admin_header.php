@@ -72,6 +72,9 @@ if (StaffAccess::isAdministrator()) {
         </a>
     </li>
     <?php endforeach; ?>
+    <?php if (StaffAccess::can('settings')): ?>
+    <li class="nav-item"><a class="nav-link" href="<?= SITE_URL ?>/admin/settings#snippe-settings"><i class="fas fa-fw fa-credit-card"></i><span>Snippe Settings</span></a></li>
+    <?php endif; ?>
     <li class="nav-item"><a class="nav-link" href="<?= SITE_URL ?>" target="_blank"><i class="fas fa-fw fa-external-link-alt"></i><span>View Site</span></a></li>
 
     <!-- Sidebar Footer -->

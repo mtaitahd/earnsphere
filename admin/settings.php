@@ -141,6 +141,20 @@ include __DIR__ . '/admin_header.php';
 <form method="POST">
     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
 
+    <div class="card mb-4" id="snippe-settings" style="scroll-margin-top:90px">
+        <div class="card-header"><h6>Snippe Instant Pay</h6></div>
+        <div class="card-body">
+            <p>Offer the hosted Snippe checkout alongside Abliner for registration payments.</p>
+            <label for="snippe-enabled">Enable Snippe checkout</label>
+            <select id="snippe-enabled" class="form-select mb-3" name="settings[snippe_enabled]"><option value="0">Off</option><option value="1" <?= ($settingsMap['snippe_enabled']['setting_value']??'0')==='1'?'selected':'' ?>>On</option></select>
+            <div class="row g-3"><?php foreach(['snippe_api_key'=>'API key (collection:read)','snippe_checkout_token'=>'Checkout sessions token (merchant JWT)','snippe_webhook_secret'=>'Webhook signing secret'] as $key=>$label): ?>
+                <div class="col-md-6"><label for="<?= $key ?>"><?= $label ?></label><input type="password" id="<?= $key ?>" name="settings[<?= $key ?>]" class="form-control" value="" autocomplete="new-password" placeholder="Leave blank to keep the saved secret"><small><?= !empty($settingsMap[$key]['setting_value']) || getenv(strtoupper($key)) ? 'Configured':'Not configured' ?></small></div>
+            <?php endforeach; ?></div>
+            <p class="mt-3">Webhook: <code><?= sanitize(rtrim(SITE_URL,'/').'/webhooks/snippe.php') ?></code></p>
+            <p class="text-muted">Snippe documents hosted sessions with a merchant JWT, separate from the collection API key. Confirm session access with Snippe and renew the token when required. Keys stay on the server. A successful return URL alone never activates an account.</p>
+        </div>
+    </div>
+
     <!-- General Settings -->
     <div class="card mb-4">
         <div class="card-header">
@@ -231,20 +245,6 @@ include __DIR__ . '/admin_header.php';
             <p class="mt-3 mb-1"><strong>Callback URL:</strong></p>
             <code><?= htmlspecialchars(rtrim(SITE_URL, '/') . '/webhooks/abliner.php', ENT_QUOTES) ?></code>
             <p class="text-muted mt-2 mb-0">Save this HTTPS URL in Abliner Dashboard → API Keys → Add Your URL callback. Generate your personal signing secret there. Both secrets stay on the server.</p>
-        </div>
-    </div>
-
-    <div class="card mb-4" id="snippe-settings">
-        <div class="card-header"><h6>Snippe Instant Pay</h6></div>
-        <div class="card-body">
-            <p>Offer the hosted Snippe checkout alongside Abliner for registration payments.</p>
-            <label for="snippe-enabled">Enable Snippe checkout</label>
-            <select id="snippe-enabled" class="form-select mb-3" name="settings[snippe_enabled]"><option value="0">Off</option><option value="1" <?= ($settingsMap['snippe_enabled']['setting_value']??'0')==='1'?'selected':'' ?>>On</option></select>
-            <div class="row g-3"><?php foreach(['snippe_api_key'=>'API key (collection:read)','snippe_checkout_token'=>'Checkout sessions token (merchant JWT)','snippe_webhook_secret'=>'Webhook signing secret'] as $key=>$label): ?>
-                <div class="col-md-6"><label for="<?= $key ?>"><?= $label ?></label><input type="password" id="<?= $key ?>" name="settings[<?= $key ?>]" class="form-control" value="" autocomplete="new-password" placeholder="Leave blank to keep the saved secret"><small><?= !empty($settingsMap[$key]['setting_value']) || getenv(strtoupper($key)) ? 'Configured':'Not configured' ?></small></div>
-            <?php endforeach; ?></div>
-            <p class="mt-3">Webhook: <code><?= sanitize(rtrim(SITE_URL,'/').'/webhooks/snippe.php') ?></code></p>
-            <p class="text-muted">Snippe documents hosted sessions with a merchant JWT, separate from the collection API key. Confirm session access with Snippe and renew the token when required. Keys stay on the server. A successful return URL alone never activates an account.</p>
         </div>
     </div>
 
