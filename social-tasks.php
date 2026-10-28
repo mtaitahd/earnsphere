@@ -46,7 +46,7 @@ $pageTitle='Social tasks';include __DIR__.'/includes/public_head.php'; ?>
 <?php if ($task['opened_id'] || $task['submission_status']): ?>
 <button type="button" class="btn btn-outline-primary" disabled>Opened</button>
 <?php else: ?>
-<form method="POST" target="_blank" rel="noopener" data-social-open><?php featureToken(); ?><input type="hidden" name="action" value="open"><input type="hidden" name="campaign_id" value="<?= (int)$task['id'] ?>"><button class="btn btn-outline-primary" type="submit">Open <?= SocialHub::PLATFORMS[$task['platform']]??'content' ?></button><p role="status" data-open-message></p></form>
+<form method="POST" action="<?= sanitize(SITE_URL) ?>/social-tasks" target="_blank" rel="noopener" data-social-open><?php featureToken(); ?><input type="hidden" name="action" value="open"><input type="hidden" name="campaign_id" value="<?= (int)$task['id'] ?>"><button class="btn btn-outline-primary" type="submit">Open <?= SocialHub::PLATFORMS[$task['platform']]??'content' ?></button><p role="status" data-open-message></p></form>
 <?php endif; ?>
 <?php if($task['submission_status']): ?><p>Your submission: <?= featureStatus($task['submission_status']) ?></p><?php else: ?>
 <form method="POST"><?php featureToken(); ?><input type="hidden" name="campaign_id" value="<?= (int)$task['id'] ?>"><label for="answer-<?= (int)$task['id'] ?>">Your feedback / completed work</label><textarea id="answer-<?= (int)$task['id'] ?>" name="answer" maxlength="4000" rows="3" required placeholder="Jibu swali la admin au eleza kazi uliyofanya. Usiweke password au taarifa za siri."></textarea><button class="btn btn-primary">Submit for review</button></form>

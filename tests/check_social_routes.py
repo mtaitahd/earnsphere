@@ -3,7 +3,7 @@ import json, subprocess, sys
 from pathlib import Path
 root=Path(__file__).resolve().parent.parent
 php=sys.argv[1] if len(sys.argv)>1 else 'php'
-def run(endpoint,user=200,method='GET',post=None):
+def run(endpoint,user=200,method='GET',post=None,accept=''):
     code='ob_start();require '+json.dumps(str(root/'tests/social_loans_fixture.php'))+';ob_end_clean();'
     code+='LoanApplications::savePolicy(3,["enabled"=>"1","terms"=>"Test terms: zero fee, 30 days","min_amount"=>"1000","max_amount"=>"10000","min_days"=>"0","min_referrals"=>"0"]);'
     code+="""
@@ -20,6 +20,7 @@ def run(endpoint,user=200,method='GET',post=None):
     """
     code+='Auth::initSession();$_SESSION=["user_id"=>'+str(user)+',"user_role"=>'+json.dumps('admin' if user==3 else ('agent' if user==204 else 'user'))+',CSRF_TOKEN_NAME=>"route-csrf"];'
     code+='$_SERVER["REQUEST_METHOD"]='+json.dumps(method)+';$_SERVER["PHP_SELF"]='+json.dumps('/'+endpoint)+';$_SERVER["REQUEST_URI"]='+json.dumps('/'+endpoint)+';'
+    code+='$_SERVER["HTTP_ACCEPT"]='+json.dumps(accept)+';'
     code+='$_POST=json_decode('+json.dumps(json.dumps(post or {}))+',true);'
     code+='register_shutdown_function(function(){echo "\nROUTE_STATE:".json_encode(["http"=>http_response_code(),"tasks"=>Database::count("social_campaigns"),"applications"=>Database::count("loan_applications")]);});'
     code+='require '+json.dumps(str(root/endpoint))+';'
@@ -49,3 +50,15 @@ for endpoint in ['admin/social.php','admin/loans.php']:
     body,state=run(endpoint,user=3,method='POST',post={'csrf_token':'route-csrf','action':'invalid'})
     assert state['http']==302,'Valid admin POST did not follow redirect flow'
 print('Populated user pages hide other users records and escape submitted HTML.')
+
+# AJAX task opening must return JSON for success and all access failures.
+for actor,post,status in [(202,{'csrf_token':'route-csrf','action':'open','campaign_id':1},200),(202,{'action':'open','campaign_id':1},403),(203,{'csrf_token':'route-csrf','action':'open','campaign_id':1},403),(999,{'csrf_token':'route-csrf','action':'open','campaign_id':1},401),(200,{'csrf_token':'route-csrf','action':'open','campaign_id':1},409)]:
+    body,state=run('social-tasks.php',user=actor,method='POST',post=post,accept='application/json')
+    result=json.loads(body)
+    assert state['http']==status,(state,body)
+    assert result['success']==(status==200)
+    if status==200: assert result['url']=='https://youtu.be/dQw4w9WgXcQ'
+    else: assert result['message']
+body,_=run('social-tasks.php',user=202)
+assert '/social-tasks" target="_blank" rel="noopener" data-social-open' in body
+print('Social open JSON: success, repeat protection, expired session, inactive account and CSRF passed.')
