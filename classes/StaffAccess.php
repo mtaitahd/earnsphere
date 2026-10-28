@@ -91,6 +91,7 @@ class StaffAccess {
             $items[] = ['permission' => 'security-alerts', 'page' => 'security-alerts', 'label' => 'Security Alerts', 'icon' => 'shield-alt'];
             $items[] = ['permission' => 'referral-lookup', 'page' => 'referral-lookup', 'label' => 'Referral Code Lookup', 'icon' => 'search'];
             $items[] = ['permission' => 'agents', 'page' => 'agents', 'label' => 'Agents & Permissions', 'icon' => 'user-shield'];
+            $items[] = ['permission' => 'settings', 'page' => 'snippe-wallet', 'label' => 'Snippe Wallet', 'icon' => 'wallet'];
             $items[] = ['permission' => 'settings', 'page' => 'settings', 'label' => 'System Settings', 'icon' => 'cog'];
         }
         if (self::isStaff()) $items[] = ['permission' => 'profile', 'page' => 'profile', 'label' => 'My Profile', 'icon' => 'user-cog'];
@@ -102,6 +103,7 @@ class StaffAccess {
         return SITE_URL . '/admin/home';
     }
     public static function pagePermission(string $page): ?string {
+        if ($page==='snippe-wallet') return 'settings';
         foreach (self::catalog() as $key => $item) if (($item['page'] ?? '') === $page) return $key;
         return in_array($page, ['settings', 'agents', 'security-alerts', 'referral-lookup', 'profile', 'home'], true) ? $page : null;
     }

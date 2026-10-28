@@ -165,6 +165,7 @@ include __DIR__ . '/admin_header.php';
     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
 
     <a href="#snippe-test" class="btn btn-outline-primary mb-3">Test USSD push</a>
+    <a href="<?= sanitize(SITE_URL) ?>/admin/snippe-wallet" class="btn btn-outline-primary mb-3">Withdraw from Snippe</a>
     <div class="card mb-4" id="snippe-settings" style="scroll-margin-top:90px">
         <div class="card-header"><h6>Snippe USSD Push</h6></div>
         <div class="card-body">

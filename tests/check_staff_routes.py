@@ -24,7 +24,7 @@ def run(endpoint, permissions=("support",), method="GET", post=None, status="act
         raise AssertionError(f"{endpoint}: {result.stderr} {result.stdout}")
     return json.loads(result.stdout.split("TEST_STATE:")[-1])
 
-for page in ["index", "users", "abliner-wallet", "payments", "commissions", "withdrawals", "referral-tree", "settings", "agents", "announcements", "contests", "sms", "logs", "error-logs", "social", "loans", "quizzes", "marketplace", "security-alerts", "referral-lookup"]:
+for page in ["index", "users", "abliner-wallet", "payments", "commissions", "withdrawals", "referral-tree", "settings", "snippe-wallet", "agents", "announcements", "contests", "sms", "logs", "error-logs", "social", "loans", "quizzes", "marketplace", "security-alerts", "referral-lookup"]:
     assert run(f"admin/{page}.php")["http"] == 403, f"Support-only agent opened {page}"
 for endpoint in ["api/abliner_balance.php", "api/create_payout.php", "api/check_payout.php", "api/payout_preview.php", "api/lookup_phone.php", "api/check_payment.php"]:
     state = run(endpoint, method="POST", post={"csrf_token":"test-csrf"})

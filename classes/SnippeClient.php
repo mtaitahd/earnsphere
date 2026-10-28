@@ -8,6 +8,7 @@ class SnippeClient extends AblinerClient {
     public function createPayment(array $payload,string $key): array {return $this->snippeRequest('POST','/v1/payments',$payload,$key);}
     public function payment(string $reference): array {return $this->snippeRequest('GET','/v1/payments/'.rawurlencode($reference));}
     public function createPayout(array $payload,string $key): array {return $this->snippeRequest('POST','/v1/payouts/send',$payload,$key);}
+    public function payoutFee(int $amount): array {return $this->snippeRequest('GET','/v1/payouts/fee?amount='.$amount);}
     public function payout(string $reference): array {return $this->snippeRequest('GET','/v1/payouts/'.rawurlencode($reference));}
     private function snippeRequest(string $method,string $path,array $payload=[],?string $key=null): array {
         $token=$this->config['api_key']??'';
