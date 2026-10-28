@@ -175,13 +175,13 @@ include __DIR__ . '/admin_header.php';
             <option value="0" <?= (string)app_setting('snippe_payout_enabled','0')!=='1'?'selected':'' ?>>Disabled</option>
             <option value="1" <?= (string)app_setting('snippe_payout_enabled','0')==='1'?'selected':'' ?>>Enabled</option>
         </select>
-        <small>Uses your Snippe API key with payout permissions and available Snippe balance. Recipient verification uses the existing Abliner lookup.</small>
+        <small>Requires API key scopes disbursement:create and disbursement:read, plus available Snippe balance. Recipient verification uses the existing Abliner lookup.</small>
             </div>
 
             <p>Collect registration payments by sending a USSD PIN prompt to the customer’s mobile money number.</p>
             <label for="snippe-enabled">Enable Snippe USSD push</label>
             <select id="snippe-enabled" class="form-select mb-3" name="settings[snippe_enabled]"><option value="0">Off</option><option value="1" <?= ($settingsMap['snippe_enabled']['setting_value']??'0')==='1'?'selected':'' ?>>On</option></select>
-            <div class="row g-3"><?php foreach(['snippe_api_key'=>'API key (collection:create and collection:read)','snippe_webhook_secret'=>'Webhook signing secret'] as $key=>$label): ?>
+            <div class="row g-3"><?php foreach(['snippe_api_key'=>'API key (collection:create and collection:read; withdrawals also need disbursement:create and disbursement:read)','snippe_webhook_secret'=>'Webhook signing secret'] as $key=>$label): ?>
                 <div class="col-md-6"><label for="<?= $key ?>"><?= $label ?></label><input type="password" id="<?= $key ?>" name="settings[<?= $key ?>]" class="form-control" value="" autocomplete="new-password" placeholder="Leave blank to keep the saved secret"><small><?= !empty($settingsMap[$key]['setting_value']) || getenv(strtoupper($key)) ? 'Configured':'Not configured' ?></small></div>
             <?php endforeach; ?></div>
             <p class="mt-3">Webhook: <code><?= sanitize(rtrim(SITE_URL,'/').'/webhooks/snippe.php') ?></code></p>

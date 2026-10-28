@@ -187,6 +187,10 @@ class AblinerPayment {
             $payout = Database::fetchOne('SELECT * FROM payouts WHERE id = ?', [$id]);
         }
         if ($payout['status'] === 'completed') $result = ['success' => true];
+        if ($this->gateway()==='snippe' && $payout['status']==='failed') {
+            $failure=json_decode($payout['metadata']??'{}',true)?:[];
+            $result['error']=SnippeErrors::message((string)($failure['failure_code']??$failure['code']??'snippe_error'));
+        }
         return ['success' => $result['success'], 'payout_id' => $id, 'status' => $payout['status'], 'reference' => $payout['reference'],
             'fees' => $payout['fees'], 'error' => $result['error'] ?? null];
     }
@@ -233,7 +237,7 @@ class AblinerPayment {
             $this->applyTransaction($table, $id, $result['data']);
         } elseif (!empty($result['uncertain'])) {
             // A timeout, 5xx or transaction_id may mean a transfer exists. Keep the hold.
-            Database::update($table, ['metadata' => $this->metadata(Database::fetchOne("SELECT * FROM $table WHERE id = ?", [$id]), ['code' => $result['code'], 'message' => $result['error'],
+            Database::update($table, ['metadata' => $this->metadata(Database::fetchOne("SELECT * FROM $table WHERE id = ?", [$id]), ['code' => $result['code'], 'http_status' => $result['http_status'] ?? null, 'message' => $result['error'],
                 'transaction_id' => $result['transaction_id'] ?? null])], 'id = ? AND status = ?', [$id, 'pending']);
         } else {
             Database::beginTransaction();
@@ -241,7 +245,7 @@ class AblinerPayment {
                 $row = Database::fetchOne("SELECT * FROM $table WHERE id = ? FOR UPDATE", [$id]);
                 if ($row['status'] === 'pending') {
                     if ($table === 'payouts') $this->settleWithdrawal($row, 'failed');
-                    Database::update($table, ['status' => 'failed', 'metadata' => $this->metadata($row, ['code' => $result['code'], 'message' => $result['error']])], 'id = ?', [$id]);
+                    Database::update($table, ['status' => 'failed', 'metadata' => $this->metadata($row, ['code' => $result['code'], 'http_status' => $result['http_status'] ?? null, 'message' => $result['error']])], 'id = ?', [$id]);
                 }
                 Database::commit();
             } catch (Throwable $e) { if (Database::inTransaction()) Database::rollback(); throw $e; }

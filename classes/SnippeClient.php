@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/AblinerClient.php';
+require_once __DIR__.'/SnippeErrors.php';
 require_once dirname(__DIR__).'/config/snippe.php';
 class SnippeClient extends AblinerClient {
     public function __construct(?array $config=null) {parent::__construct($config??snippeConfig());}
@@ -21,7 +22,9 @@ class SnippeClient extends AblinerClient {
         $data=json_decode($response['body'],true);
         if ($response['error']!=='' || !is_array($data)) return ['success'=>false,'code'=>'snippe_error','uncertain'=>true,'error'=>'Snippe verification is unavailable. Do not pay again until this request is checked.'];
         if ($response['http_code']>=200 && $response['http_code']<300 && is_array($data['data']??null) && ($data['status']??'success')==='success') return ['success'=>true,'data'=>$data['data']];
-        return ['success'=>false,'code'=>'snippe_error','uncertain'=>$response['http_code']>=500 || in_array($response['http_code'],[408,409,429],true),
-            'error'=>'Snippe could not complete this request. Contact support with your order ID.'];
+        $code=SnippeErrors::code((int)$response['http_code'],$data);
+        return ['success'=>false,'code'=>$code,'http_status'=>(int)$response['http_code'],
+            'uncertain'=>$response['http_code']>=500 || in_array($response['http_code'],[408,409,429],true),
+            'error'=>SnippeErrors::message($code)];
     }
 }

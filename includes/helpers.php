@@ -328,3 +328,11 @@ function formatLedgerTime(string $datetime): string {
     return (new DateTimeImmutable($datetime, new DateTimeZone('UTC')))
         ->setTimezone(new DateTimeZone('Africa/Dar_es_Salaam'))->format('d M Y, H:i');
 }
+
+/** Display only fixed, classified Snippe failures, never raw provider response text. */
+function snippePayoutFailureText(?string $metadata): string {
+    require_once dirname(__DIR__).'/classes/SnippeErrors.php';
+    $data=json_decode($metadata??'{}',true);
+    if (!is_array($data)) $data=[];
+    return SnippeErrors::message(is_string($data['failure_code']??$data['code']??null)?($data['failure_code']??$data['code']):'snippe_error');
+}

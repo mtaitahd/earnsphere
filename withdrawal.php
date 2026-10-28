@@ -114,9 +114,9 @@ include __DIR__ . '/includes/public_head.php';
                 <?php if ($isCompleted): ?>
                     Money has been sent to your mobile money account.
                 <?php elseif ($isPending): ?>
-                    <?= $payoutResult['message'] ?? 'Payout is being processed. You will receive the money shortly.' ?>
+                    <?= sanitize($payoutResult['message'] ?? 'Payout is being processed. You will receive the money shortly.') ?>
                 <?php else: ?>
-                    <?= $payoutResult['message'] ?? 'Something went wrong. Please try again or contact support.' ?>
+                    <?= sanitize($payoutResult['message'] ?? 'Something went wrong. Please try again or contact support.') ?>
                 <?php endif; ?>
             </p>
             
@@ -252,6 +252,7 @@ include __DIR__ . '/includes/public_head.php';
                     </p>
                 </div>
                 <div class="withdrawal-history-status">
+                    <?php if (($wd['gateway']??'')==='snippe' && $wd['status']==='failed'): ?><small class="d-block text-danger"><?= sanitize(snippePayoutFailureText($wd['payout_metadata']??null)) ?></small><?php endif; ?>
                     <?= statusBadge($wd['status']) ?><small class="d-block"><?= sanitize(ucfirst($wd['gateway'] ?? '')) ?></small>
                     <?php if (in_array($wd['gateway'] ?? '', ['abliner','snippe'],true) && in_array($wd['status'], ['pending', 'approved', 'processing'], true)): ?>
                     <button type="button" class="btn btn-sm btn-outline-primary d-block mt-2" data-check-withdrawal="<?= (int) $wd['id'] ?>">Check status</button>

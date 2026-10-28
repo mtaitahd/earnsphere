@@ -360,3 +360,10 @@ No migration is needed. State is stored with file locking in the existing privat
 After pulling, run `php database/migrate_snippe_admin_transfers.php` once (safe to repeat). It creates only the separate company-transfer history table and sends no money. Then open **Admin → Snippe Wallet** or use **Withdraw from Snippe** in Snippe settings. Enter the recipient phone and amount, preview the verified recipient name and Snippe fee, then confirm the transfer. The API key needs payout/fee/status permissions and sufficient Snippe balance. The existing Abliner recipient lookup must be configured. This admin feature is independent of the member Snippe-withdrawal switch.
 
 Only active administrators can preview, send or check company withdrawals. Users and agents cannot open the page. Company transfers never create member withdrawals, wallet debits, registration payments or commissions. Duplicate submissions reuse the existing transfer. Timeouts remain pending; use the status check or contact Snippe with the request key before another transfer. Signed payout callbacks and API verification update the same record.
+
+
+### Diagnosing Snippe withdrawal rejections
+
+A collection-only API key cannot create payouts. The application key needs all four scopes when used for both: `collection:create`, `collection:read`, `disbursement:create`, `disbursement:read`. Create/select the appropriate key in Snippe Settings → API Keys, then save it in EarnSphere Admin → Snippe Settings. Do not send keys in support messages.
+
+New rejection records preserve the safe Snippe error code and HTTP status. Member receipts/history display fixed explanations; admin withdrawal details show the code/status. Arbitrary provider messages and credentials are not echoed. Successful-HTTP payout failures also retain a classified failure reason. Older generic failed records cannot recover a discarded original provider error. Authentication/validation rejections release holds once; uncertain 5xx/timeouts retain holds for verification. No migration is required.

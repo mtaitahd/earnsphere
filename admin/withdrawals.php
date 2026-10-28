@@ -209,7 +209,9 @@ include __DIR__ . '/admin_header.php';
                             <?php if ($wd['payout_fees'] > 0): ?>
                                 <div><small class="text-muted">Fees: <?= formatCurrency($wd['payout_fees']) ?> | Provider: <?= $wd['payout_provider'] ?></small></div>
                             <?php endif; ?>
+                            <?php if (($wd['gateway']??'')==='snippe' && $wd['payout_status']==='failed'): ?><p class="text-danger mb-1"><?= sanitize(snippePayoutFailureText($wd['payout_metadata']??null)) ?></p><small>Check Snippe API key scopes: <code>disbursement:create</code> and <code>disbursement:read</code>. Receiving payments uses different scopes.</small><?php endif; ?>
                             <?php $diagnostic = json_decode($wd['payout_metadata'] ?? '{}', true) ?: []; ?>
+                            <?php if (($wd['gateway']??'')==='snippe' && isset($diagnostic['http_status'])): ?><div>Snippe HTTP: <?= (int)$diagnostic['http_status'] ?> · Code: <?= sanitize((string)($diagnostic['code']??'')) ?></div><?php endif; ?>
                             <?php if (!empty($diagnostic['verification_error'])): ?>
                                 <div class="text-danger">Initial verification error: <?= sanitize($diagnostic['verification_error']) ?></div>
                                 <?php $submission = $diagnostic['submission_response'] ?? []; ?>

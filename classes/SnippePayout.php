@@ -17,6 +17,10 @@ class SnippePayoutClient extends SnippeClient {
             || !is_string($phone) || !in_array($data['status']??'', ['pending','completed','failed'],true)) throw new RuntimeException('Invalid Snippe payout response. Funds remain reserved.');
         $result=['id'=>$reference,'reference'=>$reference,'type'=>'withdrawal','amount'=>(float)$amount['value'],'currency'=>'TZS',
             'status'=>$data['status'],'recipient'=>self::normalizePhone($phone),'provider_reference'=>$data['external_reference']??null];
+        if ($data['status']==='failed') {
+            $result['failure_code']=SnippeErrors::reason(is_string($data['failure_reason']??null)?$data['failure_reason']:'');
+            $result['failure_reason']=SnippeErrors::message($result['failure_code']);
+        }
         if (isset($data['metadata']['request_key'])) $result['customer_reference']=$data['metadata']['request_key'];
         foreach (['fees'=>'fee_tzs','total'=>'total_debited_tzs'] as $field=>$target) {
             if (isset($data[$field])) {
