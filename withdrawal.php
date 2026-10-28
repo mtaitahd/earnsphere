@@ -186,6 +186,13 @@ include __DIR__ . '/includes/public_head.php';
                 <label for="amount"><i class="fas fa-coins me-1"></i> Amount (TZS)</label>
             </div>
             
+            <div class="mb-3">
+                <label class="form-label" for="withdrawal-gateway">Withdraw via</label>
+                <select id="withdrawal-gateway" name="withdrawal_gateway" class="form-select" required>
+                    <option value="abliner">Abliner</option>
+                    <option value="snippe" <?= (string)app_setting('snippe_payout_enabled','0')==='1' ? '' : 'disabled' ?>>Snippe<?= (string)app_setting('snippe_payout_enabled','0')==='1' ? '' : ' (currently unavailable)' ?></option>
+                </select>
+            </div>
             <!-- Quick Amounts -->
             <div class="quick-amounts">
                 <button type="button" class="quick-amount-btn" onclick="setAmount(5000)">5,000</button>
@@ -245,8 +252,8 @@ include __DIR__ . '/includes/public_head.php';
                     </p>
                 </div>
                 <div class="withdrawal-history-status">
-                    <?= statusBadge($wd['status']) ?>
-                    <?php if (($wd['gateway'] ?? '') === 'abliner' && in_array($wd['status'], ['pending', 'approved', 'processing'], true)): ?>
+                    <?= statusBadge($wd['status']) ?><small class="d-block"><?= sanitize(ucfirst($wd['gateway'] ?? '')) ?></small>
+                    <?php if (in_array($wd['gateway'] ?? '', ['abliner','snippe'],true) && in_array($wd['status'], ['pending', 'approved', 'processing'], true)): ?>
                     <button type="button" class="btn btn-sm btn-outline-primary d-block mt-2" data-check-withdrawal="<?= (int) $wd['id'] ?>">Check status</button>
                     <small class="d-block" role="status" data-withdrawal-message="<?= (int) $wd['id'] ?>"></small>
                     <?php endif; ?>

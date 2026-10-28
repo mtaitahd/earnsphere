@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__).'/classes/SnippePayment.php';
+require_once dirname(__DIR__).'/classes/SnippePayout.php';
 header('Content-Type: application/json; charset=utf-8');
 if (($_SERVER['REQUEST_METHOD']??'')!=='POST'){http_response_code(405);exit;}
 $headers=array_change_key_case(function_exists('getallheaders')?getallheaders():['X-Webhook-Timestamp'=>$_SERVER['HTTP_X_WEBHOOK_TIMESTAMP']??'','X-Webhook-Signature'=>$_SERVER['HTTP_X_WEBHOOK_SIGNATURE']??''],CASE_LOWER);
@@ -10,7 +11,7 @@ if (!$client->verifyWebhookSignature($headers,$raw)){http_response_code(401);exi
 try {
     $body=json_decode($raw,true,64,JSON_THROW_ON_ERROR);
     if (!is_array($body))throw new InvalidArgumentException('Invalid body.');
-    $service=new SnippePayment($client);$result=$service->processWebhook($body);
+    $service=str_starts_with((string)($body['type']??''),'payout.')?new SnippePayout():new SnippePayment($client);$result=$service->processWebhook($body);
     echo json_encode(['success'=>true]+$result);
     if(function_exists('fastcgi_finish_request'))fastcgi_finish_request();
     elseif(function_exists('litespeed_finish_request'))litespeed_finish_request();

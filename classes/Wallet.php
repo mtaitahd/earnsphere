@@ -295,7 +295,11 @@ class Wallet {
             }
             $requestKey = (string) ($_POST['withdrawal_request_key'] ?? '');
             if (!isset($_SESSION['withdrawal_request_keys'][$requestKey])) return ['success' => false, 'errors' => ['Reload the withdrawal form before submitting.']];
-            return (new AblinerPayment())->requestWithdrawal($userId, $amount, $normalized, $verified['name'], WithdrawalCharge::validate($_POST['withdrawal_charge_quote'] ?? ''), (string) ($_POST['withdrawal_request_key'] ?? ''));
+            require_once __DIR__.'/SnippePayout.php';
+            $gateway=$_POST['withdrawal_gateway']??'abliner';
+            if (!is_string($gateway) || !in_array($gateway,['abliner','snippe'],true)) throw new InvalidArgumentException('Choose a valid withdrawal provider.');
+            $service=$gateway==='snippe'?new SnippePayout():new AblinerPayment();
+            return $service->requestWithdrawal($userId, $amount, $normalized, $verified['name'], WithdrawalCharge::validate($_POST['withdrawal_charge_quote'] ?? ''), (string) ($_POST['withdrawal_request_key'] ?? ''));
         } catch (InvalidArgumentException | RuntimeException $e) {
             return ['success' => false, 'errors' => [$e->getMessage()]];
         } catch (Throwable $e) {
@@ -352,8 +356,8 @@ class Wallet {
             return ['success' => false, 'errors' => ['Withdrawal request not found']];
         }
         
-        if (($withdrawal['gateway'] ?? '') === 'abliner') {
-            return ['success' => false, 'errors' => ['Use Abliner status verification to settle this withdrawal.']];
+        if (in_array($withdrawal['gateway'] ?? '', ['abliner','snippe'], true)) {
+            return ['success' => false, 'errors' => ['Use provider status verification to settle this withdrawal.']];
         }
 
         if ($withdrawal['status'] !== 'pending') {

@@ -9,7 +9,7 @@ try {
     $last = $_SESSION['withdrawal_poll'][$payout['id']] ?? 0;
     if ($payout['status'] === 'pending' && time() - $last < 5) paymentApiReply(['success' => true, 'status' => 'pending', 'message' => 'Please wait a few seconds before checking again.']);
     $_SESSION['withdrawal_poll'][$payout['id']] = time();
-    $service = new AblinerPayment();
+    $service = withdrawalProvider($payout['gateway']);
     $result = $service->reconcile('payouts', (int) $payout['id']);
     paymentApiReply(['success' => $result['success'], 'status' => $result['status'] ?? $payout['status'], 'message' => $result['success'] ? ($result['message'] ?? 'Status checked.') : 'Verification unavailable. Your funds remain reserved; do not submit another payout.'], 200, $service);
 } catch (Throwable $e) {

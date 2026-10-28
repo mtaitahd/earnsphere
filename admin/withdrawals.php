@@ -30,9 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $ids = $wdAction === 'delete_single' ? [(int) ($_POST['withdrawal_id'] ?? 0)] : array_map('intval', (array) ($_POST['withdrawal_ids'] ?? []));
         if ($ids) {
             $marks = implode(',', array_fill(0, count($ids), '?'));
-            $protected = Database::fetchOne("SELECT id FROM withdrawals WHERE gateway = 'abliner' AND id IN ($marks) LIMIT 1", $ids);
+            $protected = Database::fetchOne("SELECT id FROM withdrawals WHERE gateway IN ('abliner','snippe') AND id IN ($marks) LIMIT 1", $ids);
             if ($protected) {
-                setFlash('error', 'Abliner withdrawal records are retained for payment reconciliation.');
+                setFlash('error', 'Provider withdrawal records are retained for payment reconciliation.');
                 header('Location: ' . SITE_URL . '/admin/withdrawals');
                 exit;
             }
@@ -225,9 +225,9 @@ include __DIR__ . '/admin_header.php';
                     <?php endif; ?>
                 </div>
                 <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                    <?= statusBadge($wd['status']) ?>
+                    <?= statusBadge($wd['status']) ?><small class="d-block"><?= sanitize(ucfirst($wd['gateway'] ?? '')) ?></small>
 
-                    <?php if ($wd['status'] === 'pending'): ?>
+                    <?php if ($wd['status'] === 'pending' && !in_array($wd['gateway'] ?? '', ['abliner','snippe'],true)): ?>
                     <div class="mt-2 d-flex gap-2 justify-content-md-end">
                         <button class="btn btn-danger btn-sm" data-bs-toggle="collapse" data-bs-target="#reject-<?= $wd['id'] ?>">
                             <i class="fas fa-times me-1"></i> Reject
@@ -249,7 +249,7 @@ include __DIR__ . '/admin_header.php';
                     </div>
                     <?php endif; ?>
 
-                    <?php if (($wd['gateway'] ?? '') === 'abliner' && in_array($wd['status'], ['pending', 'approved']) && empty($wd['payout_id'])): ?>
+                    <?php if (in_array($wd['gateway'] ?? '', ['abliner','snippe'],true) && in_array($wd['status'], ['pending', 'approved']) && empty($wd['payout_id'])): ?>
                     <div class="mt-2">
                         <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>" id="csrf-<?= $wd['id'] ?>">
                         <button type="button" class="btn <?= empty($wd['payout_id']) ? 'btn-primary' : 'btn-warning' ?> btn-sm send-payout-btn"
@@ -262,7 +262,7 @@ include __DIR__ . '/admin_header.php';
                         <?php if (!empty($wd['payout_error'])): ?>
                             <small class="d-block text-danger mt-1" style="font-size:0.7rem;"><?= sanitize($wd['payout_error']) ?></small>
                         <?php else: ?>
-                            <small class="d-block text-muted mt-1" style="font-size:0.7rem;">Abliner Disbursement</small>
+                            <small class="d-block text-muted mt-1" style="font-size:0.7rem;"><?= sanitize(ucfirst($wd['gateway'] ?? '')) ?> Disbursement</small>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>

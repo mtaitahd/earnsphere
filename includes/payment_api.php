@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../classes/AblinerPayment.php';
 require_once __DIR__ . '/../classes/StaffAccess.php';
+require_once __DIR__.'/../classes/SnippePayout.php';
+function withdrawalProvider(string $gateway): AblinerPayment {
+    if (!in_array($gateway,['abliner','snippe'],true)) throw new RuntimeException('Unknown withdrawal provider.');
+    return $gateway==='snippe'?new SnippePayout():new AblinerPayment();
+}
 Auth::initSession();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');

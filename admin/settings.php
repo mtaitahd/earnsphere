@@ -64,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!is_array($settings)) { http_response_code(422); exit('Invalid settings.'); }
     foreach (array_keys($settings) as $settingKey) if (str_starts_with($settingKey, 'welcome_media_')) unset($settings[$settingKey]);
     unset($settings['snippe_api_url'], $settings['snippe_api_version'], $settings['snippe_checkout_token']);
+    if (isset($settings['snippe_payout_enabled']) && !in_array($settings['snippe_payout_enabled'],['0','1'],true)) {http_response_code(422);exit('Invalid Snippe withdrawal setting.');}
     if (isset($settings['snippe_enabled']) && !in_array($settings['snippe_enabled'],['0','1'],true)) {http_response_code(422);exit('Invalid Snippe setting.');}
     foreach (['abliner_api_key', 'abliner_webhook_secret', 'snippe_api_key', 'snippe_webhook_secret'] as $secret) {
         if (isset($settings[$secret]) && trim((string) $settings[$secret]) === '') unset($settings[$secret]);
@@ -167,6 +168,15 @@ include __DIR__ . '/admin_header.php';
     <div class="card mb-4" id="snippe-settings" style="scroll-margin-top:90px">
         <div class="card-header"><h6>Snippe USSD Push</h6></div>
         <div class="card-body">
+            <div class="mb-3">
+        <label class="form-label" for="snippe-payout-enabled">Snippe withdrawals</label>
+        <select class="form-select" id="snippe-payout-enabled" name="settings[snippe_payout_enabled]">
+            <option value="0" <?= (string)app_setting('snippe_payout_enabled','0')!=='1'?'selected':'' ?>>Disabled</option>
+            <option value="1" <?= (string)app_setting('snippe_payout_enabled','0')==='1'?'selected':'' ?>>Enabled</option>
+        </select>
+        <small>Uses your Snippe API key with payout permissions and available Snippe balance. Recipient verification uses the existing Abliner lookup.</small>
+            </div>
+
             <p>Collect registration payments by sending a USSD PIN prompt to the customer’s mobile money number.</p>
             <label for="snippe-enabled">Enable Snippe USSD push</label>
             <select id="snippe-enabled" class="form-select mb-3" name="settings[snippe_enabled]"><option value="0">Off</option><option value="1" <?= ($settingsMap['snippe_enabled']['setting_value']??'0')==='1'?'selected':'' ?>>On</option></select>
