@@ -21,7 +21,7 @@ $user = Auth::getUser();
 $wallet = Wallet::getWallet($_SESSION['user_id']);
 $wallet['total_earned'] = Wallet::earnedTotal((int)$_SESSION['user_id']);
 $stats = CommissionEngine::getReferralStats($_SESSION['user_id']);
-$referralLink = getReferralLink($user['referral_code']);
+// Referral links are generated only on the protected Referrals page.
 
 // Live proof of payment data
 $liveProof = Database::fetchAll(
@@ -64,6 +64,7 @@ if ($user['status'] === 'active') {
 
 // Handle AJAX referral link copy logging
 if (isAjax() && isset($_GET['action']) && $_GET['action'] === 'track_copy') {
+    if ($user['status']!=='active' || $user['role']!=='user') jsonResponse(['success'=>false,'message'=>'Lipia akaunti yako kwanza.'],403);
     Auth::logActivity($_SESSION['user_id'], 'referral_link_copied', 'Copied referral link');
     jsonResponse(['success' => true]);
 }
@@ -98,7 +99,7 @@ include __DIR__ . '/includes/public_head.php';
         <a href="withdrawal"><i class="fas fa-arrow-up" aria-hidden="true"></i><span>Withdraw</span></a>
         <?php if ($user['status'] === 'active'): ?><a href="quizzes"><i class="fas fa-gift" aria-hidden="true"></i><span>Quiz</span></a><?php endif; ?>
         <a href="marketplace"><i class="fas fa-bag-shopping" aria-hidden="true"></i><span>Buy Goods</span></a>
-        <a href="referrals"><i class="fas fa-users" aria-hidden="true"></i><span>Referrals</span></a>
+        <a href="referrals" <?= $user['status']==='pending'?'data-referral-pay-required':'' ?>><i class="fas fa-users" aria-hidden="true"></i><span>Referrals</span></a>
         <a href="profile"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>
     </nav>
     <div class="account-totals"><div><span>Total earned</span><strong><?= formatCurrency($wallet['total_earned'] ?? 0) ?></strong></div><div><span>Total withdrawn</span><strong><?= formatCurrency($wallet['total_withdrawn'] ?? 0) ?></strong></div></div>
@@ -258,7 +259,7 @@ include __DIR__ . '/includes/public_head.php';
             <a href="withdrawal" class="btn btn-outline-primary" style="padding:0.75rem;">
                 <i class="fas fa-money-bill-wave me-1"></i> Withdraw
             </a>
-            <a href="referrals" class="btn btn-outline-primary" style="padding:0.75rem;">
+            <a href="referrals" <?= $user['status']==='pending'?'data-referral-pay-required':'' ?> class="btn btn-outline-primary" style="padding:0.75rem;">
                 <i class="fas fa-share me-1"></i> Referrals
             </a>
             <a href="transactions" class="btn btn-outline-primary" style="padding:0.75rem;">
@@ -282,7 +283,7 @@ include __DIR__ . '/includes/public_head.php';
         <i class="fas fa-home"></i>
         <span>Home</span>
     </a>
-    <a href="referrals" class="nav-item">
+    <a href="referrals" <?= $user['status']==='pending'?'data-referral-pay-required':'' ?> class="nav-item">
         <i class="fas fa-users"></i>
         <span>Referrals</span>
     </a>
@@ -689,4 +690,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script src="<?= sanitize(SITE_URL) ?>/assets/js/payment-notifications.js?v=<?= filemtime(__DIR__ . '/assets/js/payment-notifications.js') ?>"></script>
 <script src="<?= sanitize(SITE_URL) ?>/assets/js/dashboard-layout.js?v=<?= filemtime(__DIR__.'/assets/js/dashboard-layout.js') ?>" defer></script>
+<?php if ($user['status']==='pending'): ?>
+<dialog id="referral-payment-notice" aria-labelledby="referral-payment-title" style="border:0;border-radius:16px;max-width:440px;width:calc(100% - 32px);padding:1.5rem;color:var(--gray-800)">
+    <h2 id="referral-payment-title" class="h5">Lipia akaunti yako kwanza</h2>
+    <p>Referral link yako itafunguka baada ya malipo ya kujiunga kuthibitishwa.</p>
+    <a class="btn btn-primary" href="<?= sanitize(SITE_URL) ?>/payment">Pay now / Lipia akaunti</a>
+    <button class="btn btn-outline-primary" type="button" data-close-referral-payment>Baadaye</button>
+</dialog>
+<style>#referral-payment-notice::backdrop{background:rgba(0,0,0,.45)}</style>
+<script src="<?= sanitize(SITE_URL) ?>/assets/js/referral-payment.js" defer></script>
+<?php endif; ?>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

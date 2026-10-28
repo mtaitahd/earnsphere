@@ -12,6 +12,7 @@ require_once __DIR__ . '/includes/helpers.php';
 Auth::initSession();
 Auth::requireAuth();
 
+header('Cache-Control: no-store, private');
 $user = Auth::getUser();
 $wallet = Wallet::getWallet($_SESSION['user_id']);
 
@@ -153,10 +154,12 @@ include __DIR__ . '/includes/public_head.php';
                     <label for="email">Email</label>
                 </div>
                 
+<?php if ($user['status']==='active'): ?>
                 <div class="form-floating mb-3">
                     <input type="text" class="form-control" value="<?= $user['referral_code'] ?>" readonly disabled>
                     <label>Referral Code</label>
                 </div>
+<?php else: ?><p class="text-muted">Referral code itafunguka baada ya akaunti kulipiwa na kuwa active.</p><?php endif; ?>
                 
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-save me-1"></i> Save Changes

@@ -12,7 +12,27 @@ require_once __DIR__ . '/includes/helpers.php';
 Auth::initSession();
 Auth::requireAuth();
 
+header('Cache-Control: no-store, private');
 $user = Auth::getUser();
+if (!$user || $user['role']!=='user' || $user['status']!=='active') {
+    $pageTitle='Referrals';
+    include __DIR__.'/includes/public_head.php';
+    ?>
+    <main class="container py-5"><div class="card mx-auto" style="max-width:520px"><div class="card-body text-center p-4">
+        <i class="fas fa-lock mb-3" style="font-size:2rem;color:var(--primary)" aria-hidden="true"></i>
+        <h1 class="h4">Referrals</h1>
+        <?php if (($user['status']??'')==='pending'): ?>
+            <p>Lipia akaunti yako kwanza ili kuona referral link yako na kuanza kuwaalika marafiki.</p>
+            <a class="btn btn-primary" href="<?= sanitize(SITE_URL) ?>/payment">Pay now / Lipia akaunti</a>
+        <?php else: ?>
+            <p>Akaunti yako haijaruhusiwa kutumia referrals. Wasiliana na support.</p>
+            <a class="btn btn-primary" href="<?= sanitize(SITE_URL) ?>/#help">Contact support</a>
+        <?php endif; ?>
+        <a class="btn btn-outline-primary d-block mt-3" href="<?= sanitize(SITE_URL) ?>/dashboard">Back to dashboard</a>
+    </div></div></main>
+    <?php include __DIR__.'/includes/public_foot.php';exit;
+}
+
 $stats = CommissionEngine::getReferralStats($_SESSION['user_id']);
 $referralLink = getReferralLink($user['referral_code']);
 $level = (int)($_GET['level'] ?? 1);
