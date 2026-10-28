@@ -8,6 +8,14 @@ function featureStatus(string $status): string {
     return '<span style="color:'.$color.';font-weight:700">'.sanitize(ucfirst(str_replace('_',' ',$status))).'</span>';
 }
 
+function featurePlatformBadge(string $platform): string {
+    $brands = ['youtube'=>'YouTube','tiktok'=>'TikTok','facebook'=>'Facebook','instagram'=>'Instagram','x'=>'X','linkedin'=>'LinkedIn'];
+    if (!isset($brands[$platform])) return '<span class="social-platform">'.sanitize($platform).'</span>';
+    $source=sanitize(SITE_URL.'/assets/images/social-logos/'.$platform.'.svg');
+    return '<span class="social-platform"><span class="social-platform-logo"><img src="'.$source.'" width="28" height="28" alt="" aria-hidden="true"></span><span>'.sanitize($brands[$platform]).'</span></span>';
+
+}
+
 function featureNavigation(string $active): void {
     $links = match ($active) {
         'marketplace', 'my-products', 'product' => ['marketplace'=>'Buy Goods', 'my-products'=>'Sell Products'],

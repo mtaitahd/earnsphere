@@ -41,7 +41,7 @@ $pageTitle='Social tasks';include __DIR__.'/includes/public_head.php'; ?>
 <form method="GET" class="service-card"><label for="platform">Platform</label><select id="platform" name="platform"><option value="">All platforms</option><?php foreach(SocialHub::PLATFORMS as $key=>$label): ?><option value="<?= $key ?>" <?= $platform===$key?'selected':'' ?>><?= $label ?></option><?php endforeach; ?></select><button class="btn btn-outline-primary">Filter</button></form>
 <?php if(!$available): ?><p class="service-empty">Tasks are temporarily unavailable. Please try again later.</p><?php elseif(!$tasks): ?><p class="service-empty">Hakuna kazi mpya kwa sasa. Tafadhali rudi baadaye.</p><?php endif; ?>
 <?php foreach($tasks as $task): ?>
-<article class="service-card"><div class="service-meta"><span><?= SocialHub::PLATFORMS[$task['platform']]??sanitize($task['platform']) ?></span><strong style="color:#15803d"><?= formatCurrency($task['reward']) ?></strong><span><?= (int)$task['slots']-(int)$task['approved_count'] ?> approvals remaining</span></div>
+<article class="service-card"><div class="service-meta"><?= featurePlatformBadge((string)$task['platform']) ?><strong style="color:#15803d"><?= formatCurrency($task['reward']) ?></strong><span><?= (int)$task['slots']-(int)$task['approved_count'] ?> approvals remaining</span></div>
 <h2><?= sanitize($task['title']) ?></h2><p class="service-note"><?= sanitize($task['instructions']) ?></p>
 <?php if ($task['opened_id'] || $task['submission_status']): ?>
 <button type="button" class="btn btn-outline-primary" disabled>Opened</button>
@@ -54,6 +54,6 @@ $pageTitle='Social tasks';include __DIR__.'/includes/public_head.php'; ?>
 <?php endforeach; ?>
 <?php featurePages($page,$hasMore,'page',['platform'=>$platform]); ?>
 <h2>My submissions</h2><?php if(!$history): ?><p>No submissions yet.</p><?php endif; ?>
-<?php foreach($history as $item): ?><article class="service-card"><h3><?= sanitize($item['title']) ?></h3><p><?= featureStatus($item['status']) ?> · <?= formatCurrency($item['reward']) ?> · <?= formatLedgerTime($item['created_at']) ?> EAT</p><p class="service-note"><?= sanitize($item['answer']) ?></p><?php if($item['review_note']): ?><p>Admin: <?= sanitize($item['review_note']) ?></p><?php endif; ?></article><?php endforeach; ?>
+<?php foreach($history as $item): ?><article class="service-card"><?= featurePlatformBadge((string)$item['platform']) ?><h3><?= sanitize($item['title']) ?></h3><p><?= featureStatus($item['status']) ?> · <?= formatCurrency($item['reward']) ?> · <?= formatLedgerTime($item['created_at']) ?> EAT</p><p class="service-note"><?= sanitize($item['answer']) ?></p><?php if($item['review_note']): ?><p>Admin: <?= sanitize($item['review_note']) ?></p><?php endif; ?></article><?php endforeach; ?>
 <?php featurePages($historyPage,$historyMore,'history_page',['platform'=>$platform]); ?>
 </main><script src="<?= sanitize(SITE_URL) ?>/assets/js/social-task-open.js?v=<?= filemtime(__DIR__.'/assets/js/social-task-open.js') ?>" defer></script><?php include __DIR__.'/includes/public_foot.php'; ?>

@@ -19,3 +19,9 @@
 .landing-marketplace .market-product-info h3 a { color:#443153;text-decoration:none; }
 .landing-market-note { margin:1rem 0 0; }
 @media(max-width:420px) { .landing-goods-search div { flex-direction:column; } }
+
+/* Local SVG logos retain the networks' original artwork and colours. */
+.social-platform{display:inline-flex;align-items:center;gap:.6rem;font-weight:700;color:#334155;line-height:1.3}
+.social-platform-logo{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;flex:0 0 42px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;padding:7px}
+.social-platform-logo img{display:block;width:28px;height:28px;max-width:100%;object-fit:contain}
+.service-meta:has(.social-platform){align-items:center;margin-bottom:.9rem}
