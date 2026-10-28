@@ -1,5 +1,6 @@
 <?php
 if (!isset($user)) { http_response_code(404); exit; }
+if (($user['role']??'')!=='user' || ($user['status']??'')!=='active') return;
 require_once __DIR__ . '/../classes/WelcomeMedia.php';
 $welcomeItems=WelcomeMedia::items();
 ?>

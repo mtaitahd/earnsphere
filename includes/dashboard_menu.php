@@ -22,7 +22,9 @@
         <a href="marketplace"><i class="fas fa-store" aria-hidden="true"></i> Buy Goods</a>
         <?php if ($user['status'] === 'active'): ?><a href="my-products"><i class="fas fa-tag" aria-hidden="true"></i> Sell Products</a><?php endif; ?>
         <p>HELP &amp; SETTINGS</p>
+        <?php if ($user['status']==='active'): ?>
         <button type="button" data-menu-guide><i class="fas fa-circle-play" aria-hidden="true"></i> Know Your Account</button>
+        <?php endif; ?>
         <button type="button" data-menu-support><i class="fas fa-life-ring" aria-hidden="true"></i> Support</button>
         <a href="profile"><i class="fas fa-user" aria-hidden="true"></i> Profile</a>
         <a href="logout" onclick="return confirm('Leave your account?')"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Sign Out</a>

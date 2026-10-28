@@ -14,5 +14,16 @@ for status,page in [('pending','referrals'),('suspended','referrals'),('active',
     if status=='active':assert 'PRIVATE-REFERRAL-200' in result.stdout and 'referral-link-input' in result.stdout
     else:assert 'PRIVATE-REFERRAL-200' not in result.stdout and 'referral-link-input' not in result.stdout
     if status=='pending':assert 'Lipia akaunti yako kwanza' in result.stdout and '/payment' in result.stdout
-    if page=='dashboard':assert result.stdout.count('data-referral-pay-required')>=2 and 'referral-payment-notice' in result.stdout
+    if page=='dashboard':
+        assert result.stdout.count('data-referral-pay-required')>=2 and 'referral-payment-notice' in result.stdout
+        assert all(item not in result.stdout for item in ['Know Your Account','welcomeMediaDialog','data-welcome-open','data-menu-guide'])
 print('Referral paywall: unpaid/suspended direct access blocked, session flags ignored, paid links retained and dashboard payment prompt passed.')
+
+for status in ['pending','active']:
+    code='ob_start();require '+json.dumps(str(root/'tests/social_loans_fixture.php'))+';ob_end_clean();'
+    code+='Database::update("users",["status"=>'+json.dumps(status)+'],"id = ?",[200]);$user=Auth::getUser(200);require '+json.dumps(str(root/'includes/welcome_media.php'))+';require '+json.dumps(str(root/'includes/dashboard_menu.php'))+';'
+    result=subprocess.run([php,'-r',code],capture_output=True,text=True,timeout=30,env=os.environ|{'APP_ENV':'testing'})
+    assert result.returncode==0,result.stderr
+    assert ('welcomeMediaDialog' in result.stdout)==(status=='active')
+    assert ('data-menu-guide' in result.stdout)==(status=='active')
+print('Know Your Account: unpaid dashboard/menu/player hidden; active member access retained.')

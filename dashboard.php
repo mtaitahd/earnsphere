@@ -250,9 +250,11 @@ include __DIR__ . '/includes/public_head.php';
         </div>
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+            <?php if ($user['status']==='active'): ?>
             <button type="button" class="btn btn-outline-primary" style="padding:0.75rem;" data-welcome-open aria-haspopup="dialog" aria-controls="welcomeMediaDialog">
                 <i class="fas fa-circle-play me-1" aria-hidden="true"></i> Know Your Account
             </button>
+            <?php endif; ?>
             <a href="wallet" class="btn btn-outline-primary" style="padding:0.75rem;">
                 <i class="fas fa-wallet me-1"></i> Wallet
             </a>
