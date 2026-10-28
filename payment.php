@@ -17,7 +17,9 @@ if (isset($_GET['user_id']) && (int) $_GET['user_id'] !== $userId) {
     http_response_code(403);
     exit('Please log in to your own account.');
 }
-$action = $_GET['action'] ?? $_POST['action'] ?? 'show';
+$action = ($_SERVER['REQUEST_METHOD']??'GET')==='POST'
+    ? ($_POST['action'] ?? $_GET['action'] ?? 'show')
+    : ($_GET['action'] ?? 'show');
 
 if (!$userId) {
     redirect(SITE_URL . '/register', 'error', 'User not found');
@@ -33,7 +35,7 @@ if ($user['status'] === 'active') {
 }
 
 $existingPayment = Database::fetchOne(
-    "SELECT * FROM payments WHERE user_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
+    "SELECT * FROM payments WHERE user_id = ? AND purpose = 'registration' AND status = 'pending' ORDER BY id DESC LIMIT 1",
     [$userId]
 );
 
@@ -43,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['pay', 'change_n
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
     } else {
-        $phone = trim($_POST['phone'] ?? '');
+        $phone = is_string($_POST['phone']??null) ? trim($_POST['phone']) : '';
         
         if (empty($phone)) {
             $error = 'Enter payment phone number.';
@@ -83,7 +85,10 @@ $csrf = Auth::generateCSRF();
 $csrfName = CSRF_TOKEN_NAME;
 $csrfVal = $csrf;
 $siteUrl = SITE_URL;
-$phone = $user['phone'];
+// Keep the chosen payer number after a validation/provider error or pending-request warning.
+$phone = (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && is_string($_POST['phone']??null))
+    ? trim($_POST['phone'])
+    : (string)($existingPayment['phone'] ?? $user['phone']);
 $fullName = sanitize($user['full_name']);
 $refCode = $user['referral_code'];
 $userIdVal = $user['id'];
@@ -93,7 +98,7 @@ unset($_SESSION['payment_notice']);
 if ($action === 'waiting') {
     // The waiting screen must correspond to a payment owned by this account.
     $waitingPayment = Database::fetchOne('SELECT * FROM payments WHERE order_id = ? AND user_id = ?', [(string) ($_GET['order_id'] ?? ''), $userId]);
-    if (!$waitingPayment) { $action = 'show'; }
+    if (!$waitingPayment || ($waitingPayment['purpose']??'registration')!=='registration') { $action = 'show'; }
 }
 $refVal = sanitize($_GET['ref'] ?? '');
 $referralLink = getReferralLink($refCode);
@@ -344,7 +349,7 @@ $referralLink = getReferralLink($refCode);
             <i class="fas fa-mobile-alt"></i> Mobile Payment
         </div>
 
-        <form method="POST" action="">
+        <form method="POST" action="<?= sanitize(SITE_URL) ?>/payment">
             <input type="hidden" name="<?= $csrfName ?>" value="<?= $csrfVal ?>">
             <input type="hidden" name="action" value="pay">
 
@@ -397,7 +402,7 @@ $referralLink = getReferralLink($refCode);
         <i class="fas fa-arrow-left"></i> Change Number
     </a>
     <h2><i class="fas fa-hourglass-half me-2"></i>Processing Payment</h2>
-    <p>Check your phone and approve the payment prompt if it appears.</p>
+    <p>Ombi la malipo limetumwa kwa <strong><?= sanitize($waitingPayment['phone']) ?></strong>. Thibitisha kwenye namba hii pekee.</p>
 </div>
 
 <div class="payment-body">
