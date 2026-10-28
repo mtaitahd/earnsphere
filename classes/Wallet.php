@@ -11,9 +11,14 @@ class Wallet {
     
     private const EARNING_TYPES = ['commission','daily_mission_bonus','contest_bonus','social_reward'];
 
+    public static function earningsProjection(string $userExpression): string {
+        if ($userExpression!=='?' && !preg_match('/^[a-z_]+\.[a-z_]+$/iD',$userExpression)) throw new InvalidArgumentException('Invalid earnings user expression.');
+        $types="'".implode("','",self::EARNING_TYPES)."'";
+        return "(SELECT COALESCE(SUM(wt.amount),0) FROM wallet_transactions wt WHERE wt.user_id = $userExpression AND wt.status = 'completed' AND wt.amount > 0 AND wt.type IN ($types))";
+    }
+
     public static function earnedTotal(int $userId): float {
-        $types=implode(',',array_fill(0,count(self::EARNING_TYPES),'?'));
-        $row=Database::fetchOne("SELECT COALESCE(SUM(amount),0) AS earned FROM wallet_transactions WHERE user_id = ? AND status = 'completed' AND amount > 0 AND type IN ($types)",array_merge([$userId],self::EARNING_TYPES));
+        $row=Database::fetchOne('SELECT '.self::earningsProjection('?').' AS earned',[$userId]);
         return (float)($row['earned']??0);
     }
 

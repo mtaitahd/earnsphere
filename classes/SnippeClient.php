@@ -3,7 +3,8 @@ require_once __DIR__.'/AblinerClient.php';
 require_once dirname(__DIR__).'/config/snippe.php';
 class SnippeClient extends AblinerClient {
     public function __construct(?array $config=null) {parent::__construct($config??snippeConfig());}
-    public function ready(): bool {return !empty($this->config['enabled']) && parent::ready();}
+    public function configured(): bool {return parent::ready();}
+    public function ready(): bool {return !empty($this->config['enabled']) && $this->configured();}
     public function createPayment(array $payload,string $key): array {return $this->snippeRequest('POST','/v1/payments',$payload,$key);}
     public function payment(string $reference): array {return $this->snippeRequest('GET','/v1/payments/'.rawurlencode($reference));}
     private function snippeRequest(string $method,string $path,array $payload=[],?string $key=null): array {

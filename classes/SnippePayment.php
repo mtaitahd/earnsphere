@@ -49,6 +49,9 @@ class SnippePayment {
         $payload=['payment_type'=>'mobile','details'=>['amount'=>(int)$plan['registration_fee'],'currency'=>'TZS'],'phone_number'=>$phone,
             'customer'=>['firstname'=>$names[0],'lastname'=>$names[1],'email'=>$email],
             'webhook_url'=>$this->client->callbackUrl(),'metadata'=>['order_id'=>$order]];
+        return $this->sendRequest($id,$order,$payload);
+    }
+    private function sendRequest(int $id,string $order,array $payload): array {
         $response=$this->client->createPayment($payload,$order);
         Database::beginTransaction();
         try {
@@ -70,8 +73,45 @@ class SnippePayment {
             Database::update('payments',['gateway_id'=>$data['reference'],'gateway_reference'=>$data['reference'],'transaction_ref'=>$data['reference']],'id = ?',[$id]);
             Database::commit();
             if(($data['status']??'')==='completed')$this->reconcile($id);
-            return $this->result(Database::fetchOne('SELECT * FROM payments WHERE id = ?',[$id]),'Ombi la USSD limetumwa kwa '.$phone.'. Thibitisha kwa PIN kwenye simu yako likifika.');
+            return $this->result(Database::fetchOne('SELECT * FROM payments WHERE id = ?',[$id]),'Ombi la USSD limetumwa kwa '.$row['phone'].'. Thibitisha kwa PIN kwenye simu yako likifika.');
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
+    }
+    public function testReady(): bool {return $this->client->configured();}
+    public function testPush(int $actor,array $input): array {
+        $admin=Database::fetchOne('SELECT * FROM users WHERE id = ?',[$actor]);
+        if (!$admin || $admin['role']!=='admin' || $admin['status']!=='active')throw new InvalidArgumentException('Administrator access required.');
+        if (!$this->testReady())throw new InvalidArgumentException('Save the Snippe API key and webhook secret first.');
+        if (($input['confirmed']??'')!=='1')throw new InvalidArgumentException('Confirm that this is a real USSD payment request.');
+        $phone=AblinerClient::normalizePhone(is_string($input['phone']??null)?$input['phone']:'');
+        $amount=filter_var($input['amount']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>500,'max_range'=>10000]]);
+        if ($amount===false)throw new InvalidArgumentException('Test amount must be whole TZS from 500 to 10,000.');
+        $name=trim(is_string($input['name']??null)?$input['name']:'');$names=preg_split('/\s+/',$name,2);
+        if (count($names)!==2 || strlen($name)>200)throw new InvalidArgumentException('Enter your first and last name.');
+        $email=trim(is_string($input['email']??null)?$input['email']:'');
+        if (strlen($email)>254 || !filter_var($email,FILTER_VALIDATE_EMAIL))throw new InvalidArgumentException('Enter a valid email address.');
+        $order=$input['request_key']??'';
+        if (!is_string($order) || !preg_match('/^SN-[a-f0-9]{24}$/D',$order))throw new InvalidArgumentException('Refresh the test form before sending.');
+        $old=Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = 'gateway_test' AND gateway = 'snippe' AND status = 'pending' ORDER BY id DESC LIMIT 1",[$actor]);
+        if($old)$this->reconcile((int)$old['id']);
+        Database::beginTransaction();
+        try {
+            $locked=Database::fetchOne('SELECT * FROM users WHERE id = ? FOR UPDATE',[$actor]);
+            if (!$locked || $locked['role']!=='admin' || $locked['status']!=='active')throw new InvalidArgumentException('Administrator access required.');
+            $prior=Database::fetchOne('SELECT * FROM payments WHERE order_id = ?',[$order]);
+            if ($prior) {
+                if ((int)$prior['user_id']!==$actor || $prior['purpose']!=='gateway_test' || $prior['gateway']!=='snippe' || $prior['phone']!==$phone || (int)$prior['amount']!==$amount)throw new InvalidArgumentException('This request key already belongs to different payment details.');
+                Database::commit();return $this->result($prior);
+            }
+            $pending=Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = 'gateway_test' AND gateway = 'snippe' AND status = 'pending' ORDER BY id DESC LIMIT 1",[$actor]);
+            if($pending) {
+                if($pending['phone']!==$phone || (int)$pending['amount']!==$amount)throw new InvalidArgumentException('Check the earlier pending test before sending to another number or amount.');
+                Database::commit();return $this->result($pending);
+            }
+            $id=Database::insert('payments',['user_id'=>$actor,'order_id'=>$order,'amount'=>$amount,'currency'=>'TZS','phone'=>$phone,'payment_method'=>'mobile_money','status'=>'pending','gateway'=>'snippe','purpose'=>'gateway_test','idempotency_key'=>$order,'metadata'=>json_encode(['snippe_ussd'=>true,'admin_test'=>true],JSON_THROW_ON_ERROR)]);
+            Database::commit();
+        }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
+        return $this->sendRequest($id,$order,['payment_type'=>'mobile','details'=>['amount'=>$amount,'currency'=>'TZS'],'phone_number'=>$phone,
+            'customer'=>['firstname'=>$names[0],'lastname'=>$names[1],'email'=>$email],'webhook_url'=>$this->client->callbackUrl(),'metadata'=>['order_id'=>$order]]);
     }
     public function reconcile(int $id): void {
         $row=Database::fetchOne("SELECT * FROM payments WHERE id = ? AND gateway = 'snippe'",[$id]);
@@ -89,7 +129,7 @@ class SnippePayment {
         if (!is_array($data) || ($data['status']??'')!==substr($type,8))throw new InvalidArgumentException('Invalid payment event.');
         $order=$data['metadata']['order_id']??null;
         if (!is_string($order) || !preg_match('/^SN-[a-f0-9]{24}$/D',$order))return ['ignored'=>true];
-        $row=Database::fetchOne("SELECT * FROM payments WHERE order_id = ? AND gateway = 'snippe' AND purpose = 'registration'",[$order]);
+        $row=Database::fetchOne("SELECT * FROM payments WHERE order_id = ? AND gateway = 'snippe' AND purpose IN ('registration','gateway_test')",[$order]);
         if (!$row)return ['ignored'=>true];
         $stored=json_decode($row['metadata']??'{}',true)?:[];
         if (empty($stored['snippe_ussd']) && empty($stored['snippe_hosted']))return ['ignored'=>true];
@@ -123,7 +163,7 @@ class SnippePayment {
                 if (!empty($meta['snippe_ussd']) && $payer!==$row['phone'])throw new RuntimeException('Snippe payer phone mismatch.');
                 Database::update('payments',['phone'=>$payer],'id = ?',[$id]);
             }
-            if ($status==='completed')RegistrationPayment::activate($row);
+            if ($status==='completed' && $row['purpose']==='registration')RegistrationPayment::activate($row);
             Database::update('payments',['status'=>in_array($status,['voided','expired'],true)?'failed':$status,'gateway_id'=>!empty($meta['snippe_ussd'])?$reference:$row['gateway_id'],'transaction_ref'=>$reference,'gateway_reference'=>$reference,'completed_at'=>$status==='completed'?date('Y-m-d H:i:s'):null,'metadata'=>json_encode($meta,JSON_THROW_ON_ERROR)],'id = ?',[$id]);
             Database::commit();
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}

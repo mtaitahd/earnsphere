@@ -9,6 +9,7 @@ require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 require_once dirname(__DIR__) . '/classes/CommissionPlan.php';
 require_once dirname(__DIR__) . '/classes/WithdrawalCharge.php';
+require_once dirname(__DIR__) . '/classes/SnippePayment.php';
 
 Auth::initSession();
 require_once dirname(__DIR__) . '/classes/StaffAccess.php';
@@ -34,6 +35,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
     exit;
 }
 $error = getFlash('error') ?? '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['snippe_test','snippe_test_status'], true)) {
+    if (!Auth::validateCSRF()) { http_response_code(403); exit('Invalid security token.'); }
+    try {
+        $tester = new SnippePayment();
+        if ($_POST['action'] === 'snippe_test') {
+            $result = $tester->testPush((int)$_SESSION['user_id'], $_POST);
+            if (empty($result['success'])) throw new InvalidArgumentException($result['error']);
+            setFlash('success', $result['message'].' Order: '.$result['order_id'].' Status: '.$result['status']);
+        } else {
+            $order = is_string($_POST['order_id'] ?? null) ? $_POST['order_id'] : '';
+            $test = Database::fetchOne("SELECT * FROM payments WHERE order_id = ? AND user_id = ? AND gateway = 'snippe' AND purpose = 'gateway_test'", [$order,(int)$_SESSION['user_id']]);
+            if (!$test) throw new InvalidArgumentException('Test payment not found.');
+            $tester->reconcile((int)$test['id']);
+            $test = Database::fetchOne('SELECT status FROM payments WHERE id = ?', [$test['id']]);
+            setFlash('success', 'Test status: '.$test['status'].'. No new USSD request was sent.');
+        }
+    } catch (InvalidArgumentException $e) { setFlash('error', $e->getMessage()); }
+    catch (Throwable $e) { error_log('Snippe admin test: '.$e->getMessage()); setFlash('error', 'Could not confirm the test request. Check its status before trying again.'); }
+    header('Location: '.SITE_URL.'/admin/settings#snippe-test'); exit;
+}
 
 // Handle settings update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -141,6 +163,7 @@ include __DIR__ . '/admin_header.php';
 <form method="POST">
     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
 
+    <a href="#snippe-test" class="btn btn-outline-primary mb-3">Test USSD push</a>
     <div class="card mb-4" id="snippe-settings" style="scroll-margin-top:90px">
         <div class="card-header"><h6>Snippe USSD Push</h6></div>
         <div class="card-body">
@@ -327,6 +350,38 @@ include __DIR__ . '/admin_header.php';
     </div>
 </form>
 
+<?php
+$testAdmin = Auth::getUser();
+$testReady = (new SnippePayment())->testReady();
+$lastTest = Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND gateway = 'snippe' AND purpose = 'gateway_test' ORDER BY id DESC LIMIT 1", [(int)$_SESSION['user_id']]);
+?>
+<div class="card mb-4" id="snippe-test" style="scroll-margin-top:90px">
+    <div class="card-header"><h6>Test Snippe USSD push</h6></div>
+    <div class="card-body">
+        <p>Send a real payment request to your own phone. Approving with your PIN deducts the amount shown. This test does not activate a member or add wallet earnings.</p>
+        <?php if (!$testReady): ?><div class="alert alert-info">Save your Snippe API key and webhook secret first.</div><?php endif; ?>
+        <form method="POST">
+            <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
+            <input type="hidden" name="action" value="snippe_test">
+            <input type="hidden" name="request_key" value="<?= 'SN-'.bin2hex(random_bytes(12)) ?>">
+            <div class="row g-3">
+                <div class="col-md-6"><label class="form-label" for="test-phone">Your mobile money number</label><input id="test-phone" name="phone" type="tel" class="form-control" required value="<?= sanitize($testAdmin['phone'] ?? '') ?>"></div>
+                <div class="col-md-6"><label class="form-label" for="test-amount">Test amount (TZS)</label><input id="test-amount" name="amount" type="number" class="form-control" min="500" max="10000" step="1" value="500" required></div>
+                <div class="col-md-6"><label class="form-label" for="test-name">First and last name</label><input id="test-name" name="name" class="form-control" maxlength="200" required value="<?= sanitize($testAdmin['full_name'] ?? '') ?>"></div>
+                <div class="col-md-6"><label class="form-label" for="test-email">Email</label><input id="test-email" name="email" type="email" class="form-control" maxlength="254" required value="<?= sanitize($testAdmin['email'] ?? '') ?>"></div>
+            </div>
+            <label class="d-block my-3"><input type="checkbox" name="confirmed" value="1" required> I understand this sends a real payment request.</label>
+            <button class="btn btn-primary" <?= $testReady ? '' : 'disabled' ?>>Send test USSD push</button>
+        </form>
+        <?php if ($lastTest): ?>
+            <hr><p>Latest test: <?= sanitize($lastTest['order_id']) ?> · TZS <?= number_format((float)$lastTest['amount']) ?> · <?= sanitize($lastTest['phone']) ?> · <?= sanitize($lastTest['status']) ?></p>
+            <form method="POST">
+                <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>"><input type="hidden" name="action" value="snippe_test_status"><input type="hidden" name="order_id" value="<?= sanitize($lastTest['order_id']) ?>">
+                <button class="btn btn-outline-primary">Check test status</button>
+            </form>
+        <?php endif; ?>
+    </div>
+</div>
 <?php include __DIR__ . '/welcome_media_form.php'; ?>
 
 <script src="<?= sanitize(SITE_URL) ?>/assets/js/commission-settings.js"></script>

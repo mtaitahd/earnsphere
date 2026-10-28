@@ -332,7 +332,7 @@ $total = Database::count('users', $where, $params);
 $userFields = 'u.id, u.full_name, u.phone, u.email, u.referral_code, u.created_at';
 if ($canViewPrivateUserColumns || $canManageUsers) $userFields .= ', u.status';
 if ($canViewPrivateUserColumns) $userFields .= ', (SELECT COUNT(*) FROM users WHERE referred_by = u.id) as direct_referrals';
-if ($canViewEarnings) $userFields .= ", (SELECT COALESCE(SUM(amount),0) FROM commissions WHERE earner_id = u.id AND status != 'cancelled') as total_earned";
+if ($canViewEarnings) $userFields .= ', '.Wallet::earningsProjection('u.id').' as total_earned';
 if ($canViewPayments) $userFields .= ", (SELECT COALESCE(SUM(amount),0) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_amount,
             (SELECT MAX(completed_at) FROM payments WHERE user_id = u.id AND purpose = 'registration' AND status = 'completed') as paid_date";
 $users = Database::fetchAll(

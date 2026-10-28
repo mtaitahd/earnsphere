@@ -141,7 +141,7 @@ include __DIR__ . '/admin_header.php';
                             <td><strong><?= sanitize($p['full_name']) ?></strong></td>
                             <td><strong><?= formatCurrency($p['amount']) ?></strong></td>
                             <td><?= formatPhone($p['phone'] ?? $p['user_phone']) ?></td>
-                            <td><code style="font-size:0.7rem;"><?= sanitize($p['order_id']) ?></code><br><small><?= sanitize(ucfirst($p['gateway']??'legacy')) ?></small></td>
+                            <td><code style="font-size:0.7rem;"><?= sanitize($p['order_id']) ?></code><br><small><?= sanitize(ucfirst($p['gateway']??'legacy').(($p['purpose']??'')==='gateway_test'?' · USSD test':'')) ?></small></td>
                             <td>
                                 <?php if (($p['gateway_reference'] ?? $p['snippe_reference'] ?? $p['transaction_ref'] ?? '')): ?>
                                     <small style="font-size:0.7rem;" title="<?= ($p['gateway_reference'] ?? $p['snippe_reference'] ?? $p['transaction_ref'] ?? '') ?>"><?= truncate(($p['gateway_reference'] ?? $p['snippe_reference'] ?? $p['transaction_ref'] ?? ''), 16) ?></small>

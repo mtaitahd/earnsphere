@@ -44,6 +44,12 @@ try:
     assert 'Snippe USSD Push' in result.stdout and 'collection:create and collection:read' in result.stdout
     assert 'merchant JWT' not in result.stdout and 'checkout_token' not in result.stdout and 'Checkout sessions token' not in result.stdout
     assert 'Fatal error' not in result.stdout and 'Warning:' not in result.stdout
-    print('Admin Snippe settings show USSD API key and webhook secret only; no checkout/JWT controls.')
+    assert 'id="snippe-test"' in result.stdout and 'value="snippe_test"' in result.stdout
+    assert 'name="request_key"' in result.stdout and 'name="confirmed"' in result.stdout
+    for action in ['snippe_test','snippe_test_status']:
+        protected=code.replace('$_SERVER["REQUEST_METHOD"]="GET";', '$_SERVER["REQUEST_METHOD"]="POST";$_POST=["action"=>'+json.dumps(action)+'];')
+        result=subprocess.run([php,'-r',protected],capture_output=True,text=True,timeout=20,env=os.environ|{'APP_ENV':'testing'})
+        assert result.returncode==0 and 'Access denied.' in result.stdout,(action,result.stdout,result.stderr)
+    print('Admin Snippe settings and test form render; test/status actions reject missing CSRF tokens.')
 finally:
     page.unlink(missing_ok=True)

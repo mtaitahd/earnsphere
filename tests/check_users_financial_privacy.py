@@ -11,7 +11,7 @@ def run(permissions=(),admin=False,revoked=False,user=False,route="users"):
  if revoked:code+='Database::delete("agent_permissions","permission = ?",["dashboard"]);'
  effective=set(permissions)-({'dashboard'} if revoked else set())
  if admin or effective.intersection({'payments','dashboard'}):code+='$staffDb->exec("CREATE TABLE payments(id INTEGER PRIMARY KEY,user_id INTEGER,amount NUMERIC,purpose TEXT,status TEXT,completed_at TEXT)");Database::insert("payments",["user_id"=>2,"amount"=>97531,"purpose"=>"registration","status"=>"completed","completed_at"=>"2026-10-27"]);'
- if admin:code+='$staffDb->exec("CREATE TABLE commissions(id INTEGER PRIMARY KEY,earner_id INTEGER,amount NUMERIC,status TEXT)");Database::insert("commissions",["earner_id"=>2,"amount"=>86420,"status"=>"approved"]);'
+ if admin:code+='$staffDb->exec("CREATE TABLE wallet_transactions(id INTEGER PRIMARY KEY,user_id INTEGER,amount NUMERIC,type TEXT,status TEXT)");foreach([[86420,"commission","completed"],[150,"social_reward","completed"],[16000,"registration_bonus","completed"],[900,"social_reward","failed"]] as $entry)Database::insert("wallet_transactions",["user_id"=>2,"amount"=>$entry[0],"type"=>$entry[1],"status"=>$entry[2]]);'
  code+='$_SESSION=["user_id"=>'+str(1 if admin else (2 if user else 3))+',"user_role"=>"admin","permissions"=>["dashboard","payments","commissions","users_manage"]];StaffAccess::clearCache();'
  code+='$_GET='+('[]' if admin else '["status"=>"suspended"]')+';'
  code+='$_SERVER["REQUEST_METHOD"]="GET";$_SERVER["PHP_SELF"]='+json.dumps('/admin/'+route+'.php')+';$_SERVER["REQUEST_URI"]='+json.dumps('/admin/'+route)+';'
@@ -38,7 +38,7 @@ def check(permissions,summary=False,payments=False,earnings=False,manage=False,a
  assert ('id="bulkDeleteForm"' in body)==manage,permissions
  assert ('id="emailModal"' in body)==manage,permissions
  assert ('97531' in body or '97,531' in body)==(summary or payments),permissions
- assert ('86,420' in body)==earnings,permissions
+ assert ('86,570' in body)==earnings,permissions
  if not payments:assert 'payment-paid-total">Total paid:' not in body and 'class="user-paid"' not in body
  if not manage:assert 'value="delete_single"' not in body and 'value="update_status"' not in body
  if not admin and 'payments_manage' not in permissions:assert 'value="mark_as_paid"' not in body and 'value="mark_as_unpaid"' not in body
