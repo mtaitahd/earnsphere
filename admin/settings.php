@@ -41,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $settings = $_POST['settings'] ?? [];
     if (!is_array($settings)) { http_response_code(422); exit('Invalid settings.'); }
     foreach (array_keys($settings) as $settingKey) if (str_starts_with($settingKey, 'welcome_media_')) unset($settings[$settingKey]);
-    unset($settings['snippe_api_url'], $settings['snippe_api_version']);
+    unset($settings['snippe_api_url'], $settings['snippe_api_version'], $settings['snippe_checkout_token']);
     if (isset($settings['snippe_enabled']) && !in_array($settings['snippe_enabled'],['0','1'],true)) {http_response_code(422);exit('Invalid Snippe setting.');}
-    foreach (['abliner_api_key', 'abliner_webhook_secret', 'snippe_api_key', 'snippe_checkout_token', 'snippe_webhook_secret'] as $secret) {
+    foreach (['abliner_api_key', 'abliner_webhook_secret', 'snippe_api_key', 'snippe_webhook_secret'] as $secret) {
         if (isset($settings[$secret]) && trim((string) $settings[$secret]) === '') unset($settings[$secret]);
     }
 
@@ -111,7 +111,7 @@ $categories = [
     'payment'  => ['registration_fee', 'min_withdrawal', 'max_withdrawal', 'withdrawal_charge'],
     'commission' => ['commission_l1', 'commission_l2', 'company_earning', 'commission_total'],
     'abliner' => ['abliner_api_key', 'abliner_webhook_secret'],
-    'snippe' => ['snippe_enabled','snippe_api_key','snippe_checkout_token','snippe_webhook_secret'],
+    'snippe' => ['snippe_enabled','snippe_api_key','snippe_webhook_secret'],
     'payout'   => ['payout_channel', 'payout_webhook_url'],
     'sms'      => ['meseji_api_key', 'meseji_api_url', 'meseji_sender_id', 'meseji_enabled', 'sms_welcome_enabled', 'sms_payment_enabled'],
     'system'   => ['maintenance_mode'],
@@ -142,16 +142,16 @@ include __DIR__ . '/admin_header.php';
     <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
 
     <div class="card mb-4" id="snippe-settings" style="scroll-margin-top:90px">
-        <div class="card-header"><h6>Snippe Instant Pay</h6></div>
+        <div class="card-header"><h6>Snippe USSD Push</h6></div>
         <div class="card-body">
-            <p>Offer the hosted Snippe checkout alongside Abliner for registration payments.</p>
-            <label for="snippe-enabled">Enable Snippe checkout</label>
+            <p>Collect registration payments by sending a USSD PIN prompt to the customer’s mobile money number.</p>
+            <label for="snippe-enabled">Enable Snippe USSD push</label>
             <select id="snippe-enabled" class="form-select mb-3" name="settings[snippe_enabled]"><option value="0">Off</option><option value="1" <?= ($settingsMap['snippe_enabled']['setting_value']??'0')==='1'?'selected':'' ?>>On</option></select>
-            <div class="row g-3"><?php foreach(['snippe_api_key'=>'API key (collection:read)','snippe_checkout_token'=>'Checkout sessions token (merchant JWT)','snippe_webhook_secret'=>'Webhook signing secret'] as $key=>$label): ?>
+            <div class="row g-3"><?php foreach(['snippe_api_key'=>'API key (collection:create and collection:read)','snippe_webhook_secret'=>'Webhook signing secret'] as $key=>$label): ?>
                 <div class="col-md-6"><label for="<?= $key ?>"><?= $label ?></label><input type="password" id="<?= $key ?>" name="settings[<?= $key ?>]" class="form-control" value="" autocomplete="new-password" placeholder="Leave blank to keep the saved secret"><small><?= !empty($settingsMap[$key]['setting_value']) || getenv(strtoupper($key)) ? 'Configured':'Not configured' ?></small></div>
             <?php endforeach; ?></div>
             <p class="mt-3">Webhook: <code><?= sanitize(rtrim(SITE_URL,'/').'/webhooks/snippe.php') ?></code></p>
-            <p class="text-muted">Snippe documents hosted sessions with a merchant JWT, separate from the collection API key. Confirm session access with Snippe and renew the token when required. Keys stay on the server. A successful return URL alone never activates an account.</p>
+            <p class="text-muted">Uses POST /v1/payments with your API key. Only the API key and webhook signing secret are needed. Account activation waits for verified payment.</p>
         </div>
     </div>
 

@@ -7,72 +7,81 @@ class SnippePayment {
     private SnippeClient $client;
     public function __construct(?SnippeClient $client=null) {$this->client=$client??new SnippeClient();}
     public function ready(): bool {return $this->client->ready();}
-    private function result(array $row): array {
-        if ($row['status']==='completed')return ['success'=>true,'order_id'=>$row['order_id'],'status'=>'completed','checkout_url'=>''];
-        $meta=json_decode($row['metadata']??'{}',true)?:[];
-        if (empty($meta['checkout_url'])) return ['success'=>false,'order_id'=>$row['order_id'],'error'=>'Checkout creation is awaiting verification. Contact support with order '.$row['order_id'].'. Do not create another payment.'];
-        return ['success'=>true,'order_id'=>$row['order_id'],'checkout_url'=>SnippeClient::checkoutUrl($meta['checkout_url']),'status'=>$row['status']];
+    private function result(array $row,string $message=''): array {
+        return ['success'=>true,'order_id'=>$row['order_id'],'status'=>$row['status'],'phone'=>$row['phone'],
+            'message'=>$message?:'Ombi hili linasubiri uthibitisho. Hakuna USSD push nyingine iliyotumwa.'];
     }
-    public function initiate(int $userId): array {
-        if (!$this->ready())return ['success'=>false,'error'=>'Snippe checkout is not configured. Please use Abliner or contact support.'];
+    public function initiate(int $userId,string $phone,string $name='',string $email='',bool $confirmNumberChange=false,string $previousOrder=''): array {
+        if (!$this->ready())return ['success'=>false,'error'=>'Snippe USSD payments are not configured. Please use Abliner or contact support.'];
+        $phone=AblinerClient::normalizePhone($phone);
         $plan=CommissionPlan::values();
+        $previous=Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = 'registration' AND status = 'pending' ORDER BY id DESC LIMIT 1",[$userId]);
+        if ($previous && $previous['gateway']==='snippe') {
+            $this->reconcile((int)$previous['id']);
+            $checked=Database::fetchOne('SELECT * FROM payments WHERE id = ?',[$previous['id']]);
+            if($checked['status']==='completed')return $this->result($checked,'Malipo yamethibitishwa.');
+        }
         Database::beginTransaction();
         try {
             $user=Database::fetchOne('SELECT * FROM users WHERE id = ? FOR UPDATE',[$userId]);
             if (!$user || $user['role']!=='user' || $user['status']!=='pending')throw new InvalidArgumentException('Only an unpaid member can start registration payment.');
+            $name=trim($name!==''?$name:(string)$user['full_name']);
+            $names=preg_split('/\s+/', $name,2);
+            if (count($names)!==2 || strlen($name)>200)throw new InvalidArgumentException('Enter your first and last name for Snippe payment.');
+            $email=trim($email!==''?$email:(string)($user['email']??''));
+            if (strlen($email)>254 || !filter_var($email,FILTER_VALIDATE_EMAIL))throw new InvalidArgumentException('Enter a valid email address for Snippe payment.');
             $old=Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = 'registration' AND status = 'pending' ORDER BY id DESC LIMIT 1",[$userId]);
             if ($old) {
-                Database::commit();
-                if ($old['gateway']!=='snippe' || empty((json_decode($old['metadata']??'{}',true)?:[])['snippe_hosted']))return ['success'=>false,'error'=>'An earlier payment is still pending. Check its status before changing payment providers.'];
-                return $this->result($old);
+                if ($old['gateway']!=='snippe' || empty((json_decode($old['metadata']??'{}',true)?:[])['snippe_ussd'])) {
+                    Database::commit();return ['success'=>false,'error'=>'An earlier payment is still pending. Check its status before changing payment providers.'];
+                }
+                if ($old['phone']===$phone) {Database::commit();return $this->result($old);}
+                if (!$confirmNumberChange || !hash_equals($old['order_id'],$previousOrder)) {
+                    Database::commit();return ['success'=>false,'error'=>'Confirm below that you have not paid and will not approve the old prompt before changing the number.'];
+                }
+                $same=Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND purpose = 'registration' AND gateway = 'snippe' AND status = 'pending' AND phone = ? ORDER BY id DESC LIMIT 1",[$userId,$phone]);
+                if ($same) {Database::commit();return $this->result($same);}
             }
             $order='SN-'.bin2hex(random_bytes(12));
-            $id=Database::insert('payments',['user_id'=>$userId,'order_id'=>$order,'amount'=>$plan['registration_fee'],'currency'=>'TZS','phone'=>$user['phone'],'payment_method'=>'mobile_money','status'=>'pending','gateway'=>'snippe','purpose'=>'registration','idempotency_key'=>$order,'metadata'=>json_encode(['commission_plan'=>$plan,'snippe_hosted'=>true],JSON_THROW_ON_ERROR)]);
+            $id=Database::insert('payments',['user_id'=>$userId,'order_id'=>$order,'amount'=>$plan['registration_fee'],'currency'=>'TZS','phone'=>$phone,'payment_method'=>'mobile_money','status'=>'pending','gateway'=>'snippe','purpose'=>'registration','idempotency_key'=>$order,'metadata'=>json_encode(['commission_plan'=>$plan,'snippe_ussd'=>true],JSON_THROW_ON_ERROR)]);
             Database::commit();
         } catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
-        $return=rtrim(SITE_URL,'/').'/payment?action=waiting&order_id='.rawurlencode($order);
-        $payload=['amount'=>(int)$plan['registration_fee'],'currency'=>'TZS','allowed_methods'=>['mobile_money'],'allow_custom_amount'=>false,
-            'customer'=>['name'=>$user['full_name'],'phone'=>$user['phone']], 'redirect_url'=>$return,'webhook_url'=>$this->client->callbackUrl(),
-            'description'=>'EarnSphere registration','metadata'=>['order_id'=>$order],'expires_in'=>3600];
-        if (filter_var($user['email']??'',FILTER_VALIDATE_EMAIL))$payload['customer']['email']=$user['email'];
-        $response=$this->client->createSession($payload,$order);
+        $payload=['payment_type'=>'mobile','details'=>['amount'=>(int)$plan['registration_fee'],'currency'=>'TZS'],'phone_number'=>$phone,
+            'customer'=>['firstname'=>$names[0],'lastname'=>$names[1],'email'=>$email],
+            'webhook_url'=>$this->client->callbackUrl(),'metadata'=>['order_id'=>$order]];
+        $response=$this->client->createPayment($payload,$order);
         Database::beginTransaction();
         try {
             $row=Database::fetchOne('SELECT * FROM payments WHERE id = ? FOR UPDATE',[$id]);
             $meta=json_decode($row['metadata'],true)?:[];
             if (!$response['success']) {
                 $meta['creation_uncertain']=!empty($response['uncertain']);
-                Database::update('payments',['status'=>$row['status']==='pending' && empty($response['uncertain'])?'failed':$row['status'],'metadata'=>json_encode($meta,JSON_THROW_ON_ERROR)],'id = ?',[$id]);
-                Database::commit();if($row['status']==='completed')return $this->result($row);return ['success'=>false,'error'=>$response['error'].' Order: '.$order];
+                $status=$row['status']==='pending' && empty($response['uncertain'])?'failed':$row['status'];
+                Database::update('payments',['status'=>$status,'metadata'=>json_encode($meta,JSON_THROW_ON_ERROR)],'id = ?',[$id]);
+                Database::commit();
+                if($row['status']==='completed' || !empty($response['uncertain']))return $this->result($row,'Ombi linathibitishwa. Usilipe tena kabla ya kuangalia status.');
+                return ['success'=>false,'error'=>$response['error'].' Order: '.$order];
             }
-            $data=$response['data'];
-            if (!is_string($data['reference']??null) || strlen($data['reference'])>100 || $data['reference']===''
-                || (int)($data['amount']??0)!==(int)$row['amount'] || ($data['currency']??'')!=='TZS')throw new RuntimeException('Snippe session identity or amount mismatch.');
-            $meta['checkout_url']=SnippeClient::checkoutUrl((string)($data['checkout_url']??''));
-            $meta['session_reference']=$data['reference'];
-            Database::update('payments',['gateway_id'=>$data['reference'],'metadata'=>json_encode($meta,JSON_THROW_ON_ERROR)],'id = ?',[$id]);
-            Database::commit();$row['metadata']=json_encode($meta,JSON_THROW_ON_ERROR);return $this->result($row);
+            $data=$response['data'];$amount=$data['amount']??null;
+            if (!is_string($data['reference']??null) || strlen($data['reference'])>100 || $data['reference']==='' || !is_array($amount)
+                || !is_numeric($amount['value']??null) || (float)$amount['value']!==(float)$row['amount'] || ($amount['currency']??'')!=='TZS'
+                || (!empty($row['transaction_ref']) && $row['transaction_ref']!==$data['reference'])
+                || (isset($data['payment_type']) && $data['payment_type']!=='mobile'))throw new RuntimeException('Snippe payment identity or amount mismatch.');
+            Database::update('payments',['gateway_id'=>$data['reference'],'gateway_reference'=>$data['reference'],'transaction_ref'=>$data['reference']],'id = ?',[$id]);
+            Database::commit();
+            if(($data['status']??'')==='completed')$this->reconcile($id);
+            return $this->result(Database::fetchOne('SELECT * FROM payments WHERE id = ?',[$id]),'Ombi la USSD limetumwa kwa '.$phone.'. Thibitisha kwa PIN kwenye simu yako likifika.');
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
     }
     public function reconcile(int $id): void {
         $row=Database::fetchOne("SELECT * FROM payments WHERE id = ? AND gateway = 'snippe'",[$id]);
         if (!$row || $row['status']!=='pending')return;
         $meta=json_decode($row['metadata']??'{}',true)?:[];
-        if (empty($meta['snippe_hosted']))return;
-        if (!empty($row['transaction_ref'])) {
-            $response=$this->client->payment($row['transaction_ref']);
-            if (!$response['success'])throw new RuntimeException('Snippe payment verification unavailable.');
-            $this->applyVerified($id,$response['data'],$row['transaction_ref']);return;
-        }
-        if (empty($meta['session_reference']))return;
-        $response=$this->client->session($meta['session_reference']);
-        if (!$response['success'])throw new RuntimeException('Snippe session verification unavailable.');
-        $data=$response['data'];
-        if (($data['reference']??'')!==$meta['session_reference'] || ($data['currency']??'')!=='TZS' || (int)($data['amount']??0)!==(int)$row['amount'])throw new RuntimeException('Snippe session mismatch.');
-        // A completed checkout alone is not proof of a verified payment reference.
-        if (in_array($data['status']??'',['expired','cancelled'],true)) {
-            Database::update('payments',['status'=>'failed'],'id = ? AND status = ?',[$id,'pending']);
-        }
+        if (empty($meta['snippe_ussd']) && empty($meta['snippe_hosted']))return;
+        if (empty($row['transaction_ref']))return;
+        $response=$this->client->payment($row['transaction_ref']);
+        if (!$response['success'])throw new RuntimeException('Snippe payment verification unavailable.');
+        $this->applyVerified($id,$response['data'],$row['transaction_ref']);
     }
     public function processWebhook(array $event): array {
         $type=$event['type']??'';$data=$event['data']??null;
@@ -82,7 +91,8 @@ class SnippePayment {
         if (!is_string($order) || !preg_match('/^SN-[a-f0-9]{24}$/D',$order))return ['ignored'=>true];
         $row=Database::fetchOne("SELECT * FROM payments WHERE order_id = ? AND gateway = 'snippe' AND purpose = 'registration'",[$order]);
         if (!$row)return ['ignored'=>true];
-        if (empty((json_decode($row['metadata']??'{}',true)?:[])['snippe_hosted']))return ['ignored'=>true];
+        $stored=json_decode($row['metadata']??'{}',true)?:[];
+        if (empty($stored['snippe_ussd']) && empty($stored['snippe_hosted']))return ['ignored'=>true];
         $reference=$data['reference']??'';
         if (!is_string($reference) || $reference==='' || strlen($reference)>100)throw new InvalidArgumentException('Missing reference.');
         $response=$this->client->payment($reference);
@@ -108,9 +118,13 @@ class SnippePayment {
             if (!in_array($row['status'],['pending','failed'],true))throw new RuntimeException('Snippe payment requires manual review.');
             if ($row['status']!=='pending' && $status!=='completed'){Database::commit();return;}
             $meta=json_decode($row['metadata']??'{}',true)?:[];$meta['verified_payment_status']=$status;
-            if (is_string($data['customer']['phone']??null)) Database::update('payments',['phone'=>AblinerClient::normalizePhone($data['customer']['phone'])],'id = ?',[$id]);
+            if (is_string($data['customer']['phone']??null)) {
+                $payer=AblinerClient::normalizePhone($data['customer']['phone']);
+                if (!empty($meta['snippe_ussd']) && $payer!==$row['phone'])throw new RuntimeException('Snippe payer phone mismatch.');
+                Database::update('payments',['phone'=>$payer],'id = ?',[$id]);
+            }
             if ($status==='completed')RegistrationPayment::activate($row);
-            Database::update('payments',['status'=>in_array($status,['voided','expired'],true)?'failed':$status,'transaction_ref'=>$reference,'gateway_reference'=>$reference,'completed_at'=>$status==='completed'?date('Y-m-d H:i:s'):null,'metadata'=>json_encode($meta,JSON_THROW_ON_ERROR)],'id = ?',[$id]);
+            Database::update('payments',['status'=>in_array($status,['voided','expired'],true)?'failed':$status,'gateway_id'=>!empty($meta['snippe_ussd'])?$reference:$row['gateway_id'],'transaction_ref'=>$reference,'gateway_reference'=>$reference,'completed_at'=>$status==='completed'?date('Y-m-d H:i:s'):null,'metadata'=>json_encode($meta,JSON_THROW_ON_ERROR)],'id = ?',[$id]);
             Database::commit();
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
     }

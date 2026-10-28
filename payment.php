@@ -43,14 +43,17 @@ $existingPayment = Database::fetchOne(
 $displayRegistrationFee = $existingPayment ? (float) $existingPayment['amount'] : (float) app_setting('registration_fee', REGISTRATION_FEE);
 
 $snippe=new SnippePayment();
-if (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && $action==='snippe_checkout') {
+if (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && $action==='snippe_pay') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME]??'')) $error='Security token expired. Refresh and try again.';
     else {
         try {
-            $result=$snippe->initiate($userId);
-            if ($result['success']) {header('Location: '.(($result['status']??'')==='completed'?rtrim(SITE_URL,'/').'/dashboard':$result['checkout_url']),true,303);exit;}
+            $result=$snippe->initiate($userId,is_string($_POST['phone']??null)?$_POST['phone']:'',is_string($_POST['customer_name']??null)?$_POST['customer_name']:'',is_string($_POST['customer_email']??null)?$_POST['customer_email']:'',($_POST['confirm_number_change']??'')==='1',is_string($_POST['previous_order']??null)?$_POST['previous_order']:'');
+            if ($result['success']) {
+                $_SESSION['pending_user_id']=$userId;$_SESSION['payment_notice']=$result['message']??'';
+                header('Location: '.rtrim(SITE_URL,'/').'/payment?action=waiting&order_id='.rawurlencode($result['order_id']),true,303);exit;
+            }
             $error=$result['error'];
-        } catch(Throwable $e){error_log('Snippe checkout could not be created: '.$e->getMessage());$error='Checkout could not be confirmed. Contact support before starting another payment.';}
+        } catch(Throwable $e){error_log('Snippe USSD payment could not be created: '.$e->getMessage());$error='Payment could not be confirmed. Check its status before starting another payment.';}
     }
     $action='show';
 }
@@ -357,14 +360,20 @@ $referralLink = getReferralLink($refCode);
         </div>
     </div>
 
-    <div class="form-card" aria-label="Payment provider">
-        <h3 class="card-title">Chagua njia ya malipo</h3>
-        <p>Instant Pay via Snippe au Mobile Payment via Abliner.</p>
+    <div class="form-card" id="snippe-payment" aria-label="Payment provider">
+        <h3 class="card-title">Snippe USSD Push</h3>
+        <p>Weka namba ya kulipia. Ombi la PIN litakuja kwenye simu yako.</p>
         <?php if($snippe->ready()): ?><form method="POST" action="<?= sanitize(SITE_URL) ?>/payment">
-            <input type="hidden" name="<?= $csrfName ?>" value="<?= $csrfVal ?>"><input type="hidden" name="action" value="snippe_checkout">
-            <button class="pay-btn" type="submit">Instant Pay via Snippe - <?= formatCurrency($displayRegistrationFee) ?></button>
-            <small>Fungua checkout salama ya Snippe uchague namba yako ya mobile money.</small>
-        </form><?php else: ?><p class="text-muted">Snippe checkout haipatikani kwa sasa. Tumia Abliner hapa chini.</p><?php endif; ?>
+            <input type="hidden" name="<?= $csrfName ?>" value="<?= $csrfVal ?>"><input type="hidden" name="action" value="snippe_pay">
+            <label for="snippe-phone">Namba ya kulipia</label><input type="tel" class="form-control mb-3" id="snippe-phone" name="phone" value="<?= sanitize($phone) ?>" pattern="^(?:\+?255|0)[67]\d{8}$" autocomplete="tel" required>
+            <label for="snippe-name">Jina la kwanza na la mwisho</label><input class="form-control mb-3" id="snippe-name" name="customer_name" maxlength="200" value="<?= sanitize(is_string($_POST['customer_name']??null)?$_POST['customer_name']:$user['full_name']) ?>" autocomplete="name" required>
+            <label for="snippe-email">Email</label><input type="email" class="form-control mb-3" id="snippe-email" name="customer_email" maxlength="254" value="<?= sanitize(is_string($_POST['customer_email']??null)?$_POST['customer_email']:($user['email']??'')) ?>" autocomplete="email" required>
+            <?php if($existingPayment && $existingPayment['gateway']==='snippe'): ?><input type="hidden" name="previous_order" value="<?= sanitize($existingPayment['order_id']) ?>">
+            <div class="alert alert-warning">Ombi la awali: <?= sanitize($existingPayment['phone']) ?>. Kubadilisha namba kunahitaji uthibitisho.
+            <label><input type="checkbox" name="confirm_number_change" value="1">Sijalipa, na sitaidhinisha ombi la zamani. Nataka kutumia namba mpya niliyoweka.</label></div><?php endif; ?>
+            <button class="pay-btn" type="submit">Pay via Snippe - <?= formatCurrency($displayRegistrationFee) ?></button>
+            <small>M-Pesa, Airtel Money, Mixx by Yas na HaloPesa. Usitume PIN yako kwenye website.</small>
+        </form><?php else: ?><p class="text-muted">Snippe haipatikani kwa sasa. Tumia Abliner hapa chini.</p><?php endif; ?>
         <a class="btn btn-outline-primary mt-3" href="#abliner-payment">Pay via Abliner</a>
     </div>
     <!-- Payment Form -->
@@ -426,7 +435,7 @@ $referralLink = getReferralLink($refCode);
         <i class="fas fa-arrow-left"></i> Change Number
     </a>
     <h2><i class="fas fa-hourglass-half me-2"></i>Processing Payment</h2>
-    <?php $waitingSnippe=($waitingPayment['gateway']??'')==='snippe'; ?><p><?= $waitingSnippe?'Tunasubiri uthibitisho wa malipo kutoka Snippe.':'Ombi la malipo limetumwa kwa <strong>'.sanitize($waitingPayment['phone']).'</strong>. Thibitisha kwenye namba hii pekee.' ?></p>
+    <?php $waitingSnippe=($waitingPayment['gateway']??'')==='snippe'; ?><p><?= $waitingSnippe?'Snippe USSD push: namba ya kulipia <strong>'.sanitize($waitingPayment['phone']).'</strong>. Tunasubiri uthibitisho.':'Ombi la malipo limetumwa kwa <strong>'.sanitize($waitingPayment['phone']).'</strong>. Thibitisha kwenye namba hii pekee.' ?></p>
 </div>
 
 <div class="payment-body">
@@ -463,7 +472,7 @@ $referralLink = getReferralLink($refCode);
         <div style="margin-top:1rem;">
             <?php if(!$waitingSnippe): ?><button type="button" class="btn btn-outline-primary" id="toggleChangeNumBtn" onclick="toggleChangeNum()" style="font-size:0.85rem;">
                 <i class="fas fa-sync me-1"></i> Change Number
-            </button><?php else: $waitingMeta=json_decode($waitingPayment['metadata']??'{}',true)?:[]; if(!empty($waitingMeta['checkout_url'])): ?><a class="btn btn-outline-primary" href="<?= sanitize(SnippeClient::checkoutUrl($waitingMeta['checkout_url'])) ?>">Continue Snippe checkout</a><?php endif; endif; ?>
+            </button><?php else: ?><a class="btn btn-outline-primary" href="<?= sanitize(SITE_URL) ?>/payment?action=show#snippe-payment">Change Snippe number</a><?php endif; ?>
             <a href="<?= $siteUrl ?>/dashboard"
                class="btn btn-outline-secondary ms-2" style="font-size:0.85rem;">
                 <i class="fas fa-home me-1"></i> Dashboard
