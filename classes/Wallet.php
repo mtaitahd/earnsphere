@@ -14,7 +14,7 @@ class Wallet {
     public static function earningsProjection(string $userExpression): string {
         if ($userExpression!=='?' && !preg_match('/^[a-z_]+\.[a-z_]+$/iD',$userExpression)) throw new InvalidArgumentException('Invalid earnings user expression.');
         $types="'".implode("','",self::EARNING_TYPES)."'";
-        return "(SELECT COALESCE(SUM(wt.amount),0) FROM wallet_transactions wt WHERE wt.user_id = $userExpression AND wt.status = 'completed' AND wt.amount > 0 AND wt.type IN ($types))";
+        return "(SELECT COALESCE(SUM(wt.amount),0) FROM wallet_transactions wt WHERE wt.user_id = $userExpression AND wt.status = 'completed' AND wt.type IN ($types))";
     }
 
     public static function earnedTotal(int $userId): float {

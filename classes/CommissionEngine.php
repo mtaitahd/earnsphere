@@ -32,6 +32,9 @@ class CommissionEngine {
      * @param int $newUserId The ID of the newly activated user
      */
     public static function processRegistrationCommissions(int $newUserId, ?array $plan = null): void {
+        // Serialize awards with settings reconciliation and use the current rates.
+        $currentRates=Database::fetchAll("SELECT setting_key,setting_value FROM settings WHERE setting_key IN ('commission_l1','commission_l2') ORDER BY setting_key FOR UPDATE");
+        foreach ($currentRates as $rate) $plan[$rate['setting_key']]=$rate['setting_value'];
         // Find the referral chain for this user
         $referralChain = self::getReferralChain($newUserId);
         
@@ -41,7 +44,7 @@ class CommissionEngine {
         ];
         
         foreach ($commissions as $level => $amount) {
-            if ($amount <= 0 || !isset($referralChain[$level])) continue;
+            if ($amount < 0 || !isset($referralChain[$level])) continue;
             
             $earnerId = $referralChain[$level];
             

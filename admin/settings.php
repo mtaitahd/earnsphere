@@ -8,6 +8,7 @@ require_once dirname(__DIR__) . '/config/database.php';
 require_once dirname(__DIR__) . '/classes/Auth.php';
 require_once dirname(__DIR__) . '/includes/helpers.php';
 require_once dirname(__DIR__) . '/classes/CommissionPlan.php';
+require_once dirname(__DIR__) . '/classes/CommissionReconciliation.php';
 require_once dirname(__DIR__) . '/classes/WithdrawalCharge.php';
 require_once dirname(__DIR__) . '/classes/SnippePayment.php';
 
@@ -98,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($error)) {
         Database::beginTransaction();
         try {
+            Database::fetchAll("SELECT id FROM settings WHERE setting_key IN ('commission_l1','commission_l2') ORDER BY setting_key FOR UPDATE");
             foreach ($settings as $key => $value) {
                 $existing = Database::fetchOne("SELECT id FROM settings WHERE setting_key = ?", [$key]);
                 if ($existing) {
@@ -113,8 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            $reconciled=$selectedSection==='finance' ? CommissionReconciliation::apply((int)$_SESSION['user_id'],$settings) : null;
             Database::commit();
-            setFlash('success', $settingSections[$selectedSection]['label'].' saved.');
+            setFlash('success', $settingSections[$selectedSection]['label'].' saved.'.($reconciled!==null?' '.$reconciled.' commission records reconciled.':''));
             header('Location: ' . SITE_URL . '/admin/settings#'.($selectedSection==='snippe'?'snippe-settings':'settings-'.$selectedSection));
             exit;
         } catch (Throwable $e) {
@@ -206,6 +209,7 @@ include __DIR__ . '/admin_header.php';
     <div class="settings-section-body"><form method="POST">
         <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
         <input type="hidden" name="action" value="save_section"><input type="hidden" name="section" value="finance">
+<p class="alert alert-info">Saving commission rates recalculates previously awarded Level 1 and Level 2 commissions. Decreases may create a debt repaid from future earnings; increases credit the difference. Every adjustment is recorded in wallet history.</p>
     <!-- Payment Settings -->
     <div class="card mb-4">
         <div class="card-header">

@@ -103,7 +103,8 @@ include __DIR__ . '/includes/public_head.php';
         <a href="profile"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>
     </nav>
     <div class="account-totals"><div><span>Total earned</span><strong><?= formatCurrency($wallet['total_earned'] ?? 0) ?></strong></div><div><span>Total withdrawn</span><strong><?= formatCurrency($wallet['total_withdrawn'] ?? 0) ?></strong></div></div>
-    <div class="account-balance"><div><span>Withdrawable balance</span><strong data-account-balance><?= formatCurrency($wallet['withdrawable_balance'] ?? 0) ?></strong><strong data-account-masked hidden>••••••</strong></div><button type="button" data-balance-toggle aria-label="Hide balance" aria-pressed="false"><i class="fas fa-eye-slash" aria-hidden="true"></i></button></div>
+    <?php if ((float)($wallet['withdrawable_balance']??0)<0): ?><p>Commission adjustment debt: <?= formatCurrency(abs((float)$wallet['withdrawable_balance'])) ?>. Future earnings will repay this amount before withdrawals become available.</p><?php endif; ?>
+<div class="account-balance"><div><span>Withdrawable balance</span><strong data-account-balance><?= formatCurrency($wallet['withdrawable_balance'] ?? 0) ?></strong><strong data-account-masked hidden>••••••</strong></div><button type="button" data-balance-toggle aria-label="Hide balance" aria-pressed="false"><i class="fas fa-eye-slash" aria-hidden="true"></i></button></div>
     <!-- Account Status -->
     <?php if ($user['status'] !== 'active'): ?>
     <div style="background:linear-gradient(135deg,<?= $paymentFailed ? '#ef4444,#dc2626' : '#f59e0b,#ef4444' ?>);border-radius:12px;padding:1rem;margin-top:0.5rem;color:white;">

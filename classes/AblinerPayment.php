@@ -394,7 +394,10 @@ class AblinerPayment {
         $balanceAfter = (float) $wallet['balance'] - ($status === 'completed' ? $amount : 0);
         $values = ['pending_amount' => (float) $wallet['pending_amount'] - $amount];
         if ($status === 'completed') {
-            if ($balanceAfter < 0) throw new RuntimeException('Insufficient wallet balance for confirmed payout.');
+            if ($balanceAfter < 0) {
+                $adjustments=Database::fetchOne("SELECT COALESCE(SUM(amount),0) AS total FROM wallet_transactions WHERE user_id = ? AND type = 'commission' AND reference_type = 'commission_reconciliation' AND status = 'completed'",[$payout['user_id']]);
+                if ($balanceAfter-(float)$adjustments['total'] < 0) throw new RuntimeException('Insufficient wallet balance for confirmed payout.');
+            }
             $values['balance'] = $balanceAfter;
             $values['total_withdrawn'] = (float) $wallet['total_withdrawn'] + $amount;
         } else $values['withdrawable_balance'] = (float) $wallet['withdrawable_balance'] + $amount;
