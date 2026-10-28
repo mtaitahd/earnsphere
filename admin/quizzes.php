@@ -45,13 +45,14 @@ $more=count($quizzes)>25;$quizzes=array_slice($quizzes,0,25);$pageTitle='Compreh
 <p id="quiz-bank-count" aria-live="polite">0 / 10 selected</p><button class="btn btn-primary">Load selected questions into draft</button>
 <p>Loading replaces the current unpublished draft. Nothing is published until you press Publish quiz.</p>
 </form></details>
-<details class="service-card" <?= $draft?'open':'' ?>><summary>Publish a comprehension quiz</summary>
+<details class="service-card" open><summary>Weka malipo na uchapishe quiz / Publish quiz</summary>
 <form method="POST" id="quiz-publish-form"><?php featureToken(); ?><input type="hidden" name="action" value="create">
+<h2>Malipo ya quiz</h2><p>Weka kiasi atakachopokea kila mtumiaji akijibu maswali yote ya quiz kwa usahihi. Mfano: TZS 100 kwa mshindi, washindi 50 = bajeti TZS 5,000.</p>
+<div class="service-grid"><div><label for="quiz-reward">Malipo kwa mshindi (TZS)</label><input id="quiz-reward" name="reward" type="number" min="1" max="100000" value="<?= quizField($draft,'reward','100') ?>" required></div><div><label for="quiz-slots">Idadi ya washindi watakaolipwa</label><input id="quiz-slots" name="slots" type="number" min="1" max="10000" value="<?= quizField($draft,'slots','100') ?>" required></div></div>
+<p class="service-budget" id="quiz-budget"></p>
 <label for="quiz-title">Title</label><input id="quiz-title" name="title" maxlength="150" value="<?= quizField($draft,'title') ?>" required>
 <label for="quiz-instructions">Instructions / lesson context</label><textarea id="quiz-instructions" name="instructions" rows="3" maxlength="4000" required><?= quizField($draft,'instructions') ?></textarea>
 <div class="service-grid"><div><label for="quiz-platform">Optional lesson platform</label><select id="quiz-platform" name="platform"><option value="none">No external link</option><?php foreach(SocialHub::PLATFORMS as $key=>$label): ?><option value="<?= $key ?>" <?= ($draft['platform']??'none')===$key?'selected':'' ?>><?= $label ?></option><?php endforeach; ?></select></div><div><label for="quiz-url">Optional lesson link</label><input id="quiz-url" name="source_url" type="url" maxlength="600" value="<?= quizField($draft,'source_url') ?>" placeholder="https://..."></div></div>
-<div class="service-grid"><div><label for="quiz-reward">Reward for all correct (TZS)</label><input id="quiz-reward" name="reward" type="number" min="1" max="100000" value="<?= quizField($draft,'reward','100') ?>" required></div><div><label for="quiz-slots">Maximum paid users</label><input id="quiz-slots" name="slots" type="number" min="1" max="10000" value="<?= quizField($draft,'slots','100') ?>" required></div></div>
-<p class="service-budget" id="quiz-budget"></p>
 <div id="quiz-question-list">
 <?php foreach($draftQuestions as $index=>$question): $question=is_array($question)?$question:[];$options=is_array($question['options']??null)?$question['options']:[]; ?>
 <fieldset class="quiz-question service-card" data-quiz-question><legend>Question <span data-question-number><?= $index+1 ?></span></legend>
