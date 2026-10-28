@@ -57,13 +57,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
     header('Location: '.SITE_URL.'/admin/settings#snippe-test'); exit;
 }
 
+// Each save accepts only the selected section's fields.
+$settingSections = [
+    'general'=>['label'=>'General settings','keys'=>['site_name','site_tagline','currency','admin_email','support_phone','terms_url','privacy_url']],
+    'finance'=>['label'=>'Payments & commissions','keys'=>['registration_fee','min_withdrawal','max_withdrawal','withdrawal_charge','commission_l1','commission_l2','company_earning','commission_total']],
+    'abliner'=>['label'=>'Abliner payments','keys'=>['abliner_api_key','abliner_webhook_secret']],
+    'snippe'=>['label'=>'Snippe payments & withdrawals','keys'=>['snippe_enabled','snippe_payout_enabled','snippe_api_key','snippe_webhook_secret']],
+    'sms'=>['label'=>'SMS settings','keys'=>['meseji_api_key','meseji_api_url','meseji_sender_id','meseji_enabled','sms_welcome_enabled','sms_payment_enabled']],
+    'system'=>['label'=>'System controls','keys'=>['maintenance_mode']],
+];
+$selectedSection='';
+
 // Handle settings update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF()) { http_response_code(403); exit('Invalid security token.'); }
+    $selectedSection=is_string($_POST['section']??null)?$_POST['section']:'';
+    if (($_POST['action']??'')!=='save_section' || !isset($settingSections[$selectedSection])) {http_response_code(422);exit('Choose a valid settings section.');}
     $settings = $_POST['settings'] ?? [];
     if (!is_array($settings)) { http_response_code(422); exit('Invalid settings.'); }
-    foreach (array_keys($settings) as $settingKey) if (str_starts_with($settingKey, 'welcome_media_')) unset($settings[$settingKey]);
-    unset($settings['snippe_api_url'], $settings['snippe_api_version'], $settings['snippe_checkout_token']);
+    if (array_diff(array_keys($settings),$settingSections[$selectedSection]['keys'])) {http_response_code(422);exit('This form can only update its own section.');}
+    foreach ($settings as $value) if (!is_string($value)) {http_response_code(422);exit('Invalid setting value.');}
     if (isset($settings['snippe_payout_enabled']) && !in_array($settings['snippe_payout_enabled'],['0','1'],true)) {http_response_code(422);exit('Invalid Snippe withdrawal setting.');}
     if (isset($settings['snippe_enabled']) && !in_array($settings['snippe_enabled'],['0','1'],true)) {http_response_code(422);exit('Invalid Snippe setting.');}
     foreach (['abliner_api_key', 'abliner_webhook_secret', 'snippe_api_key', 'snippe_webhook_secret'] as $secret) {
@@ -72,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Derive totals on the server; posted total/company/L3 values cannot override the two-level plan.
     try {
-        $settings = array_replace($settings, CommissionPlan::fromInput($settings));
+        if ($selectedSection==='finance') $settings = array_replace($settings, CommissionPlan::fromInput($settings));
         if (isset($settings['withdrawal_charge'])) {
             $settings['withdrawal_charge'] = WithdrawalCharge::validate($settings['withdrawal_charge']);
             $minimum = (float) ($settings['min_withdrawal'] ?? app_setting('min_withdrawal', MIN_WITHDRAWAL));
@@ -101,8 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             Database::commit();
-            setFlash('success', 'Settings updated. The registration fee and Level 1/Level 2 commissions now apply to new payments.');
-            header('Location: ' . SITE_URL . '/admin/settings');
+            setFlash('success', $settingSections[$selectedSection]['label'].' saved.');
+            header('Location: ' . SITE_URL . '/admin/settings#'.($selectedSection==='snippe'?'snippe-settings':'settings-'.$selectedSection));
             exit;
         } catch (Throwable $e) {
             if (Database::inTransaction()) Database::rollback();
@@ -146,54 +159,31 @@ include __DIR__ . '/admin_header.php';
 
 <div class="page-header">
     <h1><i class="fas fa-cog me-2" style="color:var(--primary);"></i>Settings</h1>
-    <p>Manage system settings</p>
+    <p>Choose a section to manage its settings.</p>
 </div>
 
 <?php if ($success): ?>
     <div class="alert alert-success d-flex align-items-center" role="alert">
-        <i class="fas fa-check-circle me-2"></i> <?= $success ?>
+        <i class="fas fa-check-circle me-2"></i> <?= sanitize($success) ?>
     </div>
 <?php endif; ?>
 
 <?php if ($error): ?>
     <div class="alert alert-danger d-flex align-items-center" role="alert">
-        <i class="fas fa-exclamation-circle me-2"></i> <?= $error ?>
+        <i class="fas fa-exclamation-circle me-2"></i> <?= sanitize($error) ?>
     </div>
 <?php endif; ?>
 
-<form method="POST">
-    <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
-
-    <a href="#snippe-test" class="btn btn-outline-primary mb-3">Test USSD push</a>
-    <a href="<?= sanitize(SITE_URL) ?>/admin/snippe-wallet" class="btn btn-outline-primary mb-3">Withdraw from Snippe</a>
-    <div class="card mb-4" id="snippe-settings" style="scroll-margin-top:90px">
-        <div class="card-header"><h6>Snippe USSD Push</h6></div>
-        <div class="card-body">
-            <div class="mb-3">
-        <label class="form-label" for="snippe-payout-enabled">Snippe withdrawals</label>
-        <select class="form-select" id="snippe-payout-enabled" name="settings[snippe_payout_enabled]">
-            <option value="0" <?= (string)app_setting('snippe_payout_enabled','0')!=='1'?'selected':'' ?>>Disabled</option>
-            <option value="1" <?= (string)app_setting('snippe_payout_enabled','0')==='1'?'selected':'' ?>>Enabled</option>
-        </select>
-        <small>Requires API key scopes disbursement:create and disbursement:read, plus available Snippe balance. Recipient verification uses the existing Abliner lookup.</small>
-            </div>
-
-            <p>Collect registration payments by sending a USSD PIN prompt to the customer’s mobile money number.</p>
-            <label for="snippe-enabled">Enable Snippe USSD push</label>
-            <select id="snippe-enabled" class="form-select mb-3" name="settings[snippe_enabled]"><option value="0">Off</option><option value="1" <?= ($settingsMap['snippe_enabled']['setting_value']??'0')==='1'?'selected':'' ?>>On</option></select>
-            <div class="row g-3"><?php foreach(['snippe_api_key'=>'API key (collection:create and collection:read; withdrawals also need disbursement:create and disbursement:read)','snippe_webhook_secret'=>'Webhook signing secret'] as $key=>$label): ?>
-                <div class="col-md-6"><label for="<?= $key ?>"><?= $label ?></label><input type="password" id="<?= $key ?>" name="settings[<?= $key ?>]" class="form-control" value="" autocomplete="new-password" placeholder="Leave blank to keep the saved secret"><small><?= !empty($settingsMap[$key]['setting_value']) || getenv(strtoupper($key)) ? 'Configured':'Not configured' ?></small></div>
-            <?php endforeach; ?></div>
-            <p class="mt-3">Webhook: <code><?= sanitize(rtrim(SITE_URL,'/').'/webhooks/snippe.php') ?></code></p>
-            <p class="text-muted">Uses POST /v1/payments with your API key. Only the API key and webhook signing secret are needed. Account activation waits for verified payment.</p>
-        </div>
-    </div>
-
+<p class="text-muted">Open the section you need, make your changes, then save that section.</p>
+<div class="mb-3 d-flex flex-wrap gap-2"><a class="btn btn-outline-primary" href="#snippe-test">Test USSD push</a><a class="btn btn-outline-primary" href="<?= sanitize(SITE_URL) ?>/admin/snippe-wallet">Withdraw from Snippe</a></div>
+<details class="settings-section mb-3" id="settings-general" <?= $selectedSection==='general'?'open':'' ?>>
+    <summary>General settings<span aria-hidden="true" class="settings-chevron">⌄</span></summary>
+    <div class="settings-section-body"><form method="POST">
+        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
+        <input type="hidden" name="action" value="save_section"><input type="hidden" name="section" value="general">
     <!-- General Settings -->
     <div class="card mb-4">
-        <div class="card-header">
-            <h6><i class="fas fa-globe me-1"></i> General Settings</h6>
-        </div>
+
         <div class="card-body">
             <div class="row g-3">
                 <?php foreach ($categories['general'] as $key): ?>
@@ -207,6 +197,15 @@ include __DIR__ . '/admin_header.php';
         </div>
     </div>
 
+
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save General settings</button>
+    </form></div>
+</details>
+<details class="settings-section mb-3" id="settings-finance" <?= $selectedSection==='finance'?'open':'' ?>>
+    <summary>Payments & commissions<span aria-hidden="true" class="settings-chevron">⌄</span></summary>
+    <div class="settings-section-body"><form method="POST">
+        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
+        <input type="hidden" name="action" value="save_section"><input type="hidden" name="section" value="finance">
     <!-- Payment Settings -->
     <div class="card mb-4">
         <div class="card-header">
@@ -263,8 +262,17 @@ include __DIR__ . '/admin_header.php';
         </div>
     </div>
 
+
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Payments &amp; commissions</button>
+    </form></div>
+</details>
+<details class="settings-section mb-3" id="settings-abliner" <?= $selectedSection==='abliner'?'open':'' ?>>
+    <summary>Abliner payments<span aria-hidden="true" class="settings-chevron">⌄</span></summary>
+    <div class="settings-section-body"><form method="POST">
+        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
+        <input type="hidden" name="action" value="save_section"><input type="hidden" name="section" value="abliner">
     <div class="card mb-4">
-        <div class="card-header"><h6><i class="fas fa-plug me-1"></i> Abliner Payments</h6></div>
+
         <div class="card-body">
             <p>Collect registration payments, verify mobile money recipients, and send withdrawals with Abliner.</p>
             <div class="row g-3">
@@ -282,11 +290,50 @@ include __DIR__ . '/admin_header.php';
         </div>
     </div>
 
+
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Abliner payments</button>
+    </form></div>
+</details>
+<details class="settings-section mb-3" id="snippe-settings" <?= $selectedSection==='snippe'?'open':'' ?>>
+    <summary>Snippe USSD Push &amp; withdrawals<span aria-hidden="true" class="settings-chevron">⌄</span></summary>
+    <div class="settings-section-body"><form method="POST">
+        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
+        <input type="hidden" name="action" value="save_section"><input type="hidden" name="section" value="snippe">
+    <div class="card mb-4" style="scroll-margin-top:90px">
+
+        <div class="card-body">
+            <div class="mb-3">
+        <label class="form-label" for="snippe-payout-enabled">Snippe withdrawals</label>
+        <select class="form-select" id="snippe-payout-enabled" name="settings[snippe_payout_enabled]">
+            <option value="0" <?= (string)app_setting('snippe_payout_enabled','0')!=='1'?'selected':'' ?>>Disabled</option>
+            <option value="1" <?= (string)app_setting('snippe_payout_enabled','0')==='1'?'selected':'' ?>>Enabled</option>
+        </select>
+        <small>Requires API key scopes disbursement:create and disbursement:read, plus available Snippe balance. Recipient verification uses the existing Abliner lookup.</small>
+            </div>
+
+            <p>Collect registration payments by sending a USSD PIN prompt to the customer’s mobile money number.</p>
+            <label for="snippe-enabled">Enable Snippe USSD push</label>
+            <select id="snippe-enabled" class="form-select mb-3" name="settings[snippe_enabled]"><option value="0">Off</option><option value="1" <?= ($settingsMap['snippe_enabled']['setting_value']??'0')==='1'?'selected':'' ?>>On</option></select>
+            <div class="row g-3"><?php foreach(['snippe_api_key'=>'API key (collection:create and collection:read; withdrawals also need disbursement:create and disbursement:read)','snippe_webhook_secret'=>'Webhook signing secret'] as $key=>$label): ?>
+                <div class="col-md-6"><label for="<?= $key ?>"><?= $label ?></label><input type="password" id="<?= $key ?>" name="settings[<?= $key ?>]" class="form-control" value="" autocomplete="new-password" placeholder="Leave blank to keep the saved secret"><small><?= !empty($settingsMap[$key]['setting_value']) || getenv(strtoupper($key)) ? 'Configured':'Not configured' ?></small></div>
+            <?php endforeach; ?></div>
+            <p class="mt-3">Webhook: <code><?= sanitize(rtrim(SITE_URL,'/').'/webhooks/snippe.php') ?></code></p>
+            <p class="text-muted">Uses POST /v1/payments with your API key. Only the API key and webhook signing secret are needed. Account activation waits for verified payment.</p>
+        </div>
+    </div>
+
+
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Snippe payments &amp; withdrawals</button>
+    </form></div>
+</details>
+<details class="settings-section mb-3" id="settings-sms" <?= $selectedSection==='sms'?'open':'' ?>>
+    <summary>SMS settings<span aria-hidden="true" class="settings-chevron">⌄</span></summary>
+    <div class="settings-section-body"><form method="POST">
+        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
+        <input type="hidden" name="action" value="save_section"><input type="hidden" name="section" value="sms">
     <!-- SMS Settings (Meseji) -->
     <div class="card mb-4">
-        <div class="card-header">
-            <h6><i class="fas fa-sms me-1"></i> SMS (Meseji Gateway)</h6>
-        </div>
+
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-6">
@@ -333,11 +380,18 @@ include __DIR__ . '/admin_header.php';
         </div>
     </div>
 
+
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save SMS settings</button>
+    </form></div>
+</details>
+<details class="settings-section mb-3" id="settings-system" <?= $selectedSection==='system'?'open':'' ?>>
+    <summary>System controls<span aria-hidden="true" class="settings-chevron">⌄</span></summary>
+    <div class="settings-section-body"><form method="POST">
+        <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= Auth::generateCSRF() ?>">
+        <input type="hidden" name="action" value="save_section"><input type="hidden" name="section" value="system">
     <!-- System Settings -->
     <div class="card mb-4">
-        <div class="card-header">
-            <h6><i class="fas fa-tools me-1"></i> System</h6>
-        </div>
+
         <div class="card-body">
             <div class="row g-3">
                 <?php foreach ($categories['system'] as $key): ?>
@@ -354,18 +408,18 @@ include __DIR__ . '/admin_header.php';
         </div>
     </div>
 
-    <div class="text-end mb-4">
-        <button type="submit" class="btn btn-primary btn-lg">
-            <i class="fas fa-save me-1"></i> Save Settings
-        </button>
-    </div>
-</form>
+
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save System controls</button>
+    </form></div>
+</details>
+
 
 <?php
 $testAdmin = Auth::getUser();
 $testReady = (new SnippePayment())->testReady();
 $lastTest = Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND gateway = 'snippe' AND purpose = 'gateway_test' ORDER BY id DESC LIMIT 1", [(int)$_SESSION['user_id']]);
 ?>
+<details class="settings-section mb-3" id="settings-test"><summary>Snippe USSD test<span aria-hidden="true" class="settings-chevron">⌄</span></summary><div class="settings-section-body">
 <div class="card mb-4" id="snippe-test" style="scroll-margin-top:90px">
     <div class="card-header"><h6>Test Snippe USSD push</h6></div>
     <div class="card-body">
@@ -393,8 +447,20 @@ $lastTest = Database::fetchOne("SELECT * FROM payments WHERE user_id = ? AND gat
         <?php endif; ?>
     </div>
 </div>
+</div></details>
+<details class="settings-section mb-3" id="settings-guides"><summary>Know Your Account — audio, videos &amp; links<span aria-hidden="true" class="settings-chevron">⌄</span></summary><div class="settings-section-body">
 <?php include __DIR__ . '/welcome_media_form.php'; ?>
+</div></details>
 
+<style>
+.settings-section{background:#fff;border:1px solid #e3e6f0;border-radius:8px;scroll-margin-top:90px}
+.settings-section>summary{cursor:pointer;padding:1.1rem 1.25rem;font-weight:700;color:var(--primary);display:flex;justify-content:space-between;align-items:center;list-style:none}
+.settings-section>summary::-webkit-details-marker{display:none}
+.settings-section>summary:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.settings-section[open]>summary{border-bottom:1px solid #e3e6f0}.settings-section[open] .settings-chevron{transform:rotate(180deg)}
+.settings-section-body{padding:1.25rem}.settings-section-body .card{box-shadow:none}
+</style>
+<script src="<?= sanitize(SITE_URL) ?>/assets/js/settings-sections.js"></script>
 <script src="<?= sanitize(SITE_URL) ?>/assets/js/commission-settings.js"></script>
 
 <?php include __DIR__ . '/admin_footer.php'; ?>

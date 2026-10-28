@@ -367,3 +367,8 @@ Only active administrators can preview, send or check company withdrawals. Users
 A collection-only API key cannot create payouts. The application key needs all four scopes when used for both: `collection:create`, `collection:read`, `disbursement:create`, `disbursement:read`. Create/select the appropriate key in Snippe Settings → API Keys, then save it in EarnSphere Admin → Snippe Settings. Do not send keys in support messages.
 
 New rejection records preserve the safe Snippe error code and HTTP status. Member receipts/history display fixed explanations; admin withdrawal details show the code/status. Arbitrary provider messages and credentials are not echoed. Successful-HTTP payout failures also retain a classified failure reason. Older generic failed records cannot recover a discarded original provider error. Authentication/validation rejections release holds once; uncertain 5xx/timeouts retain holds for verification. No migration is required.
+
+
+### Settings by section
+
+System Settings now uses collapsible sections, each with its own form and Save button. Payments, withdrawal limits/charge and commission amounts are saved together because the registration fee and commission shares must remain consistent. Saving General, Snippe, Abliner, SMS or System controls cannot change another section. Blank payment API secrets preserve the saved values. Existing Snippe test and instruction-upload forms keep their own actions. Settings links open the relevant collapsed section automatically. No migration is needed.
