@@ -99,7 +99,7 @@ include __DIR__ . '/includes/public_head.php';
         <a href="withdrawal"><i class="fas fa-arrow-up" aria-hidden="true"></i><span>Withdraw</span></a>
         <?php if ($user['status'] === 'active'): ?><a href="quizzes"><i class="fas fa-gift" aria-hidden="true"></i><span>Quiz</span></a><?php endif; ?>
         <a href="marketplace"><i class="fas fa-bag-shopping" aria-hidden="true"></i><span>Buy Goods</span></a>
-        <a href="referrals" <?= $user['status']==='pending'?'data-referral-pay-required':'' ?>><i class="fas fa-users" aria-hidden="true"></i><span>Referrals</span></a>
+        <a href="referrals" <?= $user['status']==='pending'?'data-referral-pay-required':'' ?>><i class="fas <?= $user['status']==='active'?'fa-users':'fa-comments' ?>" aria-hidden="true"></i><span><?= $user['status']==='active'?'Referrals':'Chat' ?></span></a>
         <a href="profile"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>
     </nav>
     <div class="account-totals"><div><span>Total earned</span><strong><?= formatCurrency($wallet['total_earned'] ?? 0) ?></strong></div><div><span>Total withdrawn</span><strong><?= formatCurrency($wallet['total_withdrawn'] ?? 0) ?></strong></div></div>
@@ -260,7 +260,7 @@ include __DIR__ . '/includes/public_head.php';
                 <i class="fas fa-money-bill-wave me-1"></i> Withdraw
             </a>
             <a href="referrals" <?= $user['status']==='pending'?'data-referral-pay-required':'' ?> class="btn btn-outline-primary" style="padding:0.75rem;">
-                <i class="fas fa-share me-1"></i> Referrals
+                <i class="fas <?= $user['status']==='active'?'fa-share':'fa-comments' ?> me-1"></i> <?= $user['status']==='active'?'Referrals':'Chat' ?>
             </a>
             <a href="transactions" class="btn btn-outline-primary" style="padding:0.75rem;">
                 <i class="fas fa-history me-1"></i> History
@@ -284,8 +284,8 @@ include __DIR__ . '/includes/public_head.php';
         <span>Home</span>
     </a>
     <a href="referrals" <?= $user['status']==='pending'?'data-referral-pay-required':'' ?> class="nav-item">
-        <i class="fas fa-users"></i>
-        <span>Referrals</span>
+        <i class="fas <?= $user['status']==='active'?'fa-users':'fa-comments' ?>"></i>
+        <span><?= $user['status']==='active'?'Referrals':'Chat' ?></span>
     </a>
     <a href="wallet" class="nav-item center-action">
         <i class="fas fa-wallet"></i>
