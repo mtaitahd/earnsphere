@@ -31,6 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     $action = $_POST['action'];
 
+    if ($action === 'unlock_login') {
+        if (!StaffAccess::isAdministrator()) StaffAccess::deny();
+        try { AccountLoginLock::unlock((int)$_SESSION['user_id'],(int)($_POST['user_id']??0));setFlash('success','Password lock removed. The user can log in again.'); }
+        catch (Throwable $e) {error_log('Account unlock failed: '.$e->getMessage());setFlash('error','Could not unlock this account.');}
+        header('Location: '.SITE_URL.'/admin/users');exit;
+    }
+
     if ($action === 'update_status') {
         $userId = (int)($_POST['user_id'] ?? 0);
         $newStatus = in_array($_POST['new_status'] ?? '', ['active', 'pending', 'suspended'], true) ? $_POST['new_status'] : 'active';
@@ -487,7 +494,10 @@ include __DIR__ . '/admin_header.php';
                                 <?php endif; ?>
                             </td>
                             <?php endif; ?>
-                            <?php if ($canViewPrivateUserColumns): ?><td><?= statusBadge($u['status']) ?></td><?php endif; ?>
+                            <?php if ($canViewPrivateUserColumns): ?><td><?= statusBadge($u['status']) ?>
+                                <?php try {$loginLock=AccountLoginLock::status((int)$u['id']);}catch(Throwable $e){$loginLock=['permanent'=>true,'until'=>0];} ?>
+                                <?php if (AccountLoginLock::blocked($loginLock)): ?><small class="d-block text-danger">Login locked<?= !empty($loginLock['permanent'])?' — admin unlock required':' until '.date('d M H:i',(int)$loginLock['until']) ?></small><?php endif; ?>
+                            </td><?php endif; ?>
                             <td><small><?= date('d M Y', strtotime($u['created_at'])) ?></small></td>
                             <?php if ($canManageUsers || $canViewErrorLogs): ?><td>
                                 <div class="dropdown">
@@ -495,6 +505,14 @@ include __DIR__ . '/admin_header.php';
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu">
+                                        <?php if (StaffAccess::isAdministrator()): ?>
+                                        <li><form method="POST" onsubmit="return confirm('Remove the password lock for this user?')">
+                                            <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
+                                            <input type="hidden" name="action" value="unlock_login">
+                                            <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                            <button class="dropdown-item" type="submit"><i class="fas fa-unlock me-1"></i> Unlock login</button>
+                                        </form></li>
+                                        <?php endif; ?>
                                         <?php if ($canManageUsers): ?>
                                         <li><h6 class="dropdown-header">Change Status</h6></li>
                                         <?php foreach (['active' => 'Activate', 'pending' => 'Pending', 'suspended' => 'Suspend'] as $val => $label): ?>

@@ -288,4 +288,5 @@ async function submitHelp(e) {
 }
 </script>
 
+<script>if (window.location.hash === '#help') { window.addEventListener('load', function () { if (typeof openHelpModal === 'function') openHelpModal(); }); }</script>
 <?php include __DIR__ . '/includes/public_foot.php'; ?>

@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/SecurityRateLimit.php';
 require_once __DIR__ . '/SecurityAlerts.php';
+require_once __DIR__ . '/AccountLoginLock.php';
 
 class Auth {
     
@@ -251,7 +252,16 @@ class Auth {
             return ['success' => false, 'errors' => ['Phone/email or password is incorrect.']];
         }
         
-        if (!password_verify($password, $user['password'])) {
+        $passwordCorrect=password_verify($password,$user['password']);
+        if ($user['role']==='user') {
+            try { $lock=AccountLoginLock::attempt((int)$user['id'],$passwordCorrect); }
+            catch (Throwable $e) {error_log('Account login protection unavailable');return ['success'=>false,'help_required'=>true,'errors'=>['Login protection is unavailable. Please contact administrator through Help.']];}
+            if (AccountLoginLock::blocked($lock)) {
+                SecurityAlerts::record('login_blocked');
+                return AccountLoginLock::rejection($lock);
+            }
+        }
+        if (!$passwordCorrect) {
             SecurityAlerts::loginFailure($normalized);
             ErrorLogger::log('login', 'Login failed: incorrect password', [
                 'identifier' => $identifier,

@@ -19,6 +19,7 @@ if (Auth::isLoggedIn() && StaffAccess::isStaff()) {
 require_once dirname(__DIR__) . '/includes/security_headers.php';
 
 $error = '';
+$loginHelp = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
@@ -49,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'You cannot access the admin panel.';
                 }
             } else {
+                $loginHelp = !empty($result['help_required']);
                 $error = $result['errors'][0] ?? 'Login error.';
             }
         }
@@ -93,6 +95,7 @@ $csrf = Auth::generateCSRF();
                     <i class="fas fa-exclamation-circle me-2"></i> <?= $error ?>
                 </div>
             <?php endif; ?>
+            <?php if ($loginHelp): ?><a class="btn btn-outline-primary d-block mb-3" href="<?= sanitize(SITE_URL) ?>/#help"><i class="fas fa-life-ring me-1"></i> Help — Contact administrator</a><?php endif; ?>
             
             <form method="POST">
                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">

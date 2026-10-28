@@ -32,6 +32,7 @@ for endpoint in ["api/abliner_balance.php", "api/create_payout.php", "api/check_
 for page, permission in [("users","users"),("payments","payments"),("commissions","commissions"),("withdrawals","withdrawals"),("abliner-wallet","wallet"),("logs","logs"),("error-logs","error_logs")]:
     assert run(f"admin/{page}.php", (permission,), "POST", {"csrf_token":"test-csrf"})["http"] == 403, f"Read-only permission allowed mutation on {page}"
 assert run("api/create_payout.php", ("withdrawals",), "POST", {"csrf_token":"test-csrf"})["http"] == 403
+assert run("admin/users.php", ("users","users_manage"), "POST", {"csrf_token":"test-csrf","action":"unlock_login","user_id":2})["http"] == 403, "Agent unlocked a member login"
 for action in ["mark_as_paid", "mark_as_unpaid"]:
     assert run("admin/users.php", ("users","users_manage"), "POST", {"csrf_token":"test-csrf","action":action,"user_id":2})["http"] == 403, "User management bypassed financial permission"
 assert run("admin/users.php", ("users","users_manage"), "POST", {"csrf_token":"test-csrf","action":"update_status","user_id":2,"new_status":"active"})["http"] == 403, "User management bypassed activation permission"

@@ -346,3 +346,10 @@ Callback: `https://YOUR-DOMAIN/webhooks/snippe.php`. Raw-body timestamp HMAC is 
 In Admin → Snippe Settings, enable **Snippe withdrawals** after configuring a payout-capable Snippe API key, the webhook secret and sufficient Snippe balance. This switch is separate from registration collections and defaults to disabled. Users can choose Abliner or Snippe on the withdrawal form. No new migration is needed on the current payment schema. Recipient name verification continues through the existing Abliner lookup.
 
 Snippe transfers use `POST /v1/payouts/send` and status verification uses `GET /v1/payouts/{reference}`. Keep the same signed `/webhooks/snippe.php` callback subscribed to payout events. The fixed user charge is deducted before sending; Snippe company-side fees are recorded separately. Timeouts retain the wallet hold. Never dispatch again or switch providers to resolve an uncertain payout. Verified failures release the hold once; completed payouts debit once. Reversals require manual reconciliation. Existing gateway records cannot be manually completed or deleted. Offline tests do not send real money.
+
+
+### Member password locks
+
+Five incorrect passwords lock member login for two hours. After that expires, another five incorrect passwords require an administrator to unlock the member. Successful login clears the current failure count, but retains the first-lock history until an administrator resets it. Phone/email aliases share the same user ID lock. Existing IP/account rate limits still apply. Admin → View users shows login-lock status; the user action menu has **Unlock login** (administrator only, CSRF protected and audited). Unlocking does not activate unpaid or suspended users or change balances. Login errors link to the public Help form.
+
+No migration is needed. State is stored with file locking in the existing private `logs/security-limits` directory. Preserve this directory during deployments and backups; deleting it resets lock history. All web workers must use the same persistent directory. Storage errors fail closed. Staff keep their existing login throttles; this two-stage policy applies to normal members.
