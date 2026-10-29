@@ -21,6 +21,35 @@
         };
         if (!form || typeof form.requestSubmit !== 'function') return;
         entry.classList.add('ready');
+        const keypad = form.querySelector('[data-code-keypad]');
+        if (keypad) {
+            input.setAttribute('inputmode', 'none');
+            keypad.hidden = false;
+            const status = keypad.querySelector('[data-keypad-status]');
+            keypad.addEventListener('click', async event => {
+                const button = event.target.closest('[data-code-key]');
+                if (!button || !keypad.contains(button) || submitted) return;
+                const key = button.dataset.codeKey;
+                if (/^[0-9]$/.test(key)) input.value += key;
+                else if (key === 'backspace') input.value = input.value.slice(0, -1);
+                else if (key === 'clear') input.value = '';
+                else if (key === 'paste') {
+                    try {
+                        const value = await navigator.clipboard.readText();
+                        if (submitted) return;
+                        input.value = value;
+                        if (status) status.textContent = '';
+                    } catch (_) {
+                        if (status) status.textContent = 'Touch and hold the code boxes to paste.';
+                        input.focus({ preventScroll: true });
+                        return;
+                    }
+                } else return;
+                render(true);
+                if (!submitted) input.focus({ preventScroll: true });
+            });
+        }
+        if (input.hasAttribute('data-code-autofocus')) input.focus({ preventScroll: true });
         input.addEventListener('input', () => render(true));
         input.addEventListener('paste', event => {
             const value = event.clipboardData && event.clipboardData.getData('text');

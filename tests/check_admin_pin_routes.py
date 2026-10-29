@@ -14,6 +14,7 @@ def run(mode):
 body,status=run('valid')
 assert 'name="pin"' in body and 'name="identifier"' not in body and 'name="password"' not in body
 assert body.count('<span class="code-box"></span>')==4 and 'data-code-length="4"' in body
+assert 'data-code-keypad' in body and all('data-code-key="'+key+'"' in body for key in ['0','1','2','3','4','5','6','7','8','9','backspace','clear','paste'])
 assert json.loads(status) in (False,200)
 for mode in ['invalid','direct']:
  body,status=run(mode);assert json.loads(status)==404 and not body
