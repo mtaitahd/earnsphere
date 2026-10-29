@@ -52,6 +52,7 @@ class ComprehensionQuiz {
         try {
             $quiz=Database::fetchOne('SELECT * FROM comprehension_quizzes WHERE id = ? FOR UPDATE',[$id]);
             if (!$quiz || !in_array($quiz['status'],['active','paused'],true)) throw new InvalidArgumentException('Only an active or paused quiz can change visibility.');
+            DailyContent::requireCurrent($quiz);
             Database::update('comprehension_quizzes',['status'=>$quiz['status']==='active'?'paused':'active'],'id = ?',[$id]);
             Database::commit();
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
@@ -65,6 +66,7 @@ class ComprehensionQuiz {
         try {
             $quiz=Database::fetchOne('SELECT * FROM comprehension_quizzes WHERE id = ? FOR UPDATE',[$id]);
             if (!$quiz || $quiz['status']!=='paused') throw new InvalidArgumentException('Pause the quiz before changing its reward. Completed quizzes cannot be changed.');
+            DailyContent::requireCurrent($quiz);
             Database::update('comprehension_quizzes',['reward'=>$reward],'id = ?',[$id]);
             Database::commit();
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}
@@ -81,6 +83,7 @@ class ComprehensionQuiz {
             $existing=Database::fetchOne('SELECT * FROM comprehension_attempts WHERE quiz_id = ? AND user_id = ?',[$quizId,$userId]);
             if ($existing) {Database::commit();return $existing;}
             if ($quiz['status']!=='active' || (int)$quiz['paid_count'] >= (int)$quiz['slots']) throw new InvalidArgumentException('This quiz is closed or its reward slots are full.');
+            DailyContent::requireCurrent($quiz);
             $questions=self::validateQuestions(json_decode($quiz['questions'],true,512,JSON_THROW_ON_ERROR));
             if (!is_array($answers) || array_keys($answers)!==range(0,count($questions)-1)) throw new InvalidArgumentException('Answer every question before submitting.');
             $score=0;$validated=[];

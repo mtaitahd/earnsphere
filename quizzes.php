@@ -17,12 +17,14 @@ $page=max(1,min(100000,(int)($_GET['page']??1)));$offset=($page-1)*25;
 $historyPage=max(1,min(100000,(int)($_GET['history_page']??1)));$historyOffset=($historyPage-1)*25;
 $quizzes=[];$history=[];$available=true;
 try {
-    $quizzes=Database::fetchAll("SELECT q.id,q.title,q.instructions,q.platform,q.source_url,q.questions,q.reward,q.slots,q.paid_count FROM comprehension_quizzes q WHERE q.status='active' AND q.paid_count<q.slots AND NOT EXISTS (SELECT 1 FROM comprehension_attempts a WHERE a.quiz_id=q.id AND a.user_id=?) ORDER BY q.id DESC LIMIT 26 OFFSET $offset",[$user['id']]);
-    $history=Database::fetchAll("SELECT a.*,q.title FROM comprehension_attempts a JOIN comprehension_quizzes q ON q.id=a.quiz_id WHERE a.user_id=? ORDER BY a.id DESC LIMIT 26 OFFSET $historyOffset",[$user['id']]);
+    [$dayStart,$dayEnd]=DailyContent::bounds();
+    $quizzes=Database::fetchAll("SELECT q.id,q.title,q.instructions,q.platform,q.source_url,q.questions,q.reward,q.slots,q.paid_count FROM comprehension_quizzes q WHERE q.status='active' AND q.paid_count<q.slots AND q.created_at>=? AND q.created_at<? AND NOT EXISTS (SELECT 1 FROM comprehension_attempts a WHERE a.quiz_id=q.id AND a.user_id=?) ORDER BY q.id DESC LIMIT 26 OFFSET $offset",[$dayStart,$dayEnd,$user['id']]);
+    $history=Database::fetchAll("SELECT a.*,q.title FROM comprehension_attempts a JOIN comprehension_quizzes q ON q.id=a.quiz_id WHERE a.user_id=? AND q.created_at>=? AND q.created_at<? ORDER BY a.id DESC LIMIT 26 OFFSET $historyOffset",[$user['id'],$dayStart,$dayEnd]);
 }catch(Throwable $e){$available=false;error_log('Quizzes unavailable: '.$e->getMessage());}
 $more=count($quizzes)>25;$quizzes=array_slice($quizzes,0,25);$historyMore=count($history)>25;$history=array_slice($history,0,25);
 $pageTitle='Maswali ya uelewa';include __DIR__.'/includes/public_head.php'; ?>
-<link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/member-services.css"><main class="services-page"><h1>Maswali ya uelewa</h1><p>Soma au tazama maelekezo, kisha jibu maswali yote.</p><?php featureNavigation('quizzes');displayFlash(); ?>
+<link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/member-services.css"><main class="services-page"><h1>Maswali ya uelewa</h1><p>Soma au tazama maelekezo, kisha jibu maswali yote.</p><p class="service-note">Quiz za leo zinaisha saa 00:00 kwa saa za Tanzania.</p>
+<?php featureNavigation('quizzes');displayFlash(); ?>
 <div class="service-notice">Ukijibu maswali yote sahihi, reward iliyowekwa itaingia wallet moja kwa moja. Una jaribio <strong>moja tu kwa kila quiz</strong>; ukikosea hakuna malipo. Hakikisha majibu yako kabla ya kutuma. Reward slots zinaweza kuisha kabla hujatuma.</div>
 <?php if(!$available): ?><p class="service-empty">Quizzes are temporarily unavailable.</p><?php elseif(!$quizzes): ?><p class="service-empty">Hakuna maswali mapya kwa sasa. Rudi baadaye.</p><?php endif; ?>
 <?php foreach($quizzes as $quiz): $questions=ComprehensionQuiz::publicQuestions($quiz['questions']); ?>

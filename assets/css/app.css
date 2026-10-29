@@ -1990,3 +1990,13 @@ html:has(.welcome-media-dialog[open]) { overflow: hidden; }
 .account-support-reply { margin-top:.75rem;padding:.8rem;background:#f4eff8;border-left:3px solid #72578b; }
 .account-support-read { min-height:40px;border:1px solid #23754e;background:#fff;color:#23754e;padding:.4rem .65rem;margin-top:.5rem;font-size:.75rem; }
 @media(min-width:992px) { .account-help-fab { bottom:1.25rem; } }
+
+/* New daily content alerts on dashboard actions. */
+.dashboard-shortcut,.account-primary-actions a{position:relative}
+.dashboard-shortcut .content-bell,.account-primary-actions .content-bell{position:absolute;top:5px;right:5px;display:flex;align-items:center;justify-content:center;gap:3px;min-width:24px;max-width:none;height:21px;padding:2px 5px;border-radius:12px;background:#dc3545;color:#fff;font-size:11px;line-height:1;box-shadow:0 0 0 2px #fff;z-index:1}
+.content-bell b{font-size:11px;font-weight:800}.content-bell svg{flex:none}
+
+.dashboard-shortcut .content-bell,.account-primary-actions .content-bell{animation:content-new-pulse 1.8s ease-in-out infinite;gap:3px}
+.content-bell b{font-size:9px;letter-spacing:.3px}.content-bell em{font-size:10px;font-weight:800;font-style:normal}
+@keyframes content-new-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 2px #fff,0 0 0 0 #dc354540}50%{transform:scale(1.045);box-shadow:0 0 0 2px #fff,0 0 0 4px #dc354510}}
+@media(prefers-reduced-motion:reduce){.dashboard-shortcut .content-bell,.account-primary-actions .content-bell{animation:none}}

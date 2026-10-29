@@ -26,15 +26,16 @@ $page=max(1,min(100000,(int)($_GET['page']??1)));$offset=($page-1)*25;
 $historyPage=max(1,min(100000,(int)($_GET['history_page']??1)));$historyOffset=($historyPage-1)*25;
 $available=true; $tasks=[]; $history=[];
 try {
-    $where="c.status = 'active' AND c.approved_count < c.slots AND (c.owner_id IS NULL OR c.owner_id != ?)"; $params=[$user['id'],$user['id'],$user['id']];
+    [$dayStart,$dayEnd]=DailyContent::bounds();
+    $where="c.status = 'active' AND c.approved_count < c.slots AND (c.owner_id IS NULL OR c.owner_id != ?) AND c.created_at>=? AND c.created_at<?"; $params=[$user['id'],$user['id'],$user['id'],$dayStart,$dayEnd];
     if($platform!==''){$where.=' AND c.platform = ?';$params[]=$platform;}
     $tasks=Database::fetchAll("SELECT c.*, s.status AS submission_status, o.id AS opened_id FROM social_campaigns c LEFT JOIN social_submissions s ON s.campaign_id=c.id AND s.user_id=? LEFT JOIN social_task_opens o ON o.campaign_id=c.id AND o.user_id=? WHERE $where ORDER BY c.id DESC LIMIT 26 OFFSET $offset",$params);
-    $history=Database::fetchAll("SELECT s.*, c.title,c.reward,c.platform FROM social_submissions s JOIN social_campaigns c ON c.id=s.campaign_id WHERE s.user_id=? ORDER BY s.id DESC LIMIT 26 OFFSET $historyOffset",[$user['id']]);
+    $history=Database::fetchAll("SELECT s.*, c.title,c.reward,c.platform FROM social_submissions s JOIN social_campaigns c ON c.id=s.campaign_id WHERE s.user_id=? AND c.created_at>=? AND c.created_at<? ORDER BY s.id DESC LIMIT 26 OFFSET $historyOffset",[$user['id'],$dayStart,$dayEnd]);
 }catch(Throwable $e){$available=false;error_log('Social tasks unavailable: '.$e->getMessage());}
 $hasMore=count($tasks)>25;$tasks=array_slice($tasks,0,25);$historyMore=count($history)>25;$history=array_slice($history,0,25);
 $pageTitle='Social tasks';include __DIR__.'/includes/public_head.php'; ?>
 <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/member-services.css">
-<main class="services-page"><h1>Social tasks</h1><p>Fungua maudhui, fuata maelekezo na tuma jibu lako kwa ukaguzi.</p>
+<main class="services-page"><h1>Social tasks</h1><p class="service-note">Kazi za leo zinaisha saa 00:00 kwa saa za Tanzania.</p><p>Fungua maudhui, fuata maelekezo na tuma jibu lako kwa ukaguzi.</p>
 <?php featureNavigation('social-tasks'); displayFlash(); ?>
 <p><a class="btn btn-primary" href="quizzes">Maswali ya uelewa — jibu yote sahihi ulipwe automatic</a></p>
 <div class="service-notice">Reward hulipwa baada ya admin kukagua na kukubali kazi. Kufungua link pekee hakuthibitishi subscribe, like au follow. Ushiriki wa mitandaoni ni wa hiari; reward ni kwa jibu/kazi iliyokubaliwa, si ununuzi wa followers.</div>

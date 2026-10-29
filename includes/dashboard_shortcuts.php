@@ -3,8 +3,8 @@
 <section class="dashboard-services" aria-labelledby="dashboard-explore-title">
     <h2 id="dashboard-explore-title">Explore</h2>
     <div class="dashboard-shortcuts">
-        <a href="quizzes" class="dashboard-shortcut"><i class="fas fa-question-circle" aria-hidden="true"></i><span>Quiz</span></a>
-        <a href="social-tasks" class="dashboard-shortcut"><i class="fas fa-tasks" aria-hidden="true"></i><span>Social Media Tasks</span></a>
+        <a href="quizzes" class="dashboard-shortcut"><?php $contentBellCount=$contentCounts['quizzes']??0;include __DIR__.'/content_bell.php'; ?><i class="fas fa-question-circle" aria-hidden="true"></i><span>Quiz</span></a>
+        <a href="social-tasks" class="dashboard-shortcut"><?php $contentBellCount=$contentCounts['social']??0;include __DIR__.'/content_bell.php'; ?><i class="fas fa-tasks" aria-hidden="true"></i><span>Social Media Tasks</span></a>
         <a href="promote" class="dashboard-shortcut"><i class="fas fa-bullhorn" aria-hidden="true"></i><span>Promote Account</span></a>
     </div>
 </section>

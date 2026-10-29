@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/Wallet.php';
 require_once __DIR__ . '/StaffAccess.php';
+require_once __DIR__.'/DailyContent.php';
 
 class SocialHub {
     public const PLATFORMS = ['youtube'=>'YouTube','tiktok'=>'TikTok','facebook'=>'Facebook','instagram'=>'Instagram','x'=>'X','linkedin'=>'LinkedIn'];
@@ -51,6 +52,7 @@ class SocialHub {
             self::activeUser($userId);
             $campaign = Database::fetchOne('SELECT * FROM social_campaigns WHERE id = ? FOR UPDATE', [$campaignId]);
             if (!$campaign || $campaign['status'] !== 'active' || $campaign['approved_count'] >= $campaign['slots']) throw new InvalidArgumentException('This task is closed or full.');
+            DailyContent::requireCurrent($campaign);
             if ((int)($campaign['owner_id'] ?? 0) === $userId) throw new InvalidArgumentException('You cannot open your own promotion as a task.');
             if (Database::fetchOne('SELECT id FROM social_task_opens WHERE campaign_id = ? AND user_id = ?', [$campaignId, $userId]) || Database::fetchOne('SELECT id FROM social_submissions WHERE campaign_id = ? AND user_id = ?', [$campaignId, $userId])) throw new InvalidArgumentException('Opened: you already opened this task.');
             $url = self::url($campaign['platform'], $campaign['url']);
@@ -66,6 +68,7 @@ class SocialHub {
             self::activeUser($userId);
             $campaign=Database::fetchOne('SELECT * FROM social_campaigns WHERE id = ? FOR UPDATE',[$campaignId]);
             if (!$campaign || $campaign['status']!=='active' || $campaign['approved_count'] >= $campaign['slots']) throw new InvalidArgumentException('This task is closed or full.');
+            DailyContent::requireCurrent($campaign);
             if ((int)($campaign['owner_id']??0)===$userId) throw new InvalidArgumentException('You cannot earn rewards on your own promotion.');
             if (Database::fetchOne('SELECT id FROM social_submissions WHERE campaign_id = ? AND user_id = ?',[$campaignId,$userId])) throw new InvalidArgumentException('You already submitted this task.');
             Database::insert('social_submissions',['campaign_id'=>$campaignId,'user_id'=>$userId,'answer'=>$answer,'created_at'=>gmdate('Y-m-d H:i:s')]);
@@ -107,6 +110,7 @@ class SocialHub {
             $row=Database::fetchOne('SELECT * FROM social_campaigns WHERE id = ? FOR UPDATE',[$id]);
             if(!$row)throw new InvalidArgumentException('Task not found.');
             if(!in_array($row['status'],['active','paused'],true))throw new InvalidArgumentException('Completed tasks cannot be reopened.');
+            DailyContent::requireCurrent($row);
             Database::update('social_campaigns',['status'=>$row['status']==='active'?'paused':'active'],'id = ?',[$id]);
             Database::commit();
         }catch(Throwable $e){if(Database::inTransaction())Database::rollback();throw $e;}

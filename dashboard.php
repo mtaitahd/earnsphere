@@ -8,6 +8,7 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/classes/Auth.php';
 require_once __DIR__ . '/classes/CommissionEngine.php';
 require_once __DIR__ . '/classes/Wallet.php';
+require_once __DIR__.'/classes/DailyContent.php';
 require_once __DIR__ . '/classes/DailyMission.php';
 require_once __DIR__ . '/classes/Contest.php';
 require_once __DIR__ . '/includes/helpers.php';
@@ -19,6 +20,7 @@ Wallet::autoExpirePending((int) $_SESSION['user_id']);
 
 $user = Auth::getUser();
 if (($user['role']??'')==='admin') {require_once __DIR__.'/classes/StaffAccess.php';header('Location: '.StaffAccess::landingUrl());exit;}
+$contentCounts=DailyContent::pendingCounts((int)$user['id']);
 $wallet = Wallet::getWallet($_SESSION['user_id']);
 $wallet['total_earned'] = Wallet::earnedTotal((int)$_SESSION['user_id']);
 $stats = CommissionEngine::getReferralStats($_SESSION['user_id']);
@@ -98,7 +100,7 @@ include __DIR__ . '/includes/public_head.php';
     <div class="account-greeting"><p>Hello,</p><h1><?= sanitize($user['full_name']) ?></h1></div>
     <nav class="account-primary-actions" aria-label="Main account actions">
         <a href="withdrawal"><i class="fas fa-arrow-up" aria-hidden="true"></i><span>Withdraw</span></a>
-        <?php if ($user['status'] === 'active'): ?><a href="quizzes"><i class="fas fa-gift" aria-hidden="true"></i><span>Quiz</span></a><?php endif; ?>
+        <?php if ($user['status'] === 'active'): ?><a href="quizzes"><?php $contentBellCount=$contentCounts['quizzes'];include __DIR__.'/includes/content_bell.php'; ?><i class="fas fa-gift" aria-hidden="true"></i><span>Quiz</span></a><?php endif; ?>
         <a href="marketplace"><i class="fas fa-bag-shopping" aria-hidden="true"></i><span>Buy Goods</span></a>
         <a href="referrals" <?= $user['status']==='pending'?'data-referral-pay-required':'' ?>><i class="fas <?= $user['status']==='active'?'fa-users':'fa-comments' ?>" aria-hidden="true"></i><span><?= $user['status']==='active'?'Referrals':'Chat' ?></span></a>
         <a href="profile"><i class="fas fa-user" aria-hidden="true"></i><span>Profile</span></a>

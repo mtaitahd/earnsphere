@@ -393,3 +393,12 @@ before signing out. The private path requires Apache rewrite rules from `.htacce
 
 The old `/admin/login` and `/admin/login.php` entries are removed (404). Agents
 use `/admin/agent-login`; administrators use only their generated private link.
+
+
+Quiz and social-task publishing is daily: each item closes at 00:00 Tanzania
+(Africa/Dar_es_Salaam) at the end of its publication day. Existing older items
+will disappear from member lists after this update. No migration or cron is
+required; list queries and server submission/open checks enforce the UTC bounds
+of the local publishing day. Expired content cannot be resumed; publish a new
+item. Existing attempts, earned rewards and social submissions remain available
+for history and administrator review.

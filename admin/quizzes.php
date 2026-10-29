@@ -32,7 +32,7 @@ try{$quizzes=Database::fetchAll("SELECT q.*,u.full_name,(SELECT COUNT(*) FROM co
 catch(Throwable $e){$available=false;error_log('Quiz list: '.$e->getMessage());}
 $more=count($quizzes)>25;$quizzes=array_slice($quizzes,0,25);$pageTitle='Comprehension quizzes';include __DIR__.'/admin_header.php'; ?>
 <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/member-services.css">
-<h1>Comprehension quizzes</h1><?php displayFlash(); ?>
+<h1>Comprehension quizzes</h1><p class="service-notice">Published quizzes expire at midnight Tanzania time. Publish a new quiz for each day. Expired quizzes cannot be resumed.</p><?php displayFlash(); ?>
 <p class="service-notice">Users answer every question once. All answers must be correct to automatically receive the configured reward in their wallet. Correct answers stay private. Published questions cannot be edited; pause the quiz and publish a new one if a correction is needed.</p>
 <?php if(!$available): ?><div class="alert alert-warning">Run <code>php database/migrate_quizzes.php</code> before publishing quizzes.</div><?php else: ?>
 <details class="service-card"><summary>Question bank · Benki ya maswali (100)</summary>
@@ -69,7 +69,7 @@ $more=count($quizzes)>25;$quizzes=array_slice($quizzes,0,25);$pageTitle='Compreh
 <button class="btn btn-primary" type="submit">Publish quiz</button></form></details>
 <?php endif; ?>
 <?php if(!$quizzes && $available): ?><p class="service-empty">No quizzes published yet.</p><?php endif; ?>
-<?php foreach($quizzes as $quiz): ?><article class="service-card"><h2><?= sanitize($quiz['title']) ?></h2><p>#<?= (int)$quiz['id'] ?> · <?= featureStatus($quiz['status']) ?> · Published by <?= sanitize($quiz['full_name']??'Staff') ?></p><p class="service-note"><?= sanitize($quiz['instructions']) ?></p><p class="service-budget">Reward <?= formatCurrency($quiz['reward']) ?> · <?= (int)$quiz['paid_count'] ?> / <?= (int)$quiz['slots'] ?> users paid · <?= (int)$quiz['attempt_count'] ?> attempts · Remaining reward budget <?= formatCurrency($quiz['reward']*max(0,(int)$quiz['slots']-(int)$quiz['paid_count'])) ?></p>
+<?php foreach($quizzes as $quiz): $quiz['status']=DailyContent::status($quiz); ?><article class="service-card"><h2><?= sanitize($quiz['title']) ?></h2><p>#<?= (int)$quiz['id'] ?> · <?= featureStatus($quiz['status']) ?> · Published by <?= sanitize($quiz['full_name']??'Staff') ?></p><p class="service-note"><?= sanitize($quiz['instructions']) ?></p><p class="service-budget">Reward <?= formatCurrency($quiz['reward']) ?> · <?= (int)$quiz['paid_count'] ?> / <?= (int)$quiz['slots'] ?> users paid · <?= (int)$quiz['attempt_count'] ?> attempts · Remaining reward budget <?= formatCurrency($quiz['reward']*max(0,(int)$quiz['slots']-(int)$quiz['paid_count'])) ?></p>
 <details><summary>Questions and private answer key</summary><?php foreach(ComprehensionQuiz::validateQuestions(json_decode($quiz['questions'],true)) as $index=>$question): ?><p><strong><?= $index+1 ?>. <?= sanitize($question['question']) ?></strong></p><ol type="A"><?php foreach($question['options'] as $choice=>$option): ?><li><?= sanitize($option) ?><?= $choice===$question['correct']?' — Correct':'' ?></li><?php endforeach; ?></ol><?php endforeach; ?></details>
 <?php if(in_array($quiz['status'],['active','paused'],true)): ?>
 <details class="service-card"><summary>Badilisha malipo / Update reward - <?= formatCurrency($quiz['reward']) ?></summary>
