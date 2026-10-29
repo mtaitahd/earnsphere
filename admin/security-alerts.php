@@ -48,9 +48,12 @@ include __DIR__ . '/admin_header.php';
         <dt class="col-sm-3">Source IP</dt><dd class="col-sm-9"><?= sanitize($alert['ip_address'] ?? 'Unknown') ?></dd>
         <dt class="col-sm-3">Page</dt><dd class="col-sm-9"><?= sanitize($context['path'] ?? '/') ?></dd>
         <dt class="col-sm-3">Signed-in account</dt><dd class="col-sm-9"><?= !empty($alert['user_id']) ? '#' . (int) $alert['user_id'] : 'Not signed in' ?></dd>
-        <dt class="col-sm-3">Email</dt><dd class="col-sm-9"><?= sanitize($emailLabels[$status] ?? 'Delivery status unknown') ?></dd>
+        <dt class="col-sm-3">Attempted email / phone</dt><dd class="col-sm-9"><?= sanitize($context['attempted_identifier'] ?? 'Not recorded for this alert') ?></dd>
+        <dt class="col-sm-3">Reported device / browser</dt><dd class="col-sm-9"><?= sanitize($context['device'] ?? SecurityAlerts::deviceDescription($alert['user_agent'] ?? '')) ?></dd>
+        <dt class="col-sm-3">User-Agent</dt><dd class="col-sm-9"><?= sanitize($alert['user_agent'] ?? 'Not recorded for this alert') ?></dd>
+        <dt class="col-sm-3">Alert email delivery</dt><dd class="col-sm-9"><?= sanitize($emailLabels[$status] ?? 'Delivery status unknown') ?></dd>
     </dl>
-    <p class="small mb-0 text-muted">Review the activity before taking action. Do not suspend an account based on this alert alone.</p>
+    <p class="small mb-0 text-muted">The attempted identifier and device are supplied by the browser and do not establish who made the request. Older alerts may lack these details. Review the activity before taking action. Do not suspend an account based on this alert alone.</p>
 </div></article>
 <?php endforeach; ?>
 <?php include __DIR__ . '/admin_footer.php'; ?>

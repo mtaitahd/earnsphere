@@ -226,13 +226,13 @@ class Auth {
     public static function login(string $identifier, string $password): array {
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         if (!SecurityRateLimit::consume('login-ip:' . $ip, 60, 900)) {
-            SecurityAlerts::record('login_blocked');
+            SecurityAlerts::record('login_blocked', null, $identifier);
             return ['success' => false, 'errors' => ['Too many login attempts. Please try again in 15 minutes.']];
         }
         // Normalize phone: 0622... -> 255622..., +255622... -> 255622...
         $normalized = preg_replace('/^(\+?255|0)(\d{9})$/', '255$2', trim($identifier));
         if (!SecurityRateLimit::consume('login-account:' . strtolower($normalized), 20, 900)) {
-            SecurityAlerts::record('login_blocked');
+            SecurityAlerts::record('login_blocked', null, $identifier);
             return ['success' => false, 'errors' => ['Too many login attempts. Please try again in 15 minutes.']];
         }
         
@@ -257,7 +257,7 @@ class Auth {
             try { $lock=AccountLoginLock::attempt((int)$user['id'],$passwordCorrect); }
             catch (Throwable $e) {error_log('Account login protection unavailable');return ['success'=>false,'help_required'=>true,'errors'=>['Login protection is unavailable. Please contact administrator through Help.']];}
             if (AccountLoginLock::blocked($lock)) {
-                SecurityAlerts::record('login_blocked');
+                SecurityAlerts::record('login_blocked', null, $identifier);
                 return AccountLoginLock::rejection($lock);
             }
         }

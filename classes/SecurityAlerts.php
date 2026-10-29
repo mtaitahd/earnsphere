@@ -15,18 +15,18 @@ final class SecurityAlerts {
         'webhook_signature' => 'Payment callback rejected: invalid signature',
     ];
 
-    public static function repeated(string $event, int $threshold = 5, string $scope = ''): void {
+    public static function repeated(string $event, int $threshold = 5, string $scope = '', string $identifier = ''): void {
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         if (!SecurityRateLimit::consume('security-signal:' . $event . ':' . $ip . ':' . $scope, max(1, $threshold - 1), 900)) {
-            self::record($event);
+            self::record($event, null, $identifier);
         }
     }
 
     public static function loginFailure(string $identifier): void {
-        self::repeated('login_failures');
+        self::repeated('login_failures', 5, '', $identifier);
         // Also notice a single account being guessed from different source addresses.
         if (!SecurityRateLimit::consume('security-account-fail:' . hash('sha256', strtolower($identifier)), 4, 900)) {
-            self::record('login_failures');
+            self::record('login_failures', null, $identifier);
         }
     }
 
@@ -35,7 +35,7 @@ final class SecurityAlerts {
         catch (Throwable $e) { ErrorLogger::ensureTable(); }
     }
 
-    public static function record(string $event, ?callable $sender = null): void {
+    public static function record(string $event, ?callable $sender = null, string $identifier = ''): void {
         if (self::$recording || !isset(self::EVENTS[$event])) return;
         self::$recording = true;
         try {
@@ -46,14 +46,21 @@ final class SecurityAlerts {
             $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
             $path = substr(preg_replace('/[\x00-\x1f\x7f]/', '', is_string($path) ? $path : '/'), 0, 180);
             $context = ['event' => $event, 'path' => $path, 'email_status' => 'pending'];
+            if (in_array($event, ['login_failures','login_blocked'], true)) {
+                $candidate=trim(substr($identifier,0,254));
+                if (filter_var($candidate,FILTER_VALIDATE_EMAIL)) $context['attempted_identifier']=$candidate;
+                elseif (preg_match('/^\+?[0-9]{9,15}$/D',$candidate)) $context['attempted_identifier']=$candidate;
+            }
+            $agent=substr(preg_replace('/[\x00-\x1f\x7f]/','', (string)($_SERVER['HTTP_USER_AGENT']??'')),0,512);
+            $context['device']=self::deviceDescription($agent);
             $id = Database::insert('error_logs', [
                 'user_id' => isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null,
                 'category' => 'security', 'severity' => 'warning', 'source' => 'SecurityAlerts',
                 'message' => self::EVENTS[$event], 'context' => json_encode($context),
                 'request_method' => substr($_SERVER['REQUEST_METHOD'] ?? '', 0, 10),
-                'request_uri' => $path, 'ip_address' => $ip, 'user_agent' => null,
+                'request_uri' => $path, 'ip_address' => $ip, 'user_agent' => $agent ?: null,
             ]);
-            // Never include passwords, entered OTPs, cookies, query strings or headers.
+            // Only the bounded User-Agent is retained; never passwords, OTPs, cookies or query strings.
             if (!$sender && ENVIRONMENT !== 'production') $context['email_status'] = 'disabled_nonproduction';
             elseif (!SecurityRateLimit::consume('security-alert-email-global', 4, 3600)) $context['email_status'] = 'rate_limited';
             else {
@@ -65,7 +72,7 @@ final class SecurityAlerts {
                 }
                 $subject = 'EarnSphere security alert #' . $id;
                 $text = self::EVENTS[$event] . "\nTime: " . date('d M Y H:i:s T') . "\nSource IP: " . $ip
-                    . "\nPath: " . $path . "\nThe request was rejected or limited. This is suspicious activity, not proof of a hacked account."
+                    . "\nPath: " . $path . "\nAttempted email/phone: " . ($context['attempted_identifier']??'Not recorded') . "\nReported device: " . $context['device'] . "\nThe request was rejected or limited. This is suspicious activity, not proof of a hacked account."
                     . "\nReview: " . SITE_URL . '/admin/security-alerts';
                 $html = '<h2>EarnSphere security alert</h2><p>' . nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>';
                 try {
@@ -77,6 +84,19 @@ final class SecurityAlerts {
             Database::update('error_logs', ['context' => json_encode($context)], 'id = ? AND category = ?', [$id, 'security']);
         } catch (Throwable $e) { error_log('Security alert could not be saved or emailed'); }
         finally { self::$recording = false; }
+    }
+
+    public static function deviceDescription(string $agent): string {
+        if ($agent==='') return 'Not recorded';
+        $os='Unknown OS';
+        foreach (['Android'=>'Android','iPhone'=>'iOS (iPhone)','iPad'=>'iPadOS (iPad)','Windows'=>'Windows','Macintosh'=>'macOS','CrOS'=>'ChromeOS','Linux'=>'Linux'] as $token=>$name) {
+            if (stripos($agent,$token)!==false) {$os=$name;break;}
+        }
+        $browser='Unknown browser';
+        foreach (['SamsungBrowser/'=>'Samsung Internet','Edg/'=>'Edge','EdgA/'=>'Edge','OPR/'=>'Opera','Firefox/'=>'Firefox','FxiOS/'=>'Firefox','CriOS/'=>'Chrome','Chrome/'=>'Chrome','Safari/'=>'Safari'] as $token=>$name) {
+            if (stripos($agent,$token)!==false) {$browser=$name;break;}
+        }
+        return $os.' / '.$browser;
     }
 
     private static function readThrough(int $adminId): int {
@@ -99,7 +119,7 @@ final class SecurityAlerts {
     public static function listing(int $adminId): array {
         self::requireAdministrator($adminId);
         self::ready();
-        return ['through' => self::readThrough($adminId), 'items' => Database::fetchAll("SELECT id, message, context, ip_address, user_id, created_at FROM error_logs WHERE category = ? ORDER BY id DESC LIMIT 50", ['security'])];
+        return ['through' => self::readThrough($adminId), 'items' => Database::fetchAll("SELECT id, message, context, ip_address, user_id, user_agent, created_at FROM error_logs WHERE category = ? ORDER BY id DESC LIMIT 50", ['security'])];
     }
 
     public static function markRead(int $adminId, int $through): void {

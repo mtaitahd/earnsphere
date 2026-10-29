@@ -4,6 +4,7 @@ require __DIR__.'/staff_fixture.php';require_once __DIR__.'/../classes/SecurityA
 function checkAdmin(bool $ok,string $message):void{if(!$ok)throw new RuntimeException($message);}
 Database::insert('settings',['setting_key'=>'admin_email','setting_value'=>'security@example.test']);
 $_SERVER['REMOTE_ADDR']='203.0.113.'.random_int(1,200);$_SERVER['REQUEST_URI']='/login?password=DO_NOT_LOG&otp=SECRET';
+$_SERVER['HTTP_USER_AGENT']='Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130.0.0.0 Mobile Safari/537.36';
 $base=Database::count('error_logs',"category='security'");
 for($i=0;$i<4;$i++)SecurityAlerts::loginFailure('target@example.test');
 checkAdmin(Database::count('error_logs',"category='security'")===$base,'Ordinary mistakes generated alert');
@@ -12,6 +13,8 @@ checkAdmin(Database::count('error_logs',"category='security'")===$base+1,'Fifth 
 $row=Database::fetchOne("SELECT * FROM error_logs WHERE category='security' ORDER BY id DESC LIMIT 1");
 checkAdmin(!str_contains(json_encode($row),'SECRET')&&!str_contains(json_encode($row),'DO_NOT_LOG'),'Secrets logged');
 checkAdmin(json_decode($row['context'],true)['email_status']==='disabled_nonproduction','Test environment sent mail');
+checkAdmin(json_decode($row['context'],true)['attempted_identifier']==='target@example.test','Attempted email missing');
+checkAdmin(json_decode($row['context'],true)['device']==='Android / Chrome' && str_contains($row['user_agent'],'Android 14'),'Reported device missing');
 $calls=[];$sender=function($to,$subject,$html)use(&$calls){$calls[]=[$to,$subject,$html];return true;};
 for($i=0;$i<5;$i++){$_SERVER['REMOTE_ADDR']='198.51.100.'.($i+1);SecurityAlerts::record('webhook_signature',$sender);}
 checkAdmin(count($calls)===4,'Global email flood cap failed');checkAdmin($calls[0][0]==='security@example.test','Configured admin email ignored');
@@ -67,3 +70,26 @@ checkAdmin($empty['success']&&$empty['data']['items']===[],'Empty popup level fa
 echo "Referral member lists: Level 1/2, inviters, network isolation, empty state, pagination, staff exclusion and XSS passed.\n";
 
 echo "Admin alerts/referrals: thresholds, dedup, privacy, email cap/status, independent read state, exact lookup, inviter chain, levels, cycles and safe page passed.\n";
+
+// Test the real pre-authentication account throttle path, not only direct recording.
+$_SESSION=[];
+$_SERVER['REMOTE_ADDR']='192.0.2.'.random_int(1,200);
+$attempt='alert-'.bin2hex(random_bytes(8)).'@example.test';
+for($i=0;$i<20;$i++) SecurityRateLimit::consume('login-account:'.$attempt,20,900);
+$_SERVER['HTTP_USER_AGENT']="<script>alert(1)</script>\r\n".str_repeat('X',600);
+$blocked=Auth::login($attempt,'NEVER_STORE_PASSWORD');
+$record=Database::fetchOne("SELECT * FROM error_logs WHERE category='security' AND message='Login attempt limit reached' ORDER BY id DESC LIMIT 1");
+checkAdmin(!$blocked['success']&&json_decode($record['context'],true)['attempted_identifier']===$attempt,'Blocked login identifier missing');
+checkAdmin(strlen($record['user_agent'])===512&&!str_contains($record['user_agent'],"\r"),'Unbounded/control characters in UA');
+checkAdmin(!str_contains(json_encode($record),'NEVER_STORE_PASSWORD'),'Password logged');
+$_SERVER['REMOTE_ADDR']='192.0.2.250';
+SecurityAlerts::record('login_blocked',null,'+255712345678');
+$phone=Database::fetchOne("SELECT context FROM error_logs WHERE category='security' ORDER BY id DESC LIMIT 1");
+checkAdmin(json_decode($phone['context'],true)['attempted_identifier']==='+255712345678','Phone identifier missing');
+$_SESSION=['user_id'=>1,'user_role'=>'admin'];StaffAccess::clearCache();
+$_SERVER['REQUEST_METHOD']='GET';$_SERVER['PHP_SELF']='/admin/security-alerts.php';
+ob_start();include __DIR__.'/../admin/security-alerts.php';$alertHtml=ob_get_clean();
+checkAdmin(str_contains($alertHtml,$attempt)&&str_contains($alertHtml,'+255712345678'),'Identifiers missing on admin page');
+checkAdmin(str_contains($alertHtml,'Android / Chrome')&&str_contains($alertHtml,'Alert email delivery'),'Device/delivery labels missing');
+checkAdmin(!str_contains($alertHtml,'<script>alert(1)</script>'),'User-Agent XSS');
+echo "Security alert identity/device: real blocked login, phone/email, bounded UA, no password and escaped admin rendering passed.\n";
