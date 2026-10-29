@@ -124,7 +124,7 @@ class StaffAccess {
     }
     public static function requirePage(string $page): void {
         Auth::initSession();
-        if (!isset($_SESSION['user_id'])) { header('Location: ' . SITE_URL . '/admin/login'); exit; }
+        if (!isset($_SESSION['user_id'])) { header('Location: ' . SITE_URL . '/admin/agent-login'); exit; }
         $permission = self::pagePermission($page);
         if (!$permission) self::deny();
         self::requirePermission($permission);

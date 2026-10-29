@@ -48,5 +48,5 @@ assert run("admin/support.php", version=1)["http"] == 403, "Old session bypassed
 assert run("admin/profile.php", method="POST", post={"form_type":"update_email","new_email":"test@example.test"})["http"] == 403, "Profile email update bypassed CSRF"
 state = run("admin/support.php", method="POST", post={"csrf_token":"test-csrf","action":"reply","ticket_id":1,"admin_reply":"We are checking your request."})
 assert state["http"] == 302 and state["ticket"]["admin_reply"] == "We are checking your request.", "Authorized agent could not reply to a ticket"
-assert run("admin/login.php")["http"] == 302, "Logged-in staff was not redirected to an authorized page"
+assert run("admin/agent-login.php")["http"] == 302, "Logged-in staff was not redirected to an authorized page"
 print("Staff direct-route, API, CSRF, privilege escalation and support reply checks passed.")

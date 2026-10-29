@@ -19,7 +19,7 @@ $r=AdminPIN::login($entry,$credentials['pin'],$sender);
 pinCheck(!empty($r['otp_required'])&&!Auth::isLoggedIn()&&$sent===1,'PIN bypassed OTP');
 pinCheck($_SESSION['admin_login_otp']['entry_hash']===$entry['config']['token_hash'],'OTP not bound to private entry');
 $privateEntry=$entry;$matches=['',$token];$_SERVER['REQUEST_METHOD']='GET';$_SERVER['PHP_SELF']='/admin/private-entry.php';
-ob_start();include __DIR__.'/../admin/login.php';$html=ob_get_clean();
+ob_start();include __DIR__.'/../includes/staff_login.php';$html=ob_get_clean();
 pinCheck(substr_count($html,'<span class="code-box"></span>')===6,'OTP must have six boxes');
 pinCheck(str_contains($html,'name="otp"')&&!str_contains($html,'name="identifier"'),'Private OTP form wrong');
 pinCheck(!str_contains($html,'https://cdn')&&!str_contains($html,'fonts.googleapis'),'Private link leaks to third parties');

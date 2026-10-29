@@ -20,12 +20,12 @@ otpCheck(!empty(AdminLoginOTP::resend($sender)['errors']),'Resend cooldown bypas
 $privateEntry=['user'=>$user,'config'=>['token_hash'=>str_repeat('a',64)]];
 $matches=['',str_repeat('b',64)];
 $_SESSION['admin_login_otp']['entry_hash']=$privateEntry['config']['token_hash'];
-$_SERVER['REQUEST_METHOD']='GET';$_SERVER['PHP_SELF']='/admin/login.php';
-ob_start();include __DIR__.'/../admin/login.php';$otpHtml=ob_get_clean();
+$_SERVER['REQUEST_METHOD']='GET';$_SERVER['PHP_SELF']='/admin/agent-login.php';
+ob_start();include __DIR__.'/../includes/staff_login.php';$otpHtml=ob_get_clean();
 otpCheck(str_contains($otpHtml,'name="otp"')&&!str_contains($otpHtml,'name="password"'),'OTP screen missing');
 otpCheck(str_contains($otpHtml,'60 seconds'),'Wrong expiry displayed');
 $_SERVER['REQUEST_METHOD']='POST';$_POST=['action'=>'verify_otp','otp'=>$code,CSRF_TOKEN_NAME=>'wrong-token'];
-ob_start();include __DIR__.'/../admin/login.php';ob_end_clean();
+ob_start();include __DIR__.'/../includes/staff_login.php';ob_end_clean();
 otpCheck(!Auth::isLoggedIn()&&AdminLoginOTP::pending()!==null,'CSRF bypass');
 $_SERVER['REQUEST_METHOD']='GET';$_POST=[];
 $pending=$_SESSION['admin_login_otp'];
@@ -54,7 +54,7 @@ Database::update('users',['password'=>password_hash('changed',PASSWORD_DEFAULT)]
 otpCheck(!Auth::verifyAdminOTP($code)['success'],'Password change did not invalidate challenge');
 AdminLoginOTP::begin($second,fn()=>false);
 otpCheck(AdminLoginOTP::pending()===null&&!Auth::isLoggedIn(),'Mail failure allowed login');
-$_SERVER['REQUEST_METHOD']='GET';$_SERVER['PHP_SELF']='/admin/login.php';
-ob_start();include __DIR__.'/../admin/login.php';$html=ob_get_clean();
+$_SERVER['REQUEST_METHOD']='GET';$_SERVER['PHP_SELF']='/admin/agent-login.php';
+ob_start();include __DIR__.'/../includes/staff_login.php';$html=ob_get_clean();
 otpCheck(str_contains($html,'name="pin"')&&!str_contains($html,'name="password"'),'PIN screen broken');
 echo "Admin OTP: password-only rejection, pre-auth isolation, one-use/session binding, expiry, guesses, resend, account revalidation and mail failure passed. No email sent.\n";

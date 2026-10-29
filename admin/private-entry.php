@@ -8,4 +8,4 @@ $privateEntry=AdminPIN::resolve($matches[1]);
 if (!$privateEntry) {http_response_code(404);exit;}
 header('Referrer-Policy: no-referrer');
 header('X-Robots-Tag: noindex, nofollow, noarchive');
-require __DIR__.'/login.php';
+require dirname(__DIR__).'/includes/staff_login.php';

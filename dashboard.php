@@ -18,6 +18,7 @@ Auth::requireAuth();
 Wallet::autoExpirePending((int) $_SESSION['user_id']);
 
 $user = Auth::getUser();
+if (($user['role']??'')==='admin') {require_once __DIR__.'/classes/StaffAccess.php';header('Location: '.StaffAccess::landingUrl());exit;}
 $wallet = Wallet::getWallet($_SESSION['user_id']);
 $wallet['total_earned'] = Wallet::earnedTotal((int)$_SESSION['user_id']);
 $stats = CommissionEngine::getReferralStats($_SESSION['user_id']);

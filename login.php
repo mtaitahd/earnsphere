@@ -36,7 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $result = Auth::login($identifier, $password);
             
-            if (!empty($result['otp_required'])) {header('Location: '.SITE_URL.'/admin/login');exit;}
             if ($result['success']) {
                 $user = $result['user'];
                 if (in_array($user['role'], ['admin', 'agent'], true)) {

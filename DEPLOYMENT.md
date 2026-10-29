@@ -390,3 +390,6 @@ pair. Administrator email/password login is disabled, including the member login
 The private entry requires PIN followed by the 60-second email OTP. Agents retain
 their existing staff login. Configure the administrator account email and SMTP
 before signing out. The private path requires Apache rewrite rules from `.htaccess`.
+
+The old `/admin/login` and `/admin/login.php` entries are removed (404). Agents
+use `/admin/agent-login`; administrators use only their generated private link.

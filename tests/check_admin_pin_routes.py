@@ -19,3 +19,14 @@ assert json.loads(status) in (False,200)
 for mode in ['invalid','direct']:
  body,status=run(mode);assert json.loads(status)==404 and not body
 print('Private admin route: valid PIN form, invalid token and direct-file rejection passed.')
+
+assert not (root/'admin/login.php').exists(), 'Old public admin login still exists'
+assert 'admin/(?:login|loign)' in (root/'.htaccess').read_text(), 'Removed login aliases are not blocked'
+for endpoint in ['login.php','admin/agent-login.php']:
+ code='require '+json.dumps(str(root/'tests/staff_fixture.php'))+';'
+ code+='Database::update("users",["password"=>password_hash("known-password",PASSWORD_DEFAULT)],"id = ?",[1]);$_SESSION=[CSRF_TOKEN_NAME=>"csrf-test"];StaffAccess::clearCache();'
+ code+='$_SERVER["REQUEST_METHOD"]="POST";$_POST=[CSRF_TOKEN_NAME=>"csrf-test","identifier"=>"admin@example.test","password"=>"known-password"];'
+ code+='register_shutdown_function(function(){echo "AUTH_STATE:".json_encode(isset($_SESSION["user_id"]));});require '+json.dumps(str(root/endpoint))+';'
+ result=subprocess.run([php,'-r',code],capture_output=True,text=True,env=os.environ|{'APP_ENV':'testing'},timeout=30)
+ assert result.returncode==0 and result.stdout.endswith('AUTH_STATE:false'), (endpoint,result.stderr)
+print('Administrator blocked from member and agent password login; old admin login removed.')

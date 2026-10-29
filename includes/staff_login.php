@@ -10,7 +10,7 @@ require_once dirname(__DIR__) . '/includes/helpers.php';
 
 Auth::initSession();
 $isPrivateEntry=isset($privateEntry) && is_array($privateEntry);
-$loginAction=$isPrivateEntry ? rtrim(SITE_URL,'/').'/staff-entry/'.$matches[1] : SITE_URL.'/admin/login';
+$loginAction=$isPrivateEntry ? rtrim(SITE_URL,'/').'/staff-entry/'.$matches[1] : SITE_URL.'/admin/agent-login';
 require_once dirname(__DIR__).'/classes/AdminLoginOTP.php';
 header('Cache-Control: no-store, private');
 
@@ -33,7 +33,7 @@ if ($challenge && (!$isPrivateEntry || (int)$challenge['user_id']!==(int)$privat
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCSRF($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Security: Please try again.';
-        ErrorLogger::log('login', 'Staff login failed: invalid CSRF token', [], null, 'warning', 'admin/login.php');
+        ErrorLogger::log('login', 'Staff login failed: invalid CSRF token', [], null, 'warning', 'includes/staff_login.php');
     } elseif ($isPrivateEntry && ($_POST['action']??'')==='verify_otp') {
         $result=Auth::verifyAdminOTP(is_string($_POST['otp']??null)?$_POST['otp']:'');
         if ($result['success']) {header('Location: '.StaffAccess::landingUrl());exit;}
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ErrorLogger::log('login', 'Staff login failed: missing identifier or password', [
                 'identifier_present' => $identifier !== '',
                 'password_present'   => $password !== '',
-            ], null, 'notice', 'admin/login.php');
+            ], null, 'notice', 'includes/staff_login.php');
         } else {
             $result = Auth::login($identifier, $password);
             
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     ErrorLogger::log('login', 'Staff login failed: non-admin user attempted admin panel', [
                         'identifier' => $identifier,
-                    ], (int) $result['user']['id'], 'warning', 'admin/login.php');
+                    ], (int) $result['user']['id'], 'warning', 'includes/staff_login.php');
                     Auth::logout();
                     $error = 'You cannot access the admin panel.';
                 }
@@ -133,7 +133,7 @@ $csrf = Auth::generateCSRF();
                     <div class="code-boxes" aria-hidden="true"><?php for ($i=0;$i<6;$i++): ?><span class="code-box"></span><?php endfor; ?></div>
                 </div>
                 <p class="code-hint" id="otp-hint">Enter or paste your 6-digit code.</p>
-                <?php include __DIR__.'/code-keypad.php'; ?>
+                <?php include dirname(__DIR__).'/admin/code-keypad.php'; ?>
                 <button class="btn btn-admin" type="submit">Verify and login</button>
             </form>
             <form method="POST" action="<?= sanitize($loginAction) ?>" class="mt-3">
@@ -150,7 +150,7 @@ $csrf = Auth::generateCSRF();
                     <input type="password" class="form-control code-input" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" required data-code-autofocus>
                     <div class="code-boxes" aria-hidden="true"><?php for ($i=0;$i<4;$i++): ?><span class="code-box"></span><?php endfor; ?></div>
                 </div>
-                <?php include __DIR__.'/code-keypad.php'; ?>
+                <?php include dirname(__DIR__).'/admin/code-keypad.php'; ?>
                 <?php else: ?>
                 <div class="form-floating mb-3">
                     <input type="text" class="form-control" id="identifier" name="identifier" placeholder="Username or Email" required autofocus>
