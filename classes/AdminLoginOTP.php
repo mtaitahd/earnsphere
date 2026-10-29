@@ -28,10 +28,10 @@ final class AdminLoginOTP {
     }
     public static function resend(?callable $sender=null): array {
         $p=self::pending();
-        if (!$p) return ['success'=>false,'errors'=>['Login code expired. Enter your password again.']];
-        if (time()-$p['sent_at']<60) return ['success'=>false,'errors'=>['Wait 60 seconds before requesting another code.']];
+        if (!$p) return ['success'=>false,'errors'=>['Login code expired. Enter your PIN again.']];
+        if (time()-$p['sent_at']<30) return ['success'=>false,'errors'=>['Wait 30 seconds before requesting another code.']];
         $user=Database::fetchOne('SELECT * FROM users WHERE id = ?',[$p['user_id']]);
-        if (!$user || !hash_equals($p['binding'],self::binding($user))) {unset($_SESSION['admin_login_otp']);return ['success'=>false,'errors'=>['Account changed. Enter your password again.']];}
+        if (!$user || !hash_equals($p['binding'],self::binding($user))) {unset($_SESSION['admin_login_otp']);return ['success'=>false,'errors'=>['Account changed. Enter your PIN again.']];}
         return self::begin($user,$sender);
     }
     public static function verify(string $code): ?array {

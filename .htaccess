@@ -17,6 +17,9 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # RewriteCond %{HTTP_HOST} ^www\.earnsphere\.co\.tz [NC]
 # RewriteRule ^(.*)$ https://earnsphere.co.tz/$1 [L,R=301]
 
+# Private administrator entry; its token is generated on the server.
+RewriteRule ^staff-entry/[a-f0-9]{64}/?$ admin/private-entry.php [END]
+
 # --- Remove .php extension (301 redirect) ---
 RewriteCond %{REQUEST_URI} \.php$
 RewriteCond %{REQUEST_URI} !^/(api|webhooks)/

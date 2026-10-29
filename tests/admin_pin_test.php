@@ -1,0 +1,30 @@
+<?php
+if(PHP_SAPI!=='cli')exit;
+require __DIR__.'/staff_fixture.php';require_once __DIR__.'/../classes/AdminPIN.php';
+function pinCheck(bool $ok,string $message):void {if(!$ok)throw new RuntimeException($message);}
+Database::update('users',['password'=>password_hash('old-password',PASSWORD_DEFAULT)],'id = ?',[1]);
+$_SESSION=[];StaffAccess::clearCache();
+$_SERVER['REMOTE_ADDR']='192.0.2.'.random_int(1,200);
+$r=Auth::login('admin@example.test','old-password');pinCheck(!$r['success']&&!Auth::isLoggedIn(),'Normal login accepted admin');
+$credentials=AdminPIN::provision(1);$token=basename($credentials['url']);
+$entry=AdminPIN::resolve($token);pinCheck($entry!==null,'Private token not resolved');
+$stored=Database::fetchOne('SELECT setting_value FROM settings WHERE setting_key = ?',['admin_access_1'])['setting_value'];
+pinCheck(!str_contains($stored,$credentials['pin'])&&!str_contains($stored,$token),'Raw secrets stored');
+pinCheck(AdminPIN::resolve(str_repeat('0',64))===null,'Invalid link accepted');
+$sent=0;$code='';$sender=function($email,$name,$otp)use(&$sent,&$code){$sent++;$code=$otp;return true;};
+$r=AdminPIN::login($entry,'not-a-pin',$sender);pinCheck(!$r['success']&&$sent===0,'Wrong PIN sent OTP');
+$r=AdminPIN::login($entry,$credentials['pin'],$sender);
+pinCheck(!empty($r['otp_required'])&&!Auth::isLoggedIn()&&$sent===1,'PIN bypassed OTP');
+pinCheck($_SESSION['admin_login_otp']['entry_hash']===$entry['config']['token_hash'],'OTP not bound to private entry');
+$privateEntry=$entry;$matches=['',$token];$_SERVER['REQUEST_METHOD']='GET';$_SERVER['PHP_SELF']='/admin/private-entry.php';
+ob_start();include __DIR__.'/../admin/login.php';$html=ob_get_clean();
+pinCheck(str_contains($html,'name="otp"')&&!str_contains($html,'name="identifier"'),'Private OTP form wrong');
+pinCheck(!str_contains($html,'https://cdn')&&!str_contains($html,'fonts.googleapis'),'Private link leaks to third parties');
+$r=Auth::verifyAdminOTP($code);pinCheck($r['success']&&StaffAccess::isAdministrator(),'Correct PIN plus OTP failed');
+$_SESSION=[];StaffAccess::clearCache();
+$rotated=AdminPIN::provision(1);pinCheck(AdminPIN::resolve($token)===null&&AdminPIN::resolve(basename($rotated['url']))!==null,'Rotation did not revoke old link');
+$entry=AdminPIN::resolve(basename($rotated['url']));
+for($i=0;$i<4;$i++)AdminPIN::login($entry,'000',$sender);
+$r=AdminPIN::login($entry,$rotated['pin'],$sender);
+pinCheck(empty($r['otp_required'])&&!Auth::isLoggedIn(),'PIN limit bypass');
+echo "Admin PIN: normal-login denial, hashed provisioning, private links, wrong PIN, OTP binding, complete login, rotation and limits passed. No email sent.\n";

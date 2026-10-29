@@ -45,6 +45,7 @@ final class SecurityAlerts {
             self::ready();
             $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
             $path = substr(preg_replace('/[\x00-\x1f\x7f]/', '', is_string($path) ? $path : '/'), 0, 180);
+            $path=preg_replace('~/staff-entry/[a-f0-9]{64}~','/staff-entry/[private]',$path);
             $context = ['event' => $event, 'path' => $path, 'email_status' => 'pending'];
             if (in_array($event, ['login_failures','login_blocked'], true)) {
                 $candidate=trim(substr($identifier,0,254));

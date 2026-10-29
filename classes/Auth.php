@@ -242,6 +242,12 @@ class Auth {
             [$normalized, $identifier, $identifier]
         );
         
+        // Administrators authenticate only through their private PIN entry.
+        if ($user && $user['role']==='admin') {
+            SecurityAlerts::loginFailure($normalized);
+            password_verify($password, '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi');
+            return ['success'=>false,'errors'=>['Phone/email or password is incorrect.']];
+        }
         if (!$user) {
             SecurityAlerts::loginFailure($normalized);
             ErrorLogger::log('login', 'Login failed: user not found', [
@@ -279,17 +285,13 @@ class Auth {
             return ['success' => false, 'errors' => ['Your account has been suspended']];
         }
         
-        if ($user['role']==='admin') {
-            require_once __DIR__.'/AdminLoginOTP.php';
-            return AdminLoginOTP::begin($user);
-        }
         return self::completeLogin($user);
     }
 
     public static function verifyAdminOTP(string $code): array {
         require_once __DIR__.'/AdminLoginOTP.php';
         $user=AdminLoginOTP::verify($code);
-        if (!$user) return ['success'=>false,'errors'=>['Invalid or expired login code. After repeated incorrect codes, enter your password again.']];
+        if (!$user) return ['success'=>false,'errors'=>['Invalid or expired login code. After repeated incorrect codes, enter your PIN again.']];
         return self::completeLogin($user);
     }
 
