@@ -279,6 +279,22 @@ class Auth {
             return ['success' => false, 'errors' => ['Your account has been suspended']];
         }
         
+        if ($user['role']==='admin') {
+            require_once __DIR__.'/AdminLoginOTP.php';
+            return AdminLoginOTP::begin($user);
+        }
+        return self::completeLogin($user);
+    }
+
+    public static function verifyAdminOTP(string $code): array {
+        require_once __DIR__.'/AdminLoginOTP.php';
+        $user=AdminLoginOTP::verify($code);
+        if (!$user) return ['success'=>false,'errors'=>['Invalid or expired login code. After repeated incorrect codes, enter your password again.']];
+        return self::completeLogin($user);
+    }
+
+    private static function completeLogin(array $user): array {
+        unset($_SESSION['admin_login_otp']);
         // Set session data
         session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
