@@ -111,8 +111,7 @@ $csrf = Auth::generateCSRF();
     <div class="login-card">
         <div class="login-header">
             <div class="icon"><i class="fas fa-gem"></i></div>
-            <h4 style="font-weight:800;margin:0;"><?= $isPrivateEntry?'Administrator Login':'Agent Login' ?></h4>
-            <p style="color:#6b7280;font-size:0.9rem;">EarnSphere Management</p>
+            <?php if (!$isPrivateEntry): ?><h4 style="font-weight:800;margin:0;">Agent Login</h4><?php endif; ?>
         </div>
         <div class="login-body">
             <?php if ($error): ?>
@@ -145,7 +144,7 @@ $csrf = Auth::generateCSRF();
             <form method="POST" action="<?= sanitize($loginAction) ?>">
                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
                 <?php if ($isPrivateEntry): ?>
-                <label for="pin">Enter your 4-digit PIN</label>
+                <label for="pin" style="display:block;text-align:center;">Enter your 4-digit PIN</label>
                 <div class="code-entry" data-code-entry data-code-length="4" data-code-secret>
                     <input type="password" class="form-control code-input" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" required data-code-autofocus>
                     <div class="code-boxes" aria-hidden="true"><?php for ($i=0;$i<4;$i++): ?><span class="code-box"></span><?php endfor; ?></div>
