@@ -111,7 +111,7 @@ $csrf = Auth::generateCSRF();
             <?php if ($loginHelp): ?><a class="btn btn-outline-primary d-block mb-3" href="<?= sanitize(SITE_URL) ?>/#help"><i class="fas fa-life-ring me-1"></i> Help — Contact administrator</a><?php endif; ?>
             
             <?php if ($pendingOTP): ?>
-            <p>Enter the 6-digit code sent to your administrator account email. The code expires in <?= (int)OTP_EXPIRY_MINUTES ?> minutes.</p>
+            <p>Enter the 6-digit code sent to your administrator account email. The code expires in <?= AdminLoginOTP::EXPIRY_SECONDS ?> seconds.</p>
             <form method="POST">
                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= sanitize($csrf) ?>">
                 <input type="hidden" name="action" value="verify_otp">

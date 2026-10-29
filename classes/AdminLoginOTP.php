@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__.'/OTP.php';
 final class AdminLoginOTP {
+    public const EXPIRY_SECONDS = 60;
     private static function binding(array $user): string {
         return hash('sha256', $user['password'].'|'.$user['email'].'|'.($user['staff_version']??0));
     }
@@ -17,12 +18,12 @@ final class AdminLoginOTP {
             return ['success'=>false,'errors'=>['OTP request limit reached. Try again in 15 minutes.']];
         }
         $code=OTP::generate(6);
-        try {$sent=$sender ? $sender($user['email'],$user['full_name'],$code) : OTP::sendEmail($user['email'],$user['full_name'],$code,'login');}
+        try {$sent=$sender ? $sender($user['email'],$user['full_name'],$code) : OTP::sendEmail($user['email'],$user['full_name'],$code,'login',self::EXPIRY_SECONDS);}
         catch(Throwable $e){$sent=false;}
         if (!$sent) return ['success'=>false,'errors'=>['Could not send the login code. Check the administrator email and mail settings, then try again.']];
         session_regenerate_id(true);
         foreach (['user_id','user_role','staff_version','user_name','user_status','login_ip'] as $key) unset($_SESSION[$key]);
-        $_SESSION['admin_login_otp']=['user_id'=>(int)$user['id'],'hash'=>password_hash($code,PASSWORD_DEFAULT),'binding'=>self::binding($user),'expires'=>time()+OTP_EXPIRY_MINUTES*60,'sent_at'=>time(),'attempts'=>0];
+        $_SESSION['admin_login_otp']=['user_id'=>(int)$user['id'],'hash'=>password_hash($code,PASSWORD_DEFAULT),'binding'=>self::binding($user),'expires'=>time()+self::EXPIRY_SECONDS,'sent_at'=>time(),'attempts'=>0];
         return ['success'=>false,'otp_required'=>true];
     }
     public static function resend(?callable $sender=null): array {

@@ -12,6 +12,7 @@ Database::update('users',['email'=>'admin@example.test'],'id = ?',[1]);
 $user=Database::fetchOne('SELECT * FROM users WHERE id = ?',[1]);
 $code='';$sender=function($email,$name,$otp)use(&$code){$code=$otp;return true;};
 $r=AdminLoginOTP::begin($user,$sender);
+otpCheck($_SESSION['admin_login_otp']['expires']-$_SESSION['admin_login_otp']['sent_at']===60,'OTP must expire in 60 seconds');
 otpCheck(!empty($r['otp_required'])&&!Auth::isLoggedIn()&&!StaffAccess::isStaff(),'Pending OTP grants access');
 otpCheck(!str_contains(json_encode($_SESSION),$code),'Raw OTP retained');
 otpCheck(!Auth::verifyAdminOTP('bad')['success'],'Invalid format accepted');
@@ -19,6 +20,7 @@ otpCheck(!empty(AdminLoginOTP::resend($sender)['errors']),'Resend cooldown bypas
 $_SERVER['REQUEST_METHOD']='GET';$_SERVER['PHP_SELF']='/admin/login.php';
 ob_start();include __DIR__.'/../admin/login.php';$otpHtml=ob_get_clean();
 otpCheck(str_contains($otpHtml,'name="otp"')&&!str_contains($otpHtml,'name="password"'),'OTP screen missing');
+otpCheck(str_contains($otpHtml,'60 seconds'),'Wrong expiry displayed');
 $_SERVER['REQUEST_METHOD']='POST';$_POST=['action'=>'verify_otp','otp'=>$code,CSRF_TOKEN_NAME=>'wrong-token'];
 ob_start();include __DIR__.'/../admin/login.php';ob_end_clean();
 otpCheck(!Auth::isLoggedIn()&&AdminLoginOTP::pending()!==null,'CSRF bypass');

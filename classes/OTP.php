@@ -52,7 +52,8 @@ class OTP {
     /**
      * Send OTP via email
      */
-    public static function sendEmail(string $email, string $name, string $otp, string $type = 'reset'): bool {
+    public static function sendEmail(string $email, string $name, string $otp, string $type = 'reset', ?int $expirySeconds = null): bool {
+        $expiryLabel=$expirySeconds===null ? OTP_EXPIRY_MINUTES.' minutes' : max(1,$expirySeconds).' seconds';
         $labels = [
             'reset'  => 'Reset Password',
             'verify' => 'Verify Account',
@@ -66,7 +67,7 @@ class OTP {
         $body .= '<p>Hello <strong>' . $safeName . '</strong>,</p>';
         $body .= '<p>Use the code below to ' . htmlspecialchars($label) . ':</p>';
         $body .= '<div style="background:#f4f4f5;border-radius:8px;padding:20px;text-align:center;font-size:36px;font-weight:700;letter-spacing:10px;color:#72578B;font-family:monospace;margin:20px 0;">' . $otp . '</div>';
-        $body .= '<p style="font-size:13px;color:#666;">This code expires in <strong>' . OTP_EXPIRY_MINUTES . ' minutes</strong>. Do not share this code with anyone.</p>';
+        $body .= '<p style="font-size:13px;color:#666;">This code expires in <strong>' . $expiryLabel . '</strong>. Do not share this code with anyone.</p>';
         $body .= '<p style="font-size:13px;color:#666;">If you did not request this code, please ignore this message.</p>';
         $body .= '<hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;">';
         $body .= '<p style="font-size:12px;color:#94a3b8;">Regards,<br><strong>EarnSphere</strong></p>';
