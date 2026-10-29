@@ -5,7 +5,7 @@ final class AdminPIN {
         $user=Database::fetchOne("SELECT * FROM users WHERE id = ? AND role = 'admin' AND status = 'active'",[$adminId]);
         if (!$user || !filter_var($user['email']??'',FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Choose an active administrator with a valid email address.');
         $token=bin2hex(random_bytes(32));
-        $pin='';for($i=0;$i<12;$i++)$pin.=random_int(0,9);
+        $pin='';for($i=0;$i<4;$i++)$pin.=random_int(0,9);
         $key='admin_access_'.$adminId;
         $value=json_encode(['pin_hash'=>password_hash($pin,PASSWORD_DEFAULT),'token_hash'=>hash('sha256',$token)],JSON_THROW_ON_ERROR);
         $row=Database::fetchOne('SELECT id FROM settings WHERE setting_key = ?',[$key]);
@@ -34,7 +34,7 @@ final class AdminPIN {
             SecurityAlerts::record('login_blocked',null,$entry['user']['email']);
             return ['success'=>false,'errors'=>['Too many PIN attempts. Try again in 15 minutes.']];
         }
-        if (!preg_match('/^[0-9]{12}$/D',$pin) || !password_verify($pin,$entry['config']['pin_hash'])) {
+        if (!preg_match('/^[0-9]{4}$/D',$pin) || !password_verify($pin,$entry['config']['pin_hash'])) {
             SecurityAlerts::loginFailure($entry['user']['email']);
             return ['success'=>false,'errors'=>['Incorrect PIN.']];
         }

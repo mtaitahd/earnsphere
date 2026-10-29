@@ -1,0 +1,36 @@
+/* One accessible input per code supports paste, autofill and native editing. */
+(() => {
+    'use strict';
+    document.querySelectorAll('[data-code-entry]').forEach(entry => {
+        const input = entry.querySelector('input');
+        const boxes = Array.from(entry.querySelectorAll('.code-box'));
+        const length = Number(entry.dataset.codeLength);
+        const form = input.form;
+        let submitted = false;
+        const render = (submit) => {
+            input.value = input.value.replace(/[^0-9]/g, '').slice(0, length);
+            boxes.forEach((box, index) => {
+                box.textContent = input.value[index] ? (entry.hasAttribute('data-code-secret') ? '•' : input.value[index]) : '';
+                box.classList.toggle('filled', index < input.value.length);
+                box.classList.toggle('active', index === Math.min(input.value.length, length - 1));
+            });
+            if (submit && input.value.length === length && !submitted) {
+                submitted = true;
+                form.requestSubmit();
+            }
+        };
+        if (!form || typeof form.requestSubmit !== 'function') return;
+        entry.classList.add('ready');
+        input.addEventListener('input', () => render(true));
+        input.addEventListener('paste', event => {
+            const value = event.clipboardData && event.clipboardData.getData('text');
+            if (typeof value !== 'string') return;
+            event.preventDefault();
+            input.value = value;
+            render(true);
+        });
+        input.addEventListener('focus', () => render(false));
+        form.addEventListener('submit', () => { submitted = true; });
+        render(false);
+    });
+})();

@@ -103,6 +103,7 @@ $csrf = Auth::generateCSRF();
         .btn-admin { background: linear-gradient(135deg, #72578B, #5a4570); border: none; color: white; border-radius: 12px; padding: 0.8rem; font-weight: 800; font-size: 1rem; width: 100%; }
         .btn-admin:hover { background: linear-gradient(135deg, #5a4570, #4a3560); transform: translateY(-1px); color: white; }
         *{box-sizing:border-box} body{margin:0;padding:20px}.form-control{display:block;width:100%;padding:14px;margin:8px 0 16px;border:1px solid #ddd;border-radius:10px}.form-floating label{font-size:14px;color:#554464}.mb-3,.mb-4{margin-bottom:16px}.mt-3{margin-top:16px}.btn{padding:10px 14px;cursor:pointer}.alert-danger{color:#a51f2a;background:#fff0f0;padding:12px;margin-bottom:14px}.btn-outline-secondary{background:white;border:1px solid #aaa;border-radius:8px}.btn-link{background:none;border:0;color:#72578B}
+        .code-entry{position:relative;margin:10px 0 24px}.code-boxes{display:none;gap:8px;justify-content:center}.code-box{display:flex;align-items:center;justify-content:center;flex:1;max-width:60px;min-width:0;height:58px;border:2px solid #e3dce9;border-radius:12px;background:#faf8fc;font-size:26px;font-weight:800;color:#5a4570}.code-entry.ready .code-boxes{display:flex}.code-entry.ready .code-input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;z-index:1;cursor:text}.code-entry:focus-within .code-box.active{border-color:#72578B;box-shadow:0 0 0 3px #72578b20}.code-box.filled{border-color:#ab96be}.code-hint{text-align:center;font-size:13px;color:#75667e;margin:0 0 16px}@media(max-width:360px){.login-body{padding:1rem 18px 24px}.code-boxes{gap:5px}.code-box{height:50px;font-size:23px}}
     </style>
 </head>
 <body>
@@ -126,7 +127,11 @@ $csrf = Auth::generateCSRF();
                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= sanitize($csrf) ?>">
                 <input type="hidden" name="action" value="verify_otp">
                 <label for="otp">Login code</label>
-                <input class="form-control mb-3" id="otp" name="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus>
+                <div class="code-entry" data-code-entry data-code-length="6">
+                    <input class="form-control code-input" id="otp" name="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required autofocus aria-describedby="otp-hint">
+                    <div class="code-boxes" aria-hidden="true"><?php for ($i=0;$i<6;$i++): ?><span class="code-box"></span><?php endfor; ?></div>
+                </div>
+                <p class="code-hint" id="otp-hint">Type or paste your 6-digit code.</p>
                 <button class="btn btn-admin" type="submit">Verify and login</button>
             </form>
             <form method="POST" action="<?= sanitize($loginAction) ?>" class="mt-3">
@@ -138,10 +143,12 @@ $csrf = Auth::generateCSRF();
             <form method="POST" action="<?= sanitize($loginAction) ?>">
                 <input type="hidden" name="<?= CSRF_TOKEN_NAME ?>" value="<?= $csrf ?>">
                 <?php if ($isPrivateEntry): ?>
-                <div class="form-floating mb-4">
-                    <input type="password" class="form-control" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{12}" minlength="12" maxlength="12" autocomplete="current-password" required autofocus>
-                    <label for="pin">Administrator PIN</label>
+                <label for="pin">Enter your 4-digit PIN</label>
+                <div class="code-entry" data-code-entry data-code-length="4" data-code-secret>
+                    <input type="password" class="form-control code-input" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" required autofocus aria-describedby="pin-hint">
+                    <div class="code-boxes" aria-hidden="true"><?php for ($i=0;$i<4;$i++): ?><span class="code-box"></span><?php endfor; ?></div>
                 </div>
+                <p class="code-hint" id="pin-hint">Enter all 4 digits to receive your OTP.</p>
                 <?php else: ?>
                 <div class="form-floating mb-3">
                     <input type="text" class="form-control" id="identifier" name="identifier" placeholder="Username or Email" required autofocus>
@@ -159,5 +166,6 @@ $csrf = Auth::generateCSRF();
             <?php endif; ?>
         </div>
     </div>
+<script src="<?= sanitize(SITE_URL) ?>/assets/js/admin-code-entry.js" defer></script>
 </body>
 </html>

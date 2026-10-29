@@ -383,7 +383,7 @@ php database/setup_admin_pin.php
 ```
 
 If there is more than one active administrator, select one with `--admin-id=ID`.
-The command prints a private link and a random 12-digit PIN once. Store both
+The command prints a private link and a random 4-digit PIN once. Store both
 privately. Only hashes are stored in settings; no secret is committed to Git.
 Rerunning the command rotates that administrator's PIN and link, revoking the old
 pair. Administrator email/password login is disabled, including the member login.
